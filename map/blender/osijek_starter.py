@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.3)
+OSRP - Osijek starter map for Blender (V1.0.4)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -10,6 +10,8 @@ How to use:
      - city blocks: buildings with rows of windows and pitched tile roofs
      - Tvrđa square with the red-brick cathedral and its spire
      - a city park with trees and paths, the pedestrian bridge
+     - v1.0.4: sidewalks + curbs on all streets, zebra crossings, clean intersections,
+       Holy Trinity column + fountain in Tvrđa, flower beds, bus stops
   4. Follow map/BLENDER-MAP.md to convert it with Sollumz and put it in FiveM.
 
 All sizes are in meters (GTA V uses meters too). Lamp heads use an emission
@@ -178,6 +180,12 @@ M_LEAVES = [
     material("osrp_leaves_light", (0.24, 0.42, 0.12)),
 ]
 M_WOOD = material("osrp_bench_wood", (0.40, 0.25, 0.12))
+M_FLOWERS = [material("osrp_flowers_red", (0.75, 0.10, 0.12)), material("osrp_flowers_pink", (0.85, 0.40, 0.60)),
+             material("osrp_flowers_yellow", (0.95, 0.78, 0.15))]
+M_SOIL = material("osrp_soil", (0.22, 0.15, 0.10))
+M_WHITE_STONE = material("osrp_white_stone", (0.82, 0.80, 0.74))
+M_GOLD = material("osrp_gold", (0.85, 0.65, 0.20), rough=0.3, metal=1.0)
+M_GLASS_STOP = material("osrp_busstop_glass", (0.55, 0.70, 0.75), rough=0.05)
 
 
 # ---------------------------------------------------------------- props
@@ -198,10 +206,10 @@ def tree(col, i, x, y, scale=1.0):
         blob(col, f"osrp_drvo_krosnja_{i}_{k}", (x + ox, y + oy, oz), r, random.choice(M_LEAVES), squash=0.85)
 
 
-def bench(col, i, x, y):
-    """bench along x, back on the +y side"""
+def bench(col, i, x, y, back=1):
+    """bench along x; back=+1 backrest on the +y side (you sit facing -y), back=-1 the other way"""
     box(col, f"osrp_klupa_sjed_{i}", (x, y, 0.42), (1.8, 0.45, 0.06), M_WOOD)
-    box(col, f"osrp_klupa_nasl_{i}", (x, y + 0.22, 0.6), (1.8, 0.06, 0.45), M_WOOD)
+    box(col, f"osrp_klupa_nasl_{i}", (x, y + 0.22 * back, 0.6), (1.8, 0.06, 0.45), M_WOOD)
     for k, dx in enumerate((-0.8, 0.8)):
         box(col, f"osrp_klupa_noga_{i}_{k}", (x + dx, y, 0), (0.08, 0.45, 0.42), M_POLE)
 
@@ -230,7 +238,10 @@ plane(col, "osrp_promenada", (0, PROM_Y, 0.12), (MAP_W, 16), M_WALK)
 
 # Europska avenija (y = 0): asphalt, dashed lines, curbs, sidewalks
 plane(col, "osrp_europska_avenija", (0, 0, 0.1), (MAP_W, ROAD_W), M_ROAD)
+CROSS_X = [-300, -150, 0, 150, 300]
 for i, x in enumerate(range(-395, 400, 12)):
+    if any(abs(x - cx) < 12 for cx in CROSS_X):
+        continue  # clean intersections
     box(col, f"osrp_crta_{i}", (x, -0.1, 0.1), (5, 0.18, 0.02), M_LINE)
 for side in (-1, 1):
     y_edge = side * (ROAD_W / 2)
@@ -240,17 +251,46 @@ for side in (-1, 1):
 # Side streets
 plane(col, "osrp_ulica_jug", (0, -180, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
 plane(col, "osrp_ulica_rijeka", (0, 125, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
-CROSS_X = [-300, -150, 0, 150, 300]
 for i, x in enumerate(CROSS_X):
     plane(col, f"osrp_ulica_poprecna_{i}", (x, -27, 0.12), (SIDE_ROAD_W, 316), M_ROAD)
+    # sidewalks + curbs on both sides of every cross street (not across the avenue)
+    for side in (-1, 1):
+        xe = x + side * SIDE_ROAD_W / 2
+        for (ya, yb, tag) in ((-175, -ROAD_W / 2 - 6.3, "j"), (ROAD_W / 2 + 6.3, 120, "s")):
+            box(col, f"osrp_rubnik_p_{i}_{side}_{tag}", (xe + side * 0.15, (ya + yb) / 2, 0.1), (0.3, yb - ya, 0.18), M_CURB)
+            box(col, f"osrp_plocnik_p_{i}_{side}_{tag}", (xe + side * 1.55, (ya + yb) / 2, 0.1), (2.5, yb - ya, 0.16), M_WALK)
+        # dashed centre line
+        for k, yy in enumerate(range(-170, 120, 10)):
+            if abs(yy) < ROAD_W / 2 + 7:
+                continue
+            box(col, f"osrp_crta_p_{i}_{k}_{side}", (x, yy, 0.12), (0.15, 4, 0.02), M_LINE) if side == 1 else None
+    # zebra crossings over the avenue (both sides of the intersection)
+    for zs in (-1, 1):
+        zx = x + zs * (SIDE_ROAD_W / 2 + 2.5)
+        for k in range(8):
+            box(col, f"osrp_zebra_av_{i}_{zs}_{k}", (zx, -ROAD_W / 2 + 1 + k * 2, 0.1), (3.0, 0.9, 0.02), M_LINE)
+    # zebra crossings over the cross street
+    for zs in (-1, 1):
+        zy = zs * (ROAD_W / 2 + 9)
+        for k in range(5):
+            box(col, f"osrp_zebra_p_{i}_{zs}_{k}", (x - SIDE_ROAD_W / 2 + 1 + k * 2, zy, 0.12), (0.9, 3.0, 0.02), M_LINE)
+
+# curbs along the side streets (south street and river street)
+for name, yc in (("jug", -180), ("rijeka", 125)):
+    for side in (-1, 1):
+        box(col, f"osrp_rubnik_{name}_{side}", (0, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.1), (MAP_W, 0.3, 0.18), M_CURB)
 
 # Street lights: avenue both sides every 30 m, promenade every 25 m
 li = 0
+def clear_of_cross(x, gap):
+    return all(abs(x - cx) >= gap for cx in CROSS_X)
+
+
 for x in range(-390, 391, 30):
-    if any(abs(x - cx) < 8 for cx in CROSS_X):
-        continue
-    street_light(col, li, x, ROAD_W / 2 + 1.2, -1); li += 1
-    street_light(col, li, x + 15, -ROAD_W / 2 - 1.2, 1); li += 1
+    if clear_of_cross(x, 8):
+        street_light(col, li, x, ROAD_W / 2 + 1.2, -1); li += 1
+    if clear_of_cross(x + 15, 8):
+        street_light(col, li, x + 15, -ROAD_W / 2 - 1.2, 1); li += 1
 for x in range(-385, 386, 25):
     street_light(col, li, x, PROM_Y + 6.5, 1); li += 1
 
@@ -264,7 +304,9 @@ pyramid(col, "osrp_katedrala_vrh", (TV_X, TV_Y - 20, 58), 8.6, 32, M_SPIRE)
 for k, (dx, dy) in enumerate(((-10, 36), (10, 36))):
     box(col, f"osrp_katedrala_mali_toranj_{k}", (TV_X + dx, TV_Y + dy, 0), (5, 5, 30), M_BRICK)
     pyramid(col, f"osrp_katedrala_mali_vrh_{k}", (TV_X + dx, TV_Y + dy, 30), 3.6, 9, M_SPIRE)
-for k in range(8):   # trees around the square
+for k in range(8):   # trees around the square (k=6 would stand in front of the Trinity column)
+    if k == 6:
+        continue
     a = k / 8 * math.tau
     tree(col, f"trg_{k}", TV_X + math.cos(a) * 50, TV_Y + math.sin(a) * 40, 1.1)
 
@@ -330,9 +372,55 @@ for i, x in enumerate(range(-380, 381, 25)):
 
 # Trees along the avenue sidewalks (between lamps)
 for i, x in enumerate(range(-375, 376, 30)):
-    if any(abs(x - cx) < 10 for cx in CROSS_X):
-        continue
-    tree(col, f"av_s_{i}", x, -ROAD_W / 2 - 5.2, 0.8)
-    tree(col, f"av_n_{i}", x + 15, ROAD_W / 2 + 5.2, 0.8)
+    if clear_of_cross(x, 10):
+        tree(col, f"av_s_{i}", x, -ROAD_W / 2 - 5.2, 0.8)
+    if clear_of_cross(x + 15, 10):
+        tree(col, f"av_n_{i}", x + 15, ROAD_W / 2 + 5.2, 0.8)
 
-print(f"[OSRP] Osijek map v1.0.3: {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+# ---------------------------------------------------------------- landmarks & details
+def flower_bed(i, x, y, w=3.0, d=1.2):
+    box(col, f"osrp_cvjetnjak_rub_{i}", (x, y, 0), (w + 0.3, d + 0.3, 0.45), M_WHITE_STONE)
+    box(col, f"osrp_cvjetnjak_zemlja_{i}", (x, y, 0.45), (w, d, 0.05), M_SOIL)
+    for k in range(int(w * 3)):
+        blob(col, f"osrp_cvijece_{i}_{k}", (x - w / 2 + 0.2 + k * (w - 0.4) / max(1, int(w * 3) - 1), y + random.uniform(-d / 3, d / 3), 0.6),
+             random.uniform(0.18, 0.28), random.choice(M_FLOWERS), squash=0.7)
+
+
+def bus_stop(i, x, y, facing):
+    """shelter on the avenue sidewalk, open towards the road. facing=+1: road is at +y, facing=-1: road at -y"""
+    back = y - facing * 0.9
+    box(col, f"osrp_stanica_staklo_{i}", (x, back, 0.2), (4.0, 0.06, 2.3), M_GLASS_STOP)
+    for k, dx in enumerate((-2, 2)):
+        box(col, f"osrp_stanica_stup_{i}_{k}", (x + dx, back, 0.2), (0.1, 0.1, 2.5), M_POLE)
+    box(col, f"osrp_stanica_krov_{i}", (x, y - facing * 0.2, 2.7), (4.4, 1.8, 0.12), M_POLE)
+    bench(col, f"stanica_{i}", x, back + facing * 0.45, back=-facing)
+    box(col, f"osrp_stanica_znak_{i}", (x + 2.6, y + facing * 0.6, 0.2), (0.08, 0.08, 2.6), M_POLE)
+    box(col, f"osrp_stanica_ploca_{i}", (x + 2.6, y + facing * 0.6, 2.4), (0.05, 0.6, 0.6), M_LAMP)
+
+
+# Holy Trinity column (Kužni pil) in Tvrđa
+PIL_X, PIL_Y = TV_X, 30
+box(col, "osrp_pil_baza", (PIL_X, PIL_Y, 0.14), (5, 5, 1.2), M_WHITE_STONE)
+box(col, "osrp_pil_postolje", (PIL_X, PIL_Y, 1.34), (2.8, 2.8, 3.0), M_WHITE_STONE)
+cylinder(col, "osrp_pil_stup", (PIL_X, PIL_Y, 4.34), 0.55, 9.0, M_WHITE_STONE, verts=16)
+blob(col, "osrp_pil_kip", (PIL_X, PIL_Y, 14.2), 0.9, M_GOLD, squash=1.4)
+for k, (dx, dy) in enumerate(((-5, 0), (5, 0), (0, -5), (0, 5))):
+    flower_bed(f"pil_{k}", PIL_X + dx, PIL_Y + dy, 3.0 if dx else 1.2, 1.2 if dx else 3.0)
+
+# Fountain on the square
+FX, FY = TV_X - 32, 48
+cylinder(col, "osrp_fontana_bazen", (FX, FY, 0.14), 4.2, 0.6, M_WHITE_STONE, verts=24)
+cylinder(col, "osrp_fontana_voda", (FX, FY, 0.2), 3.8, 0.5, M_WATER, verts=24)
+cylinder(col, "osrp_fontana_stup", (FX, FY, 0.7), 0.35, 1.8, M_WHITE_STONE, verts=12)
+cylinder(col, "osrp_fontana_zdjela", (FX, FY, 2.5), 1.2, 0.3, M_WHITE_STONE, verts=16)
+
+# Bus stops on Europska avenija
+for i, x in enumerate((-225, -75, 75)):
+    bus_stop(i, x, -ROAD_W / 2 - 3.6, 1)
+    bus_stop(i + 10, x + 40, ROAD_W / 2 + 3.6, -1)
+
+# Flower beds along the promenade
+for i, x in enumerate(range(-350, 351, 50)):
+    flower_bed(f"prom_{i}", x, PROM_Y - 0.5, 4.0, 1.2)
+
+print(f"[OSRP] Osijek map v1.0.4: {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

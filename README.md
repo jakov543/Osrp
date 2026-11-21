@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.3 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.4 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -125,8 +125,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.3
-git push origin v1.0.3
+git tag v1.0.4
+git push origin v1.0.4
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -148,6 +148,10 @@ Admins place real GTA V props in-game. Everything is saved on the server and eve
 | `/prop prop_bench_09` | **any** GTA V prop by its name |
 | `/proplinija lampa 10 25 2` | a row: 10 lamps, every 25 m, **on both sides** of where you face (a whole street in one command) |
 | `/proplinija drvo 15 12` | an alley of 15 trees, every 12 m |
+| **`/predlozak ulica 120 14`** | **a whole street**: stand in the MIDDLE of the road and look along it. Lamps on both sides, tree alley, benches, bins, bollards, a hydrant (120 m long, road 14 m wide) |
+| **`/predlozak trg 18`** | **a square**: stand in the center. Fountain, ring of trees, benches facing the center, lamps, bushes |
+| **`/predlozak park 40 60`** | **a park** 40×60 m: stand at the start of the path. Path lamps, benches, rows of trees, bushes |
+| **`/predlozak promenada 150`** | **a promenade**: props on your LEFT (e.g. along water). Lamps, trees, benches |
 | `/propobrisi` | delete the nearest placed prop (within 5 m) |
 | `/propundo` | delete the last placed prop |
 | `/propovi` | list of short names |
@@ -162,6 +166,10 @@ Starter city script and full guide: [`map/BLENDER-MAP.md`](map/BLENDER-MAP.md)
 | Street | Night |
 |---|---|
 | ![street](map/blender/preview_street.png) | ![night](map/blender/preview_night.png) |
+
+| Intersection | Tvrđa (Holy Trinity column) |
+|---|---|
+| ![intersection](map/blender/preview_intersection.png) | ![tvrdja](map/blender/preview_tvrdja.png) |
 
 ## Requirements for players
 - Windows 10/11
