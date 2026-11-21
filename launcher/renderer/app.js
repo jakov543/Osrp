@@ -47,6 +47,19 @@ async function initLogin() {
     $('authPass2').value = '';
     afterLogin();
   });
+  const showAddr = async () => { $('loginAddr').textContent = await window.launcher.getServerAddress(); };
+  showAddr();
+  $('btnLoginAddr').addEventListener('click', async () => {
+    $('loginAddrEdit').hidden = !$('loginAddrEdit').hidden;
+    $('loginAddrInput').value = await window.launcher.getServerAddress();
+  });
+  $('btnLoginAddrSave').addEventListener('click', async () => {
+    const r = await window.launcher.setServerAddress($('loginAddrInput').value);
+    if (!r.ok) { $('loginErr').textContent = r.error; return; }
+    $('loginErr').textContent = '';
+    $('loginAddrEdit').hidden = true;
+    showAddr();
+  });
   $('btnLogout').addEventListener('click', async () => {
     await window.launcher.logout();
     setAuthMode('login');

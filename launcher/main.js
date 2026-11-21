@@ -113,7 +113,7 @@ async function accountApi(method, route, body, token) {
     if (!data) return { ok: false, status: res.status, error: res.status === 404 ? 'Sustav računa nije uključen na serveru (osrp_accounts).' : 'Greška servera.' };
     return { ...data, status: res.status };
   } catch {
-    return { ok: false, offline: true, error: 'Server je offline. Pokušaj ponovno malo kasnije.' };
+    return { ok: false, offline: true, error: `Ne mogu se spojiti na server ${serverAddress()}. Je li server upaljen? (Promijeni server ispod)` };
   } finally {
     clearTimeout(t);
   }
