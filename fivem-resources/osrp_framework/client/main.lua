@@ -42,8 +42,14 @@ function OSRP.SpawnAt(x, y, z, h, sex)
     ClearPlayerWantedLevel(PlayerId())
     SetEntityHealth(ped, GetEntityMaxHealth(ped))
 
+    -- hold the player until there is ground under them (Osijek is streamed in by osrp_osijek)
+    FreezeEntityPosition(ped, true)
     local t = GetGameTimer()
-    while not HasCollisionLoadedAroundEntity(ped) and GetGameTimer() - t < 5000 do Wait(0) end
+    while GetGameTimer() - t < 15000 do
+        local found = GetGroundZFor_3dCoord(x, y, z + 5.0, false)
+        if found and HasCollisionLoadedAroundEntity(ped) then break end
+        Wait(250)
+    end
 
     FreezeEntityPosition(ped, false)
     SetEntityVisible(ped, true, false)

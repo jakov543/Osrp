@@ -5,7 +5,7 @@ lua54 'yes'
 name 'osrp_framework'
 author 'Bandera'
 description 'OSRP V1 - own roleplay framework (no ESX/QBCore): characters, spawn, money, jobs, death, /me /do, admin'
-version '1.0.7'
+version '1.0.8'
 
 shared_script 'config.lua'
 server_scripts {

@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.7 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.8 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.7
-git push origin v1.0.7
+git tag v1.0.8
+git push origin v1.0.8
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -166,7 +166,8 @@ Short names are in `osrp_map/config.lua` and you can add your own. Props only ap
 
 On Linux it writes CodeWalker XML. On Windows, with Sollumz plus PyMateria, it writes the native `.ydr` / `.ytyp` files directly.
 
-Put `osijek.ytyp` and `osijek_*.ydr` into `osrp_osijek/stream/`, then uncomment the `data_file` line in its `fxmanifest.lua`, add `ensure osrp_osijek`, and restart. In-game, use `/osijek` to teleport there.
+**v1.0.8: the finished files are already in `osrp_osijek/stream/`.** They were converted on Linux with `tools/xml2gta` (CodeWalker.Core) and verified: 35 models, about 101k vertices, 395 embedded textures, collision on all of them, plus `osijek.ytyp` with 35 archetypes.
+Add `ensure osrp_osijek`. Players spawn in Osijek (`osrp_framework/config.lua`), and admins can use `/osijek` to teleport there.
 
 ## Osijek map in Blender
 Starter city script and full guide: [`map/BLENDER-MAP.md`](map/BLENDER-MAP.md)

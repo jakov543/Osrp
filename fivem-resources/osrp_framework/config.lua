@@ -1,8 +1,8 @@
 Config = {}
 
 -- Where new players and respawns appear (change to your Osijek map later)
-Config.Spawn = vector4(-1037.74, -2737.9, 20.17, 330.0)      -- airport (until Osijek map is in)
-Config.Hospital = vector4(298.6, -584.5, 43.26, 70.0)        -- respawn after death
+Config.Spawn = vector4(5675.0, -1511.0, 31.0, 90.0)          -- Osijek, Europska avenija (osrp_osijek)
+Config.Hospital = vector4(5700.0, -1470.0, 31.0, 180.0)       -- Osijek, Tvrđa square (respawn after death)
 
 Config.StartCash = 500
 Config.StartBank = 2000
