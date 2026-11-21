@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.13 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.14 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.13
-git push origin v1.0.13
+git tag v1.0.14
+git push origin v1.0.14
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -195,6 +195,12 @@ v1.0.13 – **textures and roads**:
 - sidewalks along all side streets (blocks moved back 3 m), trees in the courtyards
 - **roads no longer vanish at the city edges**: long pieces are cut at the 100 m chunk lines (96 chunks), LOD distance 750 m
 - `xml2gta verify` now checks that every texture a chunk uses exists in the shared .ytd
+
+v1.0.14 – **hospital, ambulance, airport, random events**:
+- the city grows south (to y = -780, 144 chunks): **KBC Osijek** hospital (6 floors, red cross, ambulance bays, helipad with an air ambulance on the roof) and **Zračna luka Osijek** (1 km runway with markings and edge lights, taxiway, apron with 3 parked jets, terminal, car park, control tower, 2 hangars with planes, access road). **Copacabana** beach on the north bank.
+- **ambulance**: when you are down press **G** (or `/hitna`, `/112`). EMS players (job `ems`) get a 112 call with GPS and revive you with E (CPR, +$150). If nobody is on duty or nobody comes in 90 s, an **AI ambulance** drives from KBC Osijek along the streets with sirens, two paramedics do CPR and you are back up (bill $250). `/hitna` also works when you are only hurt. Treatment at the KBC reception (E, $100). EMS players take an ambulance at the hospital garage.
+- **random events** around you (`osrp_osijek/events.lua`, `Config.Events`): a car hits you, traffic accident (AI ambulance + police come), broken-down car (help the driver, +$75), thief (catch him to get the wallet back + $50), dumpster fire (fire truck comes), police chase. Admins: `/dogadaj [name]`.
+- street router for the AI vehicles (`OsijekRoute`), new HUD zones (KBC Osijek, Zračna luka, Copacabana)
 
 ![map](map/blender/preview_minimap.png)
 

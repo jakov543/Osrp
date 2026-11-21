@@ -321,6 +321,21 @@ def flowers(rng, n, base):
     return img.astype(np.uint8), 0.3 + 0.6 * bloom
 
 
+def sand(rng, n, base):
+    grains = noise(rng, n, 0.6)
+    ripple = np.sin(np.mgrid[0:n, 0:n][0] / n * np.pi * 2 * 10 + noise(rng, n, n / 10) * 3) * 0.5
+    shells = speckles(rng, n, 0.002, 0.8)
+    return colorize(base, 1 + 0.10 * grains + 0.05 * ripple + 0.3 * shells), 0.5 + 0.2 * ripple + 0.1 * grains
+
+
+def corrugated(rng, n, base):
+    xx = np.mgrid[0:n, 0:n][1].astype(float)
+    wave = np.sin(xx / n * np.pi * 2 * 16)
+    streak = noise(rng, n, 2.0, sx=0.3, sy=10.0)
+    shade = 1 + 0.10 * wave + 0.06 * streak
+    return colorize(base, shade), 0.5 + 0.5 * wave
+
+
 def flat(rng, n, base):
     return colorize(base, 1 + 0.05 * noise(rng, n, 1.0)), None
 
@@ -330,6 +345,9 @@ TABLE = [
     ("asphalt",      lambda r, n, b: asphalt(r, n, b),        1024, 6.0, 2.0),
     ("road_line",    lambda r, n, b: road_line(r, n, b),       256, 2.0, 0.0),
     ("pavement",     lambda r, n, b: pavement(r, n, b),       1024, 2.0, 3.0),
+    ("apron",        lambda r, n, b: pavement(r, n, b),       1024, 10.0, 2.0),
+    ("beach_sand",   lambda r, n, b: sand(r, n, b),            512, 3.0, 1.5),
+    ("hangar_metal", lambda r, n, b: corrugated(r, n, b),      512, 3.0, 3.0),
     ("cobble",       lambda r, n, b: cobble(r, n, b),         1024, 2.0, 4.0),
     ("curb",         lambda r, n, b: curb(r, n, b),            512, 1.0, 2.0),
     ("gravel_path",  lambda r, n, b: gravel(r, n, b),          512, 2.0, 3.0),

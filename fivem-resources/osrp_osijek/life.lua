@@ -116,6 +116,39 @@ CreateThread(function()
                 end
             end
         end
+        -- v1.0.14: ambulances at KBC Osijek, air ambulance on the hospital roof, planes at the airport (locked, decoration)
+        if Config.SpecialVehicles and Life.SPECIAL then
+            for i, sv in ipairs(Life.SPECIAL) do
+                local key = 'sp' .. i
+                local roofZ = sv[3]
+                local wp = W(sv[1], sv[2], roofZ or 0.4)
+                local d = #(pos - wp)
+                if d < 250.0 and not (parked[key] and DoesEntityExist(parked[key])) then
+                    local ground
+                    if roofZ then
+                        RequestCollisionAtCoord(wp.x, wp.y, wp.z)
+                        local ok, gz = GetGroundZFor_3dCoord(wp.x, wp.y, wp.z + 5.0, false)
+                        if ok and math.abs(gz - wp.z) < 2.0 then ground = vector3(wp.x, wp.y, gz + 0.3) end
+                    else
+                        ground = groundAt(sv[1], sv[2], 0.6)
+                    end
+                    local hash = ground and firstModel({ sv[5] })
+                    if hash and load(hash) then
+                        local v = CreateVehicle(hash, ground.x, ground.y, ground.z, sv[4], false, false)
+                        settleVehicle(v)
+                        if sv[6] and sv[6] > 0 then SetVehicleLivery(v, sv[6]) end
+                        SetVehicleDoorsLocked(v, 2)
+                        SetEntityAsMissionEntity(v, true, true)
+                        SetVehicleNumberPlateText(v, sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK')
+                        SetModelAsNoLongerNeeded(hash)
+                        parked[key] = v
+                    end
+                elseif d > 290.0 and parked[key] then
+                    if DoesEntityExist(parked[key]) then DeleteVehicle(parked[key]) end
+                    parked[key] = nil
+                end
+            end
+        end
         for i, s in ipairs(Life.SIGNS) do
             local wp = W(s[2], s[3], 0.26)
             local d = #(pos - wp)

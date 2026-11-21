@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.13)
+OSRP - Osijek starter map for Blender (V1.0.14)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -292,6 +292,8 @@ SIDE_ROAD_W = 10
 
 # Ground
 plane(col, "osrp_ground_south", (0, -105, 0), (MAP_W, 530), M_GRASS)
+SOUTH_END = -780                      # v1.0.14: land goes south to the hospital and the airport
+plane(col, "osrp_ground_jug_prosirenje", (0, (-370 + SOUTH_END) / 2, 0), (MAP_W, -370 - SOUTH_END), M_GRASS)
 plane(col, "osrp_ground_north", (0, RIVER_Y + RIVER_W / 2 + 40, 0), (MAP_W, 80), M_GRASS)
 
 # Drava + stone banks
@@ -300,7 +302,7 @@ plane(col, "osrp_ground_north", (0, RIVER_Y + RIVER_W / 2 + 40, 0), (MAP_W, 80),
 box(col, "osrp_obala_jug", (0, RIVER_Y - RIVER_W / 2 - 1.5, -12), (MAP_W, 3, 12.05), M_STONE)
 box(col, "osrp_obala_sjever", (0, RIVER_Y + RIVER_W / 2 + 1.5, -12), (MAP_W, 3, 12.05), M_STONE)
 # outer quay walls: the city stands 3 m above the GTA sea, these walls go down into the water so it is not a floating plate
-S0, S1 = -105 - 265, -105 + 265           # south land band (y)
+S0, S1 = SOUTH_END, -105 + 265            # south land band (y)
 N0, N1 = RIVER_Y + RIVER_W / 2, RIVER_Y + RIVER_W / 2 + 80
 box(col, "osrp_rub_jug", (0, S0 - 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
 box(col, "osrp_rub_sjever", (0, N1 + 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
@@ -695,6 +697,130 @@ for i, x in enumerate(range(-500, 501, 50)):
     flower_bed(f"prom_{i}", x, PROM_Y - 0.5, 4.0, 1.2)
 
 
+
+# =============================================================== v1.0.14: south expansion
+M_APRON = material("osrp_apron_concrete", (0.56, 0.55, 0.52))
+M_YLINE = material("osrp_road_line_yellow", (0.95, 0.72, 0.08))
+M_HOSP = material("osrp_plaster_hospital", (0.90, 0.90, 0.88))
+M_TERM = material("osrp_plaster_terminal", (0.72, 0.76, 0.80))
+M_RED = material("osrp_sign_red", (0.80, 0.05, 0.05))
+M_SAND = material("osrp_beach_sand", (0.78, 0.68, 0.48))
+M_RWLIGHT = material("osrp_lamp_light_runway", (1.0, 0.85, 0.5), emit=25.0)
+M_HANGAR = material("osrp_hangar_metal", (0.55, 0.58, 0.60), rough=0.4, metal=0.7)
+SPECIAL = []        # (x, y, z or None, heading, model, livery) vehicles placed in-game (ambulances, planes, heli)
+PLACES = {}         # named points used by the scripts (hospital door, EMS garage, ...)
+
+
+def line(name, x, y, sx, sy, mat=None, z=0.1):
+    box(col, name, (x, y, z), (sx, sy, 0.02), mat or M_LINE)
+
+
+# ---------- KBC Osijek (hospital) on Vukovarska, west part ----------
+HX, HY = -330, -402
+plane(col, "osrp_kbc_parkiraliste", (HX, -369, 0.1), (130, 22), M_ROAD)
+for k in range(20):
+    line(f"osrp_kbc_mjesto_{k}", HX - 60 + k * 6.3, -373.5, 0.12, 5.0)
+for k in range(4):   # ambulance bays (red)
+    line(f"osrp_kbc_hitna_{k}", HX - 45 + k * 4.5, -373.5, 0.15, 5.0, M_RED)
+box(col, "osrp_kbc_zgrada", (HX, HY, 0), (110, 44, 24), M_HOSP)
+box(col, "osrp_kbc_podnozje", (HX, HY, 0), (110.4, 44.4, 1.0), M_RIVER_PLINTH)
+windows(col, "osrp_kbc_prozori_s", HX, HY + 22, 0.8 + 0.4, 106, 6, 3.6, M_GLASS, 1)
+windows(col, "osrp_kbc_prozori_j", HX, HY - 22, 0.8 + 0.4, 106, 6, 3.6, M_GLASS, -1)
+box(col, "osrp_kbc_krilo", (HX - 40, HY - 40, 0), (30, 36, 15), M_HOSP)
+windows(col, "osrp_kbc_krilo_prozori", HX - 40, HY - 58, 0.8, 28, 3, 3.6, M_GLASS, -1)
+box(col, "osrp_kbc_krov", (HX, HY, 24), (111, 45, 0.4), M_STONE)
+for k, (dx, dy, sx, sy) in enumerate(((0, 22.2, 111, 0.3), (0, -22.2, 111, 0.3), (55.3, 0, 0.3, 45), (-55.3, 0, 0.3, 45))):
+    box(col, f"osrp_kbc_ograda_{k}", (HX + dx, HY + dy, 24.4), (sx, sy, 1.1), M_HOSP)
+# entrance: glass doors, canopy on columns, red cross
+box(col, "osrp_kbc_ulaz", (HX, HY + 22.05, 0.1), (10, 0.25, 3.2), M_GLASS)
+box(col, "osrp_kbc_nadstresnica", (HX, HY + 26, 3.8), (18, 8, 0.45), M_CANOPY)
+for dx in (-8, 8):
+    cylinder(col, f"osrp_kbc_stup_{dx}", (HX + dx, HY + 29.5, 0.1), 0.25, 3.7, M_STEEL, verts=8)
+box(col, "osrp_kbc_znak", (HX, HY + 22.15, 17.5), (6.5, 0.3, 6.5), M_WHITE_STONE)
+box(col, "osrp_kbc_kriz_v", (HX, HY + 22.35, 18.4), (1.5, 0.3, 4.7), M_RED)
+box(col, "osrp_kbc_kriz_h", (HX, HY + 22.35, 20.0), (4.7, 0.3, 1.5), M_RED)
+# helipad on the roof
+HELI = (HX + 35, HY, 24.4)
+cylinder(col, "osrp_kbc_heliodrom", HELI, 10, 0.3, M_APRON, verts=24)
+for k, (dx, sx, sy) in enumerate(((-2.4, 1.0, 7.0), (2.4, 1.0, 7.0), (0, 4.0, 1.0))):
+    box(col, f"osrp_kbc_H_{k}", (HELI[0] + dx, HELI[1], HELI[2] + 0.3), (sx, sy, 0.03), M_LINE)
+SPECIAL += [(HX - 45 + k * 4.5 + 2.25, -373.5, None, 0.0, "ambulance", 0) for k in range(3)]
+SPECIAL.append((HELI[0], HELI[1], HELI[2] + 0.35, 90.0, "polmav", 1))   # air ambulance
+PLACES["hospital_door"] = (HX, HY + 23.5)
+PLACES["hospital_spawn"] = (HX, HY + 28.5)
+PLACES["ems_garage"] = (HX + 50, -369.0)
+PLACES["ambulance_start"] = (HX + 20, -366.0)
+
+# ---------- Zračna luka Osijek (airport) ----------
+RW_Y, RW_L, RW_W = -665, 1000, 45
+plane(col, "osrp_pista", (0, RW_Y, 0.1), (RW_L, RW_W), M_ROAD)
+for side in (-1, 1):
+    line(f"osrp_pista_rub_{side}", 0, RW_Y + side * (RW_W / 2 - 1.2), RW_L - 4, 0.9)
+for k in range(-8, 9):    # centre line dashes
+    line(f"osrp_pista_sred_{k}", k * 50, RW_Y, 28, 0.9)
+for end in (-1, 1):      # threshold stripes + aiming points
+    for k in range(10):
+        line(f"osrp_pista_prag_{end}_{k}", end * (RW_L / 2 - 22), RW_Y - 18 + k * 4, 30, 1.8)
+    for side in (-1, 1):
+        line(f"osrp_pista_cilj_{end}_{side}", end * (RW_L / 2 - 160), RW_Y + side * 7, 45, 6)
+for k in range(21):      # edge lights
+    for side in (-1, 1):
+        box(col, f"osrp_pista_svjetlo_{k}_{side}", (-500 + k * 50, RW_Y + side * (RW_W / 2 + 1.5), 0.1), (0.4, 0.4, 0.35), M_RWLIGHT)
+# taxiway + connectors (yellow centre lines)
+TW_Y = -605
+plane(col, "osrp_rulnica", (0, TW_Y, 0.1), (840, 18), M_ROAD)
+line("osrp_rulnica_crta", 0, TW_Y, 836, 0.3, M_YLINE)
+for k, x in enumerate((-410, 0, 410)):
+    ya, yb = TW_Y - 9, RW_Y + RW_W / 2
+    plane(col, f"osrp_rulnica_veza_{k}", (x, (ya + yb) / 2, 0.1), (18, ya - yb), M_ROAD)
+    line(f"osrp_rulnica_veza_crta_{k}", x, (ya + yb) / 2, 0.3, ya - yb, M_YLINE)
+# apron, stands, terminal, car park, access road
+AP_X0, AP_X1, AP_Y0, AP_Y1 = 40, 360, TW_Y + 9, -460
+plane(col, "osrp_platforma", ((AP_X0 + AP_X1) / 2, (AP_Y0 + AP_Y1) / 2, 0.1), (AP_X1 - AP_X0, AP_Y1 - AP_Y0), M_APRON)
+for k, x in enumerate((110, 200, 290)):
+    line(f"osrp_stajanka_{k}", x, (AP_Y0 + AP_Y1) / 2 - 10, 0.3, AP_Y1 - AP_Y0 - 30, M_YLINE, 0.1)
+    line(f"osrp_stajanka_stop_{k}", x, AP_Y1 - 22, 6, 0.4, M_YLINE, 0.1)
+SPECIAL += [(110, -505, None, 0.0, "luxor", 0), (200, -505, None, 0.0, "shamal", 0), (290, -505, None, 0.0, "miljet", 0)]
+TX, TY = 200, -447
+box(col, "osrp_terminal", (TX, TY, 0), (200, 26, 12), M_TERM)
+box(col, "osrp_terminal_staklo_j", (TX, TY - 13.1, 0.6), (190, 0.3, 9.5), M_GLASS)
+box(col, "osrp_terminal_staklo_s", (TX, TY + 13.1, 0.3), (70, 0.3, 4.5), M_GLASS)
+box(col, "osrp_terminal_krov", (TX, TY, 12), (208, 34, 0.7), M_STEEL)
+box(col, "osrp_terminal_natpis", (TX, TY + 13.3, 8), (40, 0.4, 2.6), M_GLASS_STOP)
+plane(col, "osrp_terminal_parking", (TX, -413, 0.1), (180, 36), M_ROAD)
+for k in range(28):
+    line(f"osrp_terminal_mjesto_{k}", TX - 84 + k * 6.2, -421, 0.12, 5.0)
+    line(f"osrp_terminal_mjesto2_{k}", TX - 84 + k * 6.2, -405, 0.12, 5.0)
+plane(col, "osrp_cesta_aerodrom", (150, -376, 0.1), (10, 38), M_ROAD)
+line("osrp_cesta_aerodrom_crta", 150, -376, 0.13, 34)
+SIGNS_EXTRA = [("stop", 150 + 6, -358.5, 0.0)]
+# control tower, hangars, windsock
+cylinder(col, "osrp_toranj_stup", (390, -470, 0), 3.6, 30, M_TERM, verts=14)
+cylinder(col, "osrp_toranj_kabina", (390, -470, 30), 6.2, 4.5, M_GLASS, verts=14)
+cylinder(col, "osrp_toranj_krov", (390, -470, 34.5), 6.8, 0.7, M_STEEL, verts=14)
+cylinder(col, "osrp_toranj_antena", (390, -470, 35.2), 0.12, 7, M_POLE, verts=6)
+for k, hx in enumerate((-300, -170)):
+    box(col, f"osrp_hangar_{k}", (hx, -540, 0), (100, 56, 13), M_HANGAR)
+    gable_roof(col, f"osrp_hangar_krov_{k}", hx, -540, 13, 100, 56, 6, M_HANGAR)
+    box(col, f"osrp_hangar_vrata_{k}", (hx, -568.1, 0.1), (84, 0.3, 11.5), M_CANOPY)
+    plane(col, f"osrp_hangar_platforma_{k}", (hx, (-568 + TW_Y + 9) / 2, 0.1), (100, -568 - TW_Y - 9), M_APRON)
+SPECIAL += [(-300, -578, None, 180.0, "cuban800", 0), (-170, -578, None, 180.0, "velum2", 0)]
+cylinder(col, "osrp_vjetrokaz_stup", (480, -625, 0), 0.1, 6, M_POLE, verts=6)
+box(col, "osrp_vjetrokaz", (481.4, -625, 5.2), (2.6, 0.7, 0.7), M_RED)
+PLACES["airport"] = (TX, TY - 30)
+
+# ---------- Copacabana beach on the north bank ----------
+BEACH_Y = RIVER_Y + RIVER_W / 2 + 15
+plane(col, "osrp_plaza_pijesak", (-300, BEACH_Y, 0.12), (220, 26), M_SAND)
+for k in range(9):
+    bx_ = -390 + k * 22
+    cylinder(col, f"osrp_plaza_suncobran_stup_{k}", (bx_, BEACH_Y + 2, 0.12), 0.05, 2.4, M_POLE, verts=6)
+    cylinder(col, f"osrp_plaza_suncobran_{k}", (bx_, BEACH_Y + 2, 2.4), 1.6, 0.12, M_RED if k % 2 else M_WHITE_STONE, verts=10)
+    for dx in (-1.1, 1.1):
+        box(col, f"osrp_plaza_lezaljka_{k}_{dx}", (bx_ + dx, BEACH_Y, 0.12), (0.7, 1.9, 0.35), M_WOOD)
+for k in range(10):
+    tree(col, f"prom_plaza_{k}", -400 + k * 22 + 11, BEACH_Y + 17, 1.1)
+
 # ---------------------------------------------------------------- city life data (used in-game by osrp_osijek)
 HALF = MAP_W / 2
 MAPRECTS[:0] = [
@@ -706,10 +832,19 @@ MAPRECTS += [("road", 0, 0, MAP_W, ROAD_W), ("road", 0, -180, MAP_W, SIDE_ROAD_W
              ("road", 0, -350, MAP_W, SIDE_ROAD_W), ("road", 0, 125, MAP_W, SIDE_ROAD_W)]
 MAPRECTS += [("road", x, -112.5, SIDE_ROAD_W, 475) for x in CROSS_X]
 MAPRECTS += [("walk", 0, yc + sd * (SIDE_ROAD_W / 2 + 1.55), MAP_W, 2.5) for yc in (-350, -180, 125) for sd in (-1, 1)]
+MAPRECTS[:0] = [("land", 0, (-370 + SOUTH_END) / 2, MAP_W, -370 - SOUTH_END)]
+MAPRECTS += [
+    ("road", 0, RW_Y, RW_L, RW_W), ("road", 0, TW_Y, 840, 18), ("square", (AP_X0 + AP_X1) / 2, (AP_Y0 + AP_Y1) / 2, AP_X1 - AP_X0, AP_Y1 - AP_Y0),
+    ("bld", TX, TY, 200, 26), ("road", TX, -413, 180, 36), ("road", 150, -376, 10, 38),
+    ("bld", -300, -540, 100, 56), ("bld", -170, -540, 100, 56), ("bld", 390, -470, 8, 8),
+    ("road", HX, -369, 130, 22), ("bld", HX, HY, 110, 44), ("bld", HX - 40, HY - 40, 30, 36),
+    ("walk", -300, BEACH_Y, 220, 26),
+] + [("road", x, (TW_Y - 9 + RW_Y + RW_W / 2) / 2, 18, TW_Y - 9 - RW_Y - RW_W / 2) for x in (-410, 0, 410)]
 
 LANDMARKS = [("Tvrđa - Konkatedrala", TV_X, TV_Y - 20), ("Trg Svetog Trojstva", PIL_X, PIL_Y),
              ("Gradski park", PCX, PCY), ("Pješački most", BR_X, RIVER_Y), ("Promenada uz Dravu", 0, PROM_Y),
-             ("Europska avenija", -250, 0)]
+             ("Europska avenija", -250, 0), ("KBC Osijek - Bolnica", HX, HY), ("Zračna luka Osijek", TX, TY),
+             ("Kupalište Copacabana", -300, BEACH_Y)]
 
 PARKING = []        # (x, y, heading) parked cars along the curbs of the cross streets
 SIGNS = []          # (kind, x, y, heading)
@@ -731,6 +866,7 @@ for x in CROSS_X:
     SIGNS.append(("stop", x - SIDE_ROAD_W / 2 - 0.9, -180 + SIDE_ROAD_W / 2 + 1.5, 180.0))
     SIGNS.append(("pjesacki", x + SIDE_ROAD_W / 2 + 0.9, -(ROAD_W / 2 + 12), 0.0))
 
+SIGNS += SIGNS_EXTRA
 WALKS = []          # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
 for a, b in open_segments(-HALF, HALF, SIDE_ROAD_W / 2 + 1):
     for y in (ROAD_W / 2 + 3.3, -(ROAD_W / 2 + 3.3)):
@@ -747,4 +883,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.13: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.14: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

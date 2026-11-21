@@ -73,6 +73,7 @@ end)
 
 RegisterNetEvent('osrp:spawn', function(data)
     OSRP.Data = data
+    OSRP.Job = data.job
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeCreator' })
     local p = data.pos

@@ -41,7 +41,8 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
 with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
-    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES")}, f)
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL")}
+              | {"PLACES": {k: list(v) for k, v in city["PLACES"].items()}}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
     json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4]} for m in city["FURNITURE"]], f)
 objs = [o for o in col.objects if o.type == "MESH"]
@@ -98,6 +99,8 @@ RECIPES = {
     "pavement":       (0.35, 0.6, grid(64), 2.0, "CONCRETE_PAVEMENT"),
     "curb":           (0.30, 0.6, grid(128, color="#00000040"), 1.0, "CONCRETE_PAVEMENT"),
     "cobble":         (0.30, 0.6, [], 2.0, "COBBLESTONE"),
+    "beach_sand":     (0.30, 0.6, [], 2.0, "SAND_LOOSE"),
+    "hangar_metal":   (0.30, 0.6, [], 2.0, "METAL_SOLID_MEDIUM"),
     "manhole":        (0.30, 0.6, [], 1.0, "METAL_SOLID_SMALL"),
     "plinth_stone":   (0.30, 0.6, [], 2.0, "STONE"),
     "gravel_path":    (0.80, 0.3, [], 2.0, "GRAVEL_SMALL"),

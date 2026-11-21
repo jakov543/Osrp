@@ -65,6 +65,7 @@ function OSRP.SetJob(src, job)
     local p = OSRP.Players[src]
     if not p or not Config.Jobs[job] then return false end
     p.job = job
+    TriggerClientEvent('osrp:job', src, job)
     syncHud(src)
     save(src)
     return true

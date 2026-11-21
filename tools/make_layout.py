@@ -13,6 +13,8 @@ def num(v):
 
 
 def val(v):
+    if v is None:
+        return "false"
     if isinstance(v, str):
         return "'" + v.replace("\\", "\\\\").replace("'", "\\'") + "'"
     if isinstance(v, bool):
@@ -45,7 +47,10 @@ def main(src, dst):
     life = load("life")
     lines.append("Life = {")
     for k, rows in life.items():
-        lines += block(k, rows, "    ")
+        if isinstance(rows, dict):
+            lines += [f"    {k} = {{"] + [f"        {n} = {val(v)}," for n, v in rows.items()] + ["    },"]
+        else:
+            lines += block(k, rows, "    ")
     lines.append("}")
     open(dst, "w", encoding="utf-8", newline="\n").write("\n".join(lines) + "\n")
     print(f"layout.lua: {len(layout)} chunks, {len(trees)} trees, " + ", ".join(f"{len(v)} {k.lower()}" for k, v in life.items()))

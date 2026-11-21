@@ -7,6 +7,11 @@
   "news": [
     {
       "tag": "NOVO",
+      "title": "KBC Osijek, zračna luka i događaji",
+      "text": "v1.0.14: bolnica KBC Osijek s hitnom (G / 112), helikopter na krovu, Zračna luka Osijek s pistom i avionima, plaža Copacabana i nasumični događaji: nesreće, požari, lopovi, policijske potjere."
+    },
+    {
+      "tag": "NOVO",
       "title": "Novi Osijek: teksture i ceste",
       "text": "v1.0.13: oštre teksture (asfalt, kocka na Tvrđi, cigla, crijep, pločnici), nove oznake na cestama, pločnici u svim ulicama, šahtovi, stop linije, drveće u dvorištima. Ceste više ne nestaju na rubu grada."
     },

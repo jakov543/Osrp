@@ -35,7 +35,7 @@ Config.InteriorDistance = 120.0       -- doors/furniture appear within this dist
 Config.InteriorLight = true           -- warm ceiling light in each house (always on)
 
 -- ===================== city life (v1.0.11) =====================
-Config.CityRadius = 750.0           -- size of Osijek (metres from the centre)
+Config.CityRadius = 1000.0          -- size of Osijek incl. hospital + airport (metres from the centre)
 Config.DrawMap = true               -- draw Osijek (roads, buildings, Drava, park) on the minimap + pause map
 
 Config.ParkedCars = true
@@ -57,3 +57,25 @@ Config.TrafficCount = 10            -- cars with drivers driving around the city
 Config.TrafficModels = { 'asea', 'premier', 'blista', 'ingot', 'stanier', 'tailgater', 'fugitive', 'primo', 'dilettante', 'emperor' }
 Config.TrafficSpeed = 11.0          -- m/s (about 40 km/h)
 Config.DrivingStyle = 786603        -- normal, careful driving
+
+-- ===================== v1.0.14: hospital, airport, random events =====================
+Config.SpecialVehicles = true       -- ambulances at KBC Osijek, air ambulance on the roof, planes at the airport
+
+-- Random events happen around each player (local, like GTA's random events).
+-- Admins can test one: /dogadaj hit_and_run | accident | breakdown | thief | fire | chase
+Config.Events = {
+    Enabled = true,
+    Interval = 120,                 -- every X seconds there is a chance ...
+    Chance = 0.4,                   -- ... of 40 % that something happens near you
+    MaxActive = 2,
+    Cooldown = 600,                 -- the same event at most every 10 minutes
+    HitDamage = 35,                 -- hit_and_run damage (player health is 100-200)
+    Weights = {                     -- how often each event happens (0 = never)
+        accident = 3,
+        breakdown = 3,
+        fire = 2,
+        chase = 2,
+        thief = 2,
+        hit_and_run = 1,
+    },
+}
