@@ -3,8 +3,6 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { execFile, spawn } = require('child_process');
-const http = require('http');
-const crypto = require('crypto');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 
@@ -99,74 +97,26 @@ async function ensureFiveMAndConnect() {
   return launchServer();
 }
 
-// ---------- Google login (OAuth 2.0 desktop flow with PKCE) ----------
-const b64url = (buf) => buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const googleConfigured = () => !!(APP_CONFIG.google && APP_CONFIG.google.clientId);
-
-function googleLogin() {
-  return new Promise((resolve, reject) => {
-    if (!googleConfigured()) return reject(new Error('Google prijava nije postavljena.'));
-    const { clientId, clientSecret } = APP_CONFIG.google;
-    const verifier = b64url(crypto.randomBytes(32));
-    const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
-    const state = b64url(crypto.randomBytes(16));
-    let finished = false;
-
-    const server = http.createServer(async (req, res) => {
-      const url = new URL(req.url, 'http://127.0.0.1');
-      if (url.pathname !== '/') { res.writeHead(404); return res.end(); }
-      const code = url.searchParams.get('code');
-      const okState = url.searchParams.get('state') === state;
-      const page = (msg) => `<!DOCTYPE html><meta charset="utf-8"><body style="background:#07090d;color:#e8edf4;font-family:Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h1 style="color:#19c3a6;letter-spacing:6px">OSRP</h1><p>${msg}</p></div>`;
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      if (!code || !okState) {
-        res.end(page('Prijava otkazana. Možeš zatvoriti ovu karticu.'));
-        return done(new Error('Prijava je otkazana.'));
-      }
-      res.end(page('Prijava uspjela! Vrati se u OSRP launcher.'));
-      try {
-        const redirect = `http://127.0.0.1:${server.address().port}`;
-        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            code, client_id: clientId, client_secret: clientSecret || '',
-            redirect_uri: redirect, grant_type: 'authorization_code', code_verifier: verifier
-          })
-        });
-        const token = await tokenRes.json();
-        if (!token.access_token) throw new Error(token.error_description || 'Google nije vratio token.');
-        const info = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-          headers: { Authorization: 'Bearer ' + token.access_token }
-        }).then((r) => r.json());
-        const account = { name: info.name || info.email, email: info.email, picture: info.picture || null, id: info.sub };
-        saveSettings({ ...loadSettings(), account });
-        done(null, account);
-      } catch (e) { done(e); }
+// ---------- OSRP accounts (own login, stored on the OSRP server: osrp_accounts resource) ----------
+async function accountApi(method, route, body, token) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`http://${serverAddress()}/osrp_accounts${route}`, {
+      method,
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+      body: body ? JSON.stringify(body) : undefined
     });
-
-    const timer = setTimeout(() => done(new Error('Prijava je istekla. Pokušaj ponovno.')), 5 * 60 * 1000);
-    function done(err, account) {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      server.close();
-      if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.focus(); }
-      err ? reject(err) : resolve(account);
-    }
-
-    server.on('error', (e) => done(e));
-    server.listen(0, '127.0.0.1', () => {
-      const redirect = `http://127.0.0.1:${server.address().port}`;
-      const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-      auth.search = new URLSearchParams({
-        client_id: clientId, redirect_uri: redirect, response_type: 'code',
-        scope: 'openid email profile', code_challenge: challenge, code_challenge_method: 'S256',
-        state, prompt: 'select_account'
-      }).toString();
-      shell.openExternal(auth.toString());
-    });
-  });
+    let data = null;
+    try { data = await res.json(); } catch { data = null; }
+    if (!data) return { ok: false, status: res.status, error: res.status === 404 ? 'Sustav računa nije uključen na serveru (osrp_accounts).' : 'Greška servera.' };
+    return { ...data, status: res.status };
+  } catch {
+    return { ok: false, offline: true, error: 'Server je offline. Pokušaj ponovno malo kasnije.' };
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 const ALLOWED_LINKS = new Set([...Object.values(STORE_LINKS), APP_CONFIG.discord, APP_CONFIG.website].filter(Boolean));
@@ -445,16 +395,31 @@ ipcMain.handle('game:setPlatform', (_e, platform) => {
 ipcMain.handle('game:reset', () => saveSettings({ ownershipConfirmed: false, gamePath: null, platform: null, account: null, fivemLicense: false }));
 ipcMain.handle('fivem:acceptLicense', () => saveSettings({ ...loadSettings(), fivemLicense: true }));
 ipcMain.handle('fivem:status', async () => ({ installed: await fivemReady() }));
-ipcMain.handle('google:configured', () => googleConfigured());
-ipcMain.handle('google:login', async () => {
-  try { return { ok: true, account: await googleLogin() }; }
-  catch (e) { return { ok: false, error: e.message }; }
+async function accountAuth(kind, username, password) {
+  const r = await accountApi('POST', kind === 'register' ? '/register' : '/login', { username, password });
+  if (r.ok && r.token) {
+    saveSettings({ ...loadSettings(), account: { name: r.username, token: r.token } });
+    return { ok: true, account: { name: r.username } };
+  }
+  return { ok: false, error: r.error || 'Greška.' };
+}
+ipcMain.handle('account:login', (_e, u, p) => accountAuth('login', String(u || ''), String(p || '')));
+ipcMain.handle('account:register', (_e, u, p) => accountAuth('register', String(u || ''), String(p || '')));
+ipcMain.handle('account:logout', async () => {
+  const s = loadSettings();
+  if (s.account && s.account.token) await accountApi('POST', '/logout', {}, s.account.token);
+  saveSettings({ ...loadSettings(), account: null });
+  return { ok: true };
 });
-ipcMain.handle('google:logout', () => saveSettings({ ...loadSettings(), account: null }));
-ipcMain.handle('account:skip', () => {
-  // Guest mode only exists while the server owner has not set up Google login
-  if (googleConfigured()) return loadSettings();
-  return saveSettings({ ...loadSettings(), account: { guest: true, name: 'Gost' } });
+// Checks the saved session with the server. Offline server = keep the saved login.
+ipcMain.handle('account:check', async () => {
+  const s = loadSettings();
+  if (!s.account || !s.account.token) return { loggedIn: false };
+  const r = await accountApi('GET', '/me', null, s.account.token);
+  if (r.ok) return { loggedIn: true, account: { name: r.username } };
+  if (r.offline || r.status >= 500) return { loggedIn: true, account: { name: s.account.name }, offline: true };
+  saveSettings({ ...loadSettings(), account: null });
+  return { loggedIn: false, expired: true };
 });
 ipcMain.handle('game:play', async (_e, mode) => {
   const s = loadSettings();

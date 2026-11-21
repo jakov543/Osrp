@@ -5,13 +5,13 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.1 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.2 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
 - **Its own startup loading window** (OSRP logo + real checks: settings, finding GTA V, server status)
 - **OSRP logo** everywhere: app icon, installer, title bar, sidebar, in-game loading screen
-- **Google login**: players sign in with their Google account (name + picture in the launcher)
+- **Own OSRP accounts**: players register and log in with an OSRP username and password, stored on your own server (`osrp_accounts`)
 - **Ownership check**: the player has to confirm they own GTA V before going further
 - **Store links** for players without the game: Steam, Epic Games, Rockstar
 - **Finds GTA V automatically** (registry, Steam libraries, common folders), or the player can pick `GTA5.exe` by hand
@@ -32,6 +32,7 @@ fivem-resources/
   osrp_core/           map name "Osijek", OSRP pause menu, keeps the GTA V HUD, stream/ for your map
   osrp_loading/        in-game loading screen with the OSRP logo
   osrp_framework/      own roleplay framework (characters, money, jobs, /me /do, admin)
+  osrp_accounts/       own account system for the launcher (register / login)
 server/                setup-server.bat + start-server.bat (own test server on your PC)
 branding/              OSRP logo (svg + png)
 .github/workflows/     builds the .exe automatically on GitHub
@@ -95,6 +96,7 @@ Easiest: use `server/setup-server.bat` (above). By hand: copy `fivem-resources/o
 ensure osrp_loading
 ensure osrp_core
 ensure osrp_framework
+ensure osrp_accounts
 sets mapname "Osijek"
 ```
 
@@ -121,22 +123,17 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.0.2
+git push origin v1.0.2
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
-## Google login setup (free, about 5 minutes)
-1. Go to **console.cloud.google.com** and create a project named `OSRP`.
-2. *APIs & Services → OAuth consent screen* → **External** → app name `OSRP Launcher`, your email → Save. Then click **Publish app** so every player can sign in.
-3. *APIs & Services → Credentials → Create credentials → OAuth client ID* → type **Desktop app** → Create.
-4. Copy the **Client ID** and **Client secret** into `launcher/config.json`:
-```json
-"google": { "clientId": "xxxx.apps.googleusercontent.com", "clientSecret": "GOCSPX-xxxx" }
-```
-5. Push to GitHub and the installer rebuilds with Google login turned on.
-
-Until a Client ID is set, the launcher shows a "Continue as guest" button so nothing breaks.
+## OSRP accounts (own login)
+- The `osrp_accounts` resource runs on your FiveM server. The launcher talks to it at `http://SERVER_IP:30120/osrp_accounts/...`.
+- Register / log in in the launcher. The login is remembered for 30 days.
+- Passwords are stored hashed (scrypt + salt), never as plain text. Brute-force protection: 8 wrong tries means a 10-minute wait, and at most 3 new accounts per IP per hour.
+- Add `ensure osrp_accounts` to `server.cfg` (already in the template).
+- Note: the connection to the server is plain HTTP, so tell players not to reuse a password from other sites.
 
 ## Osijek map in Blender
 Starter city script and full guide: [`map/BLENDER-MAP.md`](map/BLENDER-MAP.md)

@@ -160,15 +160,17 @@ h2 { margin-bottom: 18px; }
 .bar-fill { height: 100%; width: 0; background: var(--grad); transition: width .3s ease; }
 .load-text { margin-top: 14px; color: var(--muted); font-size: 13px; }
 
-/* Google login */
-.btn.google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px;
-  background: #fff; color: #1f1f1f; border: none; font-weight: 700; padding: 13px; }
-.btn.google:hover:not(:disabled) { filter: brightness(.95); }
-.btn.google:disabled { opacity: .6; }
-.notice { margin-top: 10px; padding: 14px; border-radius: 12px; background: rgba(242,177,52,.08); border: 1px solid rgba(242,177,52,.3);
-  color: var(--muted); font-size: 13px; line-height: 1.5; }
-.notice code { color: var(--accent2); }
-.notice .btn { display: block; margin-top: 10px; }
+/* OSRP login */
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border-radius: 12px; background: var(--panel2);
+  border: 1px solid var(--line); margin-bottom: 14px; }
+.auth-tab { padding: 10px; border-radius: 9px; font-weight: 700; color: var(--muted); transition: .2s; }
+.auth-tab.on { background: var(--grad); color: #032019; }
+.field { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 0; letter-spacing: .5px; }
+.field input { display: block; width: 100%; margin-top: 6px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
+  background: #05070a; color: var(--text); font: inherit; font-size: 14px; outline: none; user-select: text; }
+.field input:focus { border-color: var(--accent); }
+#authForm .err { margin-top: 12px; }
+.btn.primary.loading { opacity: .7; pointer-events: none; }
 
 /* Profile */
 .profile { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: var(--panel);
@@ -198,3 +200,4 @@ h2 { margin-bottom: 18px; }
 .addr .btn { padding: 9px 14px; }
 .addr-msg { font-size: 12px; color: var(--muted); padding: 8px 0 14px; border-bottom: 1px solid var(--line); }
 .addr-msg.ok { color: var(--ok); } .addr-msg.bad { color: var(--danger); }
+.field[hidden] { display: none; }

@@ -14,27 +14,42 @@ function escapeHtml(s) {
 
 const PLATFORM_NAMES = { steam: 'Steam', epic: 'Epic Games', rockstar: 'Rockstar' };
 
-// ---------- Google login ----------
+// ---------- OSRP account (own login) ----------
+let authMode = 'login';
+
+function setAuthMode(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t) => t.classList.toggle('on', t.dataset.mode === mode));
+  $('pass2Wrap').hidden = mode !== 'register';
+  $('btnAuth').textContent = mode === 'register' ? 'Napravi račun' : 'Prijavi se';
+  $('authText').textContent = mode === 'register'
+    ? 'Napravi besplatni OSRP račun. Korisničko ime: 3-16 znakova (slova, brojevi, _).'
+    : 'Prijavi se svojim OSRP računom.';
+  $('authPass').autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+  $('loginErr').textContent = '';
+}
+
 async function initLogin() {
-  const configured = await window.launcher.googleConfigured();
-  $('googleNotice').hidden = configured;
-  $('btnGoogle').disabled = !configured;
-  $('btnGoogle').addEventListener('click', async () => {
+  document.querySelectorAll('.auth-tab').forEach((t) => t.addEventListener('click', () => setAuthMode(t.dataset.mode)));
+  $('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const user = $('authUser').value.trim();
+    const pass = $('authPass').value;
     $('loginErr').textContent = '';
-    $('btnGoogle').disabled = true;
-    $('googleText').textContent = 'Čekam prijavu u pregledniku...';
-    const r = await window.launcher.googleLogin();
-    $('btnGoogle').disabled = false;
-    $('googleText').textContent = 'Prijava s Googleom';
+    if (!/^[A-Za-z0-9_]{3,16}$/.test(user)) { $('loginErr').textContent = 'Korisničko ime: 3-16 znakova (slova, brojevi, _).'; return; }
+    if (pass.length < 6) { $('loginErr').textContent = 'Lozinka mora imati najmanje 6 znakova.'; return; }
+    if (authMode === 'register' && pass !== $('authPass2').value) { $('loginErr').textContent = 'Lozinke se ne podudaraju.'; return; }
+    $('btnAuth').classList.add('loading');
+    const r = authMode === 'register' ? await window.launcher.register(user, pass) : await window.launcher.login(user, pass);
+    $('btnAuth').classList.remove('loading');
     if (!r.ok) { $('loginErr').textContent = r.error; return; }
-    afterLogin();
-  });
-  $('btnGuest').addEventListener('click', async () => {
-    await window.launcher.skipLogin();
+    $('authPass').value = '';
+    $('authPass2').value = '';
     afterLogin();
   });
   $('btnLogout').addEventListener('click', async () => {
-    await window.launcher.googleLogout();
+    await window.launcher.logout();
+    setAuthMode('login');
     show('login');
   });
 }
@@ -48,18 +63,10 @@ async function afterLogin() {
 }
 
 function renderProfile(acc) {
-  const a = acc || { name: '—' };
-  $('pName').textContent = a.name || '—';
-  $('pEmail').textContent = a.guest ? 'Gost' : (a.email || '');
-  const av = $('avatar');
-  av.textContent = '';
-  if (a.picture && /^https:\/\/[\w.-]+\.googleusercontent\.com\//.test(a.picture)) {
-    const img = document.createElement('img');
-    img.src = a.picture;
-    img.referrerPolicy = 'no-referrer';
-    img.onerror = () => { av.textContent = (a.name || '?')[0].toUpperCase(); };
-    av.appendChild(img);
-  } else av.textContent = (a.name || '?')[0].toUpperCase();
+  const name = (acc && acc.name) || '—';
+  $('pName').textContent = name;
+  $('pEmail').textContent = 'OSRP račun';
+  $('avatar').textContent = name[0] ? name[0].toUpperCase() : '?';
 }
 
 // ---------- ownership ----------
@@ -257,10 +264,12 @@ function goMain() {
 
   const boot = await window.launcher.bootResult();
   const s = (boot && boot.settings) || (await window.launcher.getSettings());
-  renderProfile(s.account);
-  const configured = await window.launcher.googleConfigured();
-  const loggedIn = s.account && (!s.account.guest || !configured);
-  if (!loggedIn) show('login');
+  const acc = await window.launcher.checkAccount();
+  renderProfile(acc.account);
+  if (!acc.loggedIn) {
+    show('login');
+    if (acc.expired) $('loginErr').textContent = 'Prijava je istekla. Prijavi se ponovno.';
+  }
   else if (!s.ownershipConfirmed) show('own');
   else if (!s.gamePath) goGameSetup();
   else {
