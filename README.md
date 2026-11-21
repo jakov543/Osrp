@@ -49,6 +49,30 @@ branding/              OSRP logo (svg + png)
 
 Friends can join through the launcher with your public IP (`your.ip:30120`) once you open **port 30120 (TCP + UDP)** on your router and allow it in the Windows firewall.
 
+## Keep OSRP online 24/7
+
+### Option A: your own PC (free)
+- `start-server.bat` restarts the server by itself if it ever crashes.
+- Run **`install-autostart.bat`** once and the server starts automatically every time Windows starts (`remove-autostart.bat` turns that off).
+- It's only online while your PC is on. In Windows power settings, set *Sleep → Never*.
+- Friends join via your public IP: open **port 30120 TCP + UDP** on your router.
+
+### Option B: Linux VPS (real 24/7, the PC can be off)
+Needs an **x86_64 (Intel/AMD)** VPS with Ubuntu 22.04/24.04 or Debian 12, 4 GB RAM or more.
+ARM servers (like the Oracle free tier) **don't work**, because FXServer only runs on x86_64.
+
+Connect to the VPS over SSH and run **one command**:
+```bash
+curl -fsSL https://raw.githubusercontent.com/jakov543/Osrp/main/server/linux/install-osrp.sh | sudo bash
+```
+It installs everything, asks for your Cfx.re key, and sets OSRP up as a system service: it **starts on boot and restarts itself if it crashes**. At the end it prints the address to enter in the launcher.
+
+| | Command |
+|---|---|
+| Console / logs | `journalctl -u osrp -f` |
+| Restart | `sudo systemctl restart osrp` |
+| Update OSRP from GitHub | `sudo bash /opt/osrp/repo/server/linux/install-osrp.sh update` |
+
 ## OSRP framework (own, no ESX/QBCore)
 | What | How |
 |---|---|

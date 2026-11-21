@@ -26,6 +26,31 @@ const fivemDir = () => path.join(process.env.LOCALAPPDATA || app.getPath('appDat
 const fivemExe = () => path.join(fivemDir(), 'FiveM.exe');
 const fivemInstalled = () => exists(fivemExe()) && fs.existsSync(path.join(fivemDir(), 'FiveM.app'));
 
+// FiveM only starts when its parent is Explorer or a browser, so everything FiveM-related goes through explorer.exe
+function openViaExplorer(target) {
+  return new Promise((resolve, reject) => {
+    if (process.platform !== 'win32') return shell.openExternal(target).then(resolve, reject);
+    const winDir = process.env.SystemRoot || process.env.windir || 'C:\\Windows';
+    const child = spawn(path.join(winDir, 'explorer.exe'), [target], { detached: true, stdio: 'ignore', windowsHide: false });
+    child.on('error', reject);
+    child.unref();
+    setTimeout(resolve, 300); // explorer.exe hands off and exits; its exit code is not meaningful
+  });
+}
+
+// FiveM registers the fivem:// link when installed - works wherever the player installed it
+function fivemProtocolRegistered() {
+  return new Promise((resolve) => {
+    if (process.platform !== 'win32') return resolve(false);
+    execFile('reg', ['query', 'HKCU\\Software\\Classes\\fivem\\shell\\open\\command', '/ve'], { windowsHide: true }, (err, out) => {
+      if (!err && out && /FiveM/i.test(out)) return resolve(true);
+      execFile('reg', ['query', 'HKCR\\fivem\\shell\\open\\command', '/ve'], { windowsHide: true }, (err2, out2) =>
+        resolve(!err2 && !!out2 && /FiveM/i.test(out2)));
+    });
+  });
+}
+async function fivemReady() { return fivemInstalled() || (await fivemProtocolRegistered()); }
+
 function sendProgress(data) {
   if (win && !win.isDestroyed()) win.webContents.send('fivem:progress', data);
 }
@@ -59,15 +84,13 @@ function waitFor(check, timeoutMs, everyMs = 3000) {
 
 // Installs FiveM if needed (player already accepted the license in the launcher), then connects to OSRP
 async function ensureFiveMAndConnect() {
-  if (!fivemInstalled()) {
+  if (!(await fivemReady())) {
     if (!exists(fivemExe())) {
       sendProgress({ stage: 'download', fraction: 0, mb: '0.0' });
       await downloadFiveM();
     }
     sendProgress({ stage: 'install' });
-    const child = spawn(fivemExe(), [], { cwd: fivemDir(), detached: true, stdio: 'ignore' });
-    child.on('error', (e) => console.error('FiveM start error:', e.message));
-    child.unref();
+    await openViaExplorer(fivemExe());
     const ok = await waitFor(fivemInstalled, 15 * 60 * 1000);
     if (!ok) throw new Error('Instalacija klijenta traje predugo. Završi postavljanje u otvorenom prozoru pa pritisni IGRAJ ponovno.');
     await new Promise((r) => setTimeout(r, 8000));
@@ -271,10 +294,7 @@ function launchSingleplayer(settings) {
       const folder = path.dirname(settings.gamePath);
       const play = path.join(folder, 'PlayGTAV.exe');
       const target = exists(play) ? play : settings.gamePath;
-      const child = spawn(target, [], { cwd: folder, detached: true, stdio: 'ignore' });
-      child.on('error', (e) => console.error('Launch error:', e.message));
-      child.unref();
-      return Promise.resolve();
+      return openViaExplorer(target);
     }
   }
 }
@@ -283,7 +303,7 @@ function launchServer() {
   // FiveM uses the player's own GTA V install
   const addr = serverAddress();
   if (!/^[\w.-]+(:\d+)?$/.test(addr)) return Promise.reject(new Error('Bad server address'));
-  return shell.openExternal(`fivem://connect/${addr}`);
+  return openViaExplorer(`fivem://connect/${addr}`);
 }
 
 // ---------- server address (config.json default, player can change it in Settings) ----------
@@ -424,7 +444,7 @@ ipcMain.handle('game:setPlatform', (_e, platform) => {
 });
 ipcMain.handle('game:reset', () => saveSettings({ ownershipConfirmed: false, gamePath: null, platform: null, account: null, fivemLicense: false }));
 ipcMain.handle('fivem:acceptLicense', () => saveSettings({ ...loadSettings(), fivemLicense: true }));
-ipcMain.handle('fivem:status', () => ({ installed: fivemInstalled() }));
+ipcMain.handle('fivem:status', async () => ({ installed: await fivemReady() }));
 ipcMain.handle('google:configured', () => googleConfigured());
 ipcMain.handle('google:login', async () => {
   try { return { ok: true, account: await googleLogin() }; }
@@ -442,8 +462,9 @@ ipcMain.handle('game:play', async (_e, mode) => {
   if (!s.gamePath || !validateExe(s.gamePath).ok) return { ok: false, error: 'GTA V nije pronađen. Odaberi GTA5.exe.' };
   try {
     if (mode === 'server') {
-      if (!fivemInstalled() && !s.fivemLicense) return { ok: false, needLicense: true };
-      if (s.gamePath.toLowerCase().includes('enhanced') && !fivemInstalled()) {
+      const ready = await fivemReady();
+      if (!ready && !s.fivemLicense) return { ok: false, needLicense: true };
+      if (s.gamePath.toLowerCase().includes('enhanced') && !ready) {
         shell.openExternal(STORE_LINKS.fivem);
         return { ok: false, error: 'Za GTA V Enhanced preuzmi "FiveM for GTAV Enhanced" sa stranice koja se otvorila, pa pritisni IGRAJ.' };
       }
