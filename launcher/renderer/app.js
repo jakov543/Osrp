@@ -1,8 +1,7 @@
-// Osijek Launcher V1 - renderer
+// OSRP Launcher V1 - main window
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let INFO = null;
-let selectedPlatform = null;
 
 function show(screen) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
@@ -13,15 +12,7 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// ---------- own loading screen ----------
-async function bootLoading() {
-  const steps = ['Učitavanje...', 'Provjera datoteka...', 'Učitavam postavke...', 'Spajam se na Osijek...', 'Spremno!'];
-  for (let i = 0; i < steps.length; i++) {
-    $('loadText').textContent = steps[i];
-    $('loadFill').style.width = ((i + 1) / steps.length) * 100 + '%';
-    await sleep(380);
-  }
-}
+const PLATFORM_NAMES = { steam: 'Steam', epic: 'Epic Games', rockstar: 'Rockstar' };
 
 // ---------- ownership ----------
 function initOwnership() {
@@ -37,13 +28,12 @@ function initOwnership() {
 
 // ---------- game setup ----------
 function setPlatformChip(p) {
-  selectedPlatform = p;
   document.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.p === p));
 }
 
 function setGameFound(gamePath, platform) {
   $('pathBox').textContent = gamePath;
-  $('detectText').textContent = 'GTA V je pronađen!';
+  $('detectText').textContent = 'GTA V je pronađen! Provjeri platformu i nastavi.';
   $('gameErr').textContent = '';
   setPlatformChip(platform);
   $('btnGameNext').disabled = false;
@@ -51,7 +41,7 @@ function setGameFound(gamePath, platform) {
 
 async function runDetect() {
   $('detectText').textContent = 'Tražim GTA5.exe na tvom računalu...';
-  $('pathBox').textContent = '...';
+  $('pathBox').innerHTML = '<span class="spinner"></span>';
   $('btnGameNext').disabled = true;
   const r = await window.launcher.detectGame();
   if (r.found) setGameFound(r.gamePath, r.platform);
@@ -78,36 +68,58 @@ function initGameSetup() {
   $('btnGameNext').addEventListener('click', goMain);
 }
 
-function goGameSetup() {
+async function goGameSetup() {
   show('game');
-  runDetect();
+  const s = await window.launcher.getSettings();
+  if (s.gamePath) setGameFound(s.gamePath, s.platform);
+  else runDetect();
 }
 
 // ---------- main ----------
-async function refreshSettingsTab() {
+function renderNews() {
+  const news = INFO.config.news || [];
+  const html = (list) => list.map((n) =>
+    `<div class="news-item">${n.tag ? `<span class="tag">${escapeHtml(n.tag)}</span>` : ''}<h3>${escapeHtml(n.title)}</h3><p>${escapeHtml(n.text)}</p></div>`
+  ).join('');
+  $('newsHome').innerHTML = html(news.slice(0, 2));
+  $('newsAll').innerHTML = html(news);
+}
+
+async function refreshSettings() {
   const s = await window.launcher.getSettings();
   $('setPath').textContent = s.gamePath || '—';
-  $('setPlatform').textContent = s.platform || '—';
+  $('setPlatform').textContent = PLATFORM_NAMES[s.platform] || '—';
   $('setServer').textContent = INFO.config.serverAddress;
+  $('setVer').textContent = 'v' + INFO.version + ' (V1)';
+  $('miniGame').textContent = s.gamePath ? (PLATFORM_NAMES[s.platform] || 'GTA V') : 'Nije pronađen';
+}
+
+function applyStatus(st) {
+  const on = !!(st && st.online);
+  ['sDot', 'sDot2'].forEach((id) => ($(id).className = 'sdot ' + (on ? 'on' : 'off')));
+  $('sTitle').textContent = on ? 'OSRP je ONLINE' : 'Server je offline';
+  $('sSub').textContent = on ? `${st.players} / ${st.max} igrača` : INFO.config.serverAddress;
+  $('sTitle2').textContent = on ? 'Online' : 'Offline';
+  $('sSub2').textContent = on ? `${st.players} / ${st.max} igrača` : 'Server trenutno nije dostupan';
+  $('ssFill').style.width = on ? Math.min(100, (st.players / st.max) * 100) + '%' : '0';
+  $('miniServer').textContent = on ? 'Online' : 'Offline';
+  $('miniPlayers').textContent = on ? `${st.players} / ${st.max}` : '—';
 }
 
 async function refreshStatus() {
-  const st = await window.launcher.serverStatus();
-  $('sDot').className = 'sdot ' + (st.online ? 'on' : 'off');
-  $('sTitle').textContent = st.online ? 'Osijek je ONLINE' : 'Server je offline';
-  $('sSub').textContent = st.online ? `${st.players} / ${st.max} igrača` : INFO.config.serverAddress;
+  applyStatus(await window.launcher.serverStatus());
 }
 
 async function launch(mode) {
   $('playErr').textContent = '';
   $('overlay').classList.add('show');
   const steps = mode === 'server'
-    ? ['Provjeravam GTA V...', 'Pokrećem FiveM...', 'Spajam se na Osijek...']
+    ? ['Provjeravam GTA V...', 'Pokrećem FiveM...', 'Spajam se na OSRP...']
     : ['Provjeravam GTA V...', 'Pokrećem GTA V...'];
   for (let i = 0; i < steps.length; i++) {
     $('ovText').textContent = steps[i];
     $('ovFill').style.width = ((i + 1) / steps.length) * 100 + '%';
-    await sleep(500);
+    await sleep(550);
   }
   const r = await window.launcher.play(mode);
   await sleep(600);
@@ -117,20 +129,16 @@ async function launch(mode) {
 }
 
 function initMain() {
-  const news = INFO.config.news || [];
-  $('news').innerHTML = news.map((n) =>
-    `<div class="news-item"><h3>${escapeHtml(n.title)}</h3><p>${escapeHtml(n.text)}</p></div>`).join('');
-
+  renderNews();
   document.querySelectorAll('.nav').forEach((b) =>
     b.addEventListener('click', () => {
       document.querySelectorAll('.nav').forEach((x) => x.classList.remove('active'));
       document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
       b.classList.add('active');
       $('tab-' + b.dataset.tab).classList.add('active');
-      if (b.dataset.tab === 'settings') refreshSettingsTab();
+      if (b.dataset.tab === 'settings') refreshSettings();
     })
   );
-
   $('btnPlay').addEventListener('click', () => launch('server'));
   $('btnSingle').addEventListener('click', () => launch('single'));
   $('btnChangeGame').addEventListener('click', goGameSetup);
@@ -146,10 +154,11 @@ function initMain() {
 
 function goMain() {
   show('main');
+  refreshSettings();
   refreshStatus();
 }
 
-// ---------- start ----------
+// ---------- start (splash window already did the loading) ----------
 (async function start() {
   $('btnMin').addEventListener('click', () => window.launcher.minimize());
   $('btnClose').addEventListener('click', () => window.launcher.close());
@@ -161,9 +170,13 @@ function goMain() {
   initMain();
   setInterval(() => { if ($('screen-main').classList.contains('active')) refreshStatus(); }, 30000);
 
-  await bootLoading();
-  const s = await window.launcher.getSettings();
+  const boot = await window.launcher.bootResult();
+  const s = (boot && boot.settings) || (await window.launcher.getSettings());
   if (!s.ownershipConfirmed) show('own');
   else if (!s.gamePath) goGameSetup();
-  else goMain();
+  else {
+    show('main');
+    refreshSettings();
+    if (boot && boot.status) applyStatus(boot.status); else refreshStatus();
+  }
 })();

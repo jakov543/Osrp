@@ -1,4 +1,4 @@
-// Osijek Launcher V1 - main process
+// OSRP Launcher V1 - main process
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -155,16 +155,87 @@ function launchServer() {
   return shell.openExternal(`fivem://connect/${addr}`);
 }
 
-// ---------- window ----------
-let win;
-function createWindow() {
+// ---------- server status ----------
+async function getServerStatus() {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const base = `http://${APP_CONFIG.serverAddress}`;
+    const [info, players] = await Promise.all([
+      fetch(`${base}/info.json`, { signal: ctrl.signal }).then((r) => r.json()),
+      fetch(`${base}/players.json`, { signal: ctrl.signal }).then((r) => r.json())
+    ]);
+    clearTimeout(t);
+    return { online: true, players: players.length, max: Number(info.vars && info.vars.sv_maxClients) || 48 };
+  } catch {
+    return { online: false };
+  }
+}
+
+// ---------- windows ----------
+const ICON = path.join(__dirname, 'renderer', 'assets', 'icon.png');
+let win = null;
+let splash = null;
+let bootResult = null;
+
+function createSplash() {
+  splash = new BrowserWindow({
+    width: 440,
+    height: 500,
+    frame: false,
+    resizable: false,
+    transparent: true,
+    center: true,
+    alwaysOnTop: true,
+    skipTaskbar: false,
+    icon: ICON,
+    show: false,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
+  });
+  splash.loadFile(path.join(__dirname, 'renderer', 'splash.html'));
+  splash.once('ready-to-show', () => splash.show());
+  splash.webContents.once('did-finish-load', runBoot);
+}
+
+function splashStep(text, progress) {
+  if (splash && !splash.isDestroyed()) splash.webContents.send('splash:step', { text, progress });
+}
+
+// Real startup work shown on the splash screen
+async function runBoot() {
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  splashStep('Pokrećem OSRP...', 0.1);
+  await wait(500);
+
+  splashStep('Učitavam postavke...', 0.25);
+  let settings = loadSettings();
+  await wait(350);
+
+  splashStep('Tražim GTA V...', 0.45);
+  if (!settings.gamePath || !validateExe(settings.gamePath).ok) {
+    const r = await detectGame();
+    if (r.found) settings = saveSettings({ ...settings, gamePath: r.gamePath, platform: r.platform });
+  }
+  await wait(350);
+
+  splashStep('Spajam se na OSRP server...', 0.7);
+  const status = await getServerStatus();
+  await wait(300);
+
+  splashStep('Pripremam launcher...', 0.9);
+  bootResult = { settings, status };
+  createMain();
+}
+
+function createMain() {
   win = new BrowserWindow({
-    width: 1180,
-    height: 700,
-    minWidth: 980,
-    minHeight: 600,
+    width: 1200,
+    height: 720,
+    minWidth: 1000,
+    minHeight: 620,
     frame: false,
     backgroundColor: '#07090d',
+    icon: ICON,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -174,8 +245,15 @@ function createWindow() {
     }
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  win.once('ready-to-show', () => win.show());
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.once('ready-to-show', async () => {
+    splashStep('Spremno!', 1);
+    await new Promise((r) => setTimeout(r, 450));
+    if (splash && !splash.isDestroyed()) splash.close();
+    splash = null;
+    win.show();
+  });
+  win.on('closed', () => { win = null; });
 }
 
 // ---------- IPC ----------
@@ -191,6 +269,7 @@ ipcMain.handle('game:detect', async () => {
 ipcMain.handle('game:browse', async () => {
   const res = await dialog.showOpenDialog(win, {
     title: 'Odaberi GTA5.exe',
+    defaultPath: 'C:\\Program Files',
     properties: ['openFile'],
     filters: [{ name: 'GTA V', extensions: ['exe'] }]
   });
@@ -218,26 +297,21 @@ ipcMain.handle('game:play', async (_e, mode) => {
     return { ok: false, error: e.message };
   }
 });
-ipcMain.handle('server:status', async () => {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 4000);
-    const base = `http://${APP_CONFIG.serverAddress}`;
-    const [info, players] = await Promise.all([
-      fetch(`${base}/info.json`, { signal: ctrl.signal }).then((r) => r.json()),
-      fetch(`${base}/players.json`, { signal: ctrl.signal }).then((r) => r.json())
-    ]);
-    clearTimeout(t);
-    return { online: true, players: players.length, max: Number(info.vars?.sv_maxClients) || 48 };
-  } catch {
-    return { online: false };
-  }
-});
+ipcMain.handle('server:status', () => getServerStatus());
+ipcMain.handle('boot:result', () => bootResult);
 ipcMain.handle('link:open', (_e, url) => {
   if (ALLOWED_LINKS.has(url)) shell.openExternal(url);
 });
 ipcMain.on('win:minimize', () => win && win.minimize());
 ipcMain.on('win:close', () => win && win.close());
 
-app.whenReady().then(createWindow);
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+  });
+  app.whenReady().then(createSplash);
+}
 app.on('window-all-closed', () => app.quit());

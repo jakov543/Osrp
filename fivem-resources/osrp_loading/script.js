@@ -1,14 +1,15 @@
-// Osijek V1 loading screen - uses FiveM's real load progress
+// OSRP V1 loading screen - uses FiveM's real load progress
 const fill = document.getElementById('fill');
 const pct = document.getElementById('pct');
 const tip = document.getElementById('tip');
+const stage = document.getElementById('stage');
 
 const tips = [
   'Učitavanje grada Osijeka...',
   'Poštuj pravila servera.',
-  'Pridruži se našem Discordu za novosti.',
+  'Pridruži se OSRP Discordu za novosti.',
   'Vozi pažljivo kroz grad!',
-  'Dobrodošao u Osijek.'
+  'Dobrodošao na OSRP - Osijek Roleplay.'
 ];
 let tipIndex = 0;
 setInterval(() => {
@@ -25,5 +26,6 @@ window.addEventListener('message', (e) => {
     const p = Math.round(best * 100);
     fill.style.width = p + '%';
     pct.textContent = p + '%';
+    stage.textContent = p < 40 ? 'Učitavanje mape' : p < 80 ? 'Učitavanje grada' : 'Skoro gotovo';
   }
 });

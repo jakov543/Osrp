@@ -1,14 +1,14 @@
 {
-  "name": "osijek-launcher",
-  "productName": "Osijek Launcher",
+  "name": "osrp-launcher",
+  "productName": "OSRP Launcher",
   "version": "1.0.0",
-  "description": "Osijek Launcher V1 - launcher for the Osijek GTA V (FiveM) server. Requires a legal copy of GTA V.",
+  "description": "OSRP Launcher V1 - Osijek Roleplay (GTA V / FiveM). Requires a legal copy of GTA V.",
   "main": "main.js",
   "author": "Bandera",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check renderer/app.js",
+    "check": "node --check main.js && node --check preload.js && node --check renderer/app.js && node --check renderer/splash.js",
     "dist": "electron-builder --win --publish never"
   },
   "devDependencies": {
@@ -16,17 +16,22 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "hr.osijek.launcher",
-    "productName": "Osijek Launcher",
-    "artifactName": "OsijekLauncher-Setup-${version}.${ext}",
+    "appId": "hr.osrp.launcher",
+    "productName": "OSRP Launcher",
+    "artifactName": "OSRP-Launcher-Setup-${version}.${ext}",
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["main.js", "preload.js", "config.json", "renderer/**/*", "package.json"],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [{ "target": "nsis", "arch": ["x64"] }]
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Osijek Launcher"
+      "shortcutName": "OSRP Launcher",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     }
   }
 }

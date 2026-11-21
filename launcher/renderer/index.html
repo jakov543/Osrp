@@ -3,34 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
-  <title>Osijek Launcher</title>
+  <title>OSRP Launcher</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- Title bar -->
   <div class="titlebar">
-    <div class="tb-brand"><span class="dot"></span>OSIJEK LAUNCHER <span class="ver" id="ver">v1.0.0</span></div>
+    <div class="tb-brand"><img src="assets/icon.png" alt="" />OSRP LAUNCHER <span class="ver" id="ver">v1.0.0</span></div>
     <div class="tb-btns">
       <button id="btnMin" title="Minimiziraj">&#8211;</button>
       <button id="btnClose" class="close" title="Zatvori">&#10005;</button>
     </div>
   </div>
 
-  <!-- 1. Own loading screen -->
-  <section id="screen-loading" class="screen active">
-    <div class="load-wrap">
-      <div class="logo-big">OSIJEK</div>
-      <div class="logo-sub">ROLEPLAY &middot; GTA V</div>
-      <div class="bar"><div class="bar-fill" id="loadFill"></div></div>
-      <div class="load-text" id="loadText">Učitavanje...</div>
-    </div>
-  </section>
-
-  <!-- 2. Ownership confirm -->
+  <!-- 1. Ownership confirm -->
   <section id="screen-own" class="screen">
     <div class="card">
+      <img class="card-logo" src="assets/logo.png" alt="OSRP" />
+      <div class="steps"><span class="on">1</span><i></i><span>2</span><i></i><span>3</span></div>
       <h1>Imaš li GTA V?</h1>
-      <p class="muted">Za igranje na Osijek serveru trebaš <b>legalnu kopiju Grand Theft Auto V</b> na računalu. Launcher koristi tvoju instaliranu igru.</p>
+      <p class="muted">Za igranje na OSRP serveru trebaš <b>legalnu kopiju Grand Theft Auto V</b>. Launcher koristi igru koju već imaš instaliranu.</p>
       <label class="check">
         <input type="checkbox" id="ownCheck" />
         <span>Potvrđujem da posjedujem legalnu kopiju GTA V (Steam, Epic Games ili Rockstar).</span>
@@ -46,15 +38,17 @@
     </div>
   </section>
 
-  <!-- 3. Game location -->
+  <!-- 2. Game location -->
   <section id="screen-game" class="screen">
     <div class="card">
+      <img class="card-logo" src="assets/logo.png" alt="OSRP" />
+      <div class="steps"><span class="done">&#10003;</span><i class="on"></i><span class="on">2</span><i></i><span>3</span></div>
       <h1>Pronađi GTA V</h1>
       <p class="muted" id="detectText">Tražim GTA5.exe na tvom računalu...</p>
-      <div class="path-box" id="pathBox">—</div>
+      <div class="path-box" id="pathBox"><span class="spinner"></span></div>
       <div class="row">
-        <button class="btn" id="btnDetect">Traži ponovno</button>
-        <button class="btn" id="btnBrowse">Odaberi GTA5.exe ručno</button>
+        <button class="btn" id="btnDetect">&#8635; Traži ponovno</button>
+        <button class="btn" id="btnBrowse">&#128193; Odaberi GTA5.exe ručno</button>
       </div>
       <div class="platforms">
         <span class="muted">Platforma:</span>
@@ -67,15 +61,21 @@
     </div>
   </section>
 
-  <!-- 4. Main -->
+  <!-- 3. Main -->
   <section id="screen-main" class="screen">
     <div class="main">
       <aside class="side">
-        <div class="logo">OSIJEK</div>
+        <img class="side-logo" src="assets/logo.png" alt="OSRP" />
         <nav>
-          <button class="nav active" data-tab="home">Početna</button>
-          <button class="nav" data-tab="settings">Postavke</button>
+          <button class="nav active" data-tab="home"><span>&#8962;</span>Početna</button>
+          <button class="nav" data-tab="news"><span>&#9776;</span>Novosti</button>
+          <button class="nav" data-tab="settings"><span>&#9881;</span>Postavke</button>
         </nav>
+        <div class="side-status">
+          <div class="ss-top"><span class="sdot" id="sDot2"></span><b id="sTitle2">...</b></div>
+          <div class="ss-bar"><div class="ss-fill" id="ssFill"></div></div>
+          <small id="sSub2">&nbsp;</small>
+        </div>
         <div class="side-links">
           <button class="link" id="lnkDiscord">Discord</button>
           <button class="link" id="lnkFivem">Preuzmi FiveM</button>
@@ -85,11 +85,25 @@
       <div class="content">
         <div class="tab active" id="tab-home">
           <div class="hero">
-            <div class="hero-label">GRAD</div>
-            <div class="hero-title">OSIJEK</div>
-            <div class="hero-sub">Dobrodošao. Pritisni IGRAJ i uđi na server.</div>
+            <img class="hero-icon" src="assets/icon.png" alt="" />
+            <div class="hero-text">
+              <div class="hero-label">DOBRODOŠAO U</div>
+              <div class="hero-title">OSRP</div>
+              <div class="hero-sub">Osijek Roleplay &middot; tvoj grad, tvoja priča.</div>
+            </div>
           </div>
-          <div class="news" id="news"></div>
+          <div class="cards3">
+            <div class="mini"><small>Server</small><b id="miniServer">—</b></div>
+            <div class="mini"><small>Igrači</small><b id="miniPlayers">—</b></div>
+            <div class="mini"><small>Igra</small><b id="miniGame">—</b></div>
+          </div>
+          <h3 class="sec">Najnovije</h3>
+          <div class="news" id="newsHome"></div>
+        </div>
+
+        <div class="tab" id="tab-news">
+          <h2>Novosti</h2>
+          <div class="news" id="newsAll"></div>
         </div>
 
         <div class="tab" id="tab-settings">
@@ -97,6 +111,7 @@
           <div class="set-row"><span>GTA V putanja</span><code id="setPath">—</code></div>
           <div class="set-row"><span>Platforma</span><code id="setPlatform">—</code></div>
           <div class="set-row"><span>Server</span><code id="setServer">—</code></div>
+          <div class="set-row"><span>Verzija launchera</span><code id="setVer">—</code></div>
           <div class="row">
             <button class="btn" id="btnChangeGame">Promijeni lokaciju igre</button>
             <button class="btn danger" id="btnReset">Resetiraj launcher</button>
@@ -121,7 +136,8 @@
 
   <!-- Launch overlay -->
   <div class="overlay" id="overlay">
-    <div class="logo-big">OSIJEK</div>
+    <img class="ov-icon" src="assets/icon.png" alt="" />
+    <div class="ov-name">OSRP</div>
     <div class="bar"><div class="bar-fill" id="ovFill"></div></div>
     <div class="load-text" id="ovText">Pokrećem igru...</div>
   </div>
