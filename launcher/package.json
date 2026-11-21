@@ -1,0 +1,32 @@
+{
+  "name": "osijek-launcher",
+  "productName": "Osijek Launcher",
+  "version": "1.0.0",
+  "description": "Osijek Launcher V1 - launcher for the Osijek GTA V (FiveM) server. Requires a legal copy of GTA V.",
+  "main": "main.js",
+  "author": "Bandera",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check renderer/app.js",
+    "dist": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "hr.osijek.launcher",
+    "productName": "Osijek Launcher",
+    "artifactName": "OsijekLauncher-Setup-${version}.${ext}",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "config.json", "renderer/**/*", "package.json"],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Osijek Launcher"
+    }
+  }
+}

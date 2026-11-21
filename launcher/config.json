@@ -1,0 +1,10 @@
+{
+  "serverName": "Osijek",
+  "serverAddress": "127.0.0.1:30120",
+  "discord": "https://discord.gg/",
+  "website": "",
+  "news": [
+    { "title": "Osijek Launcher V1", "text": "Prva verzija launchera je izašla. Dobrodošli u Osijek!" },
+    { "title": "Pravila", "text": "Prije igranja pročitaj pravila servera na Discordu." }
+  ]
+}
