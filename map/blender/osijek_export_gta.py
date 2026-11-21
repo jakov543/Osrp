@@ -38,6 +38,10 @@ for o in [o for o in col.objects if "_drvo_" in o.name]:
     bpy.data.objects.remove(o, do_unlink=True)
 with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
     json.dump([{"x": t[0], "y": t[1], "s": t[2], "kind": t[3]} for t in city["TREES"]], f)
+with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
+    json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
+with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
+    json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4]} for m in city["FURNITURE"]], f)
 objs = [o for o in col.objects if o.type == "MESH"]
 print(f"[OSRP] {len(objs)} meshes built")
 
@@ -109,6 +113,9 @@ RECIPES = {
     "lamp_pole":      (0.10, 1.0, [], 2.0, "METAL_SOLID_MEDIUM"),
     "gold":           (0.10, 1.0, [], 1.0, "METAL_SOLID_SMALL"),
     "flowers":        (0.40, 0.5, [], 1.0, "GRASS"),
+    "floor_wood":     (0.35, 0.4, stripes(28, color="#00000040") + bricks(256, 28, color="#00000030"), 2.0, "WOOD_SOLID_POLISHED"),
+    "door_frame":     (0.30, 0.5, stripes(40, color="#00000040"), 1.0, "WOOD_SOLID_MEDIUM"),
+    "canopy":         (0.15, 1.0, [], 2.0, "METAL_SOLID_MEDIUM"),
 }
 DEFAULT_RECIPE = (0.15, 1.0, [], 2.0, "CONCRETE")
 

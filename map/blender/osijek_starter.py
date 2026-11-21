@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.9)
+OSRP - Osijek starter map for Blender (V1.0.10)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -348,7 +348,69 @@ for k in range(26):
         continue
     tree(col, f"park_{k}", x, y, random.uniform(0.9, 1.4))
 
-# City blocks: buildings with windows + pitched roofs
+DOORS = []       # (x, y, z, heading) - real GTA V doors placed in-game by osrp_osijek
+FURNITURE = []   # (kind, x, y, z, heading) - real GTA V furniture placed in-game
+M_FLOOR = material("osrp_floor_wood", (0.45, 0.30, 0.17))
+M_DOORFRAME = material("osrp_door_frame", (0.20, 0.14, 0.09))
+M_CANOPY = material("osrp_canopy", (0.25, 0.27, 0.30), rough=0.5, metal=0.5)
+
+DOOR_W, DOOR_H, WALL_T, FLOOR_H = 1.4, 2.5, 0.3, 3.3
+
+
+def door_heading(facing):
+    """GTA heading of something on the street face, looking out to the street (+y = 0 deg, -y = 180 deg)"""
+    return 180.0 if facing == -1 else 0.0
+
+
+def house_enterable(name, cx, cy, w, d, h, mat, facing):
+    """ground floor you can walk into: walls, doorway, wooden floor, ceiling; upper floors solid"""
+    y_front = cy + facing * d / 2          # street face
+    y_back = cy - facing * d / 2
+    fy = y_front - facing * WALL_T / 2     # centre line of the front wall
+    by = y_back + facing * WALL_T / 2
+    # front wall with a doorway in the middle
+    left_w = (w - DOOR_W) / 2
+    box(col, f"{name}_zid_l", (cx - w / 2 + left_w / 2, fy, 0), (left_w, WALL_T, FLOOR_H), mat)
+    box(col, f"{name}_zid_d", (cx + w / 2 - left_w / 2, fy, 0), (left_w, WALL_T, FLOOR_H), mat)
+    box(col, f"{name}_nadvratnik", (cx, fy, DOOR_H), (DOOR_W, WALL_T, FLOOR_H - DOOR_H), mat)
+    # back + side walls
+    box(col, f"{name}_zid_s", (cx, by, 0), (w, WALL_T, FLOOR_H), mat)
+    for k, sx in enumerate((-1, 1)):
+        box(col, f"{name}_zid_bok{k}", (cx + sx * (w / 2 - WALL_T / 2), cy, 0), (WALL_T, d - 2 * WALL_T, FLOOR_H), mat)
+    # upper floors (solid) - its underside is the ceiling of the room
+    box(col, f"{name}_katovi", (cx, cy, FLOOR_H), (w, d, h - FLOOR_H), mat)
+    # wooden floor + entrance step + door frame
+    box(col, f"{name}_pod", (cx, cy, 0), (w - 2 * WALL_T, d - 2 * WALL_T, 0.05), M_FLOOR)
+    box(col, f"{name}_stepenica", (cx, y_front + facing * 0.45, 0.1), (DOOR_W + 0.6, 0.9, 0.12), M_WHITE_STONE)
+    for k, sx in enumerate((-1, 1)):
+        box(col, f"{name}_okvir{k}", (cx + sx * (DOOR_W / 2 + 0.06), y_front + facing * 0.04, 0), (0.12, 0.1, DOOR_H + 0.1), M_DOORFRAME)
+    box(col, f"{name}_okvir_gore", (cx, y_front + facing * 0.04, DOOR_H), (DOOR_W + 0.24, 0.1, 0.12), M_DOORFRAME)
+    box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
+    # GTA door: hinge on the left edge of the doorway (seen from the street)
+    heading = door_heading(facing)
+    DOORS.append((round(cx - facing * DOOR_W / 2, 2), round(fy, 2), 0.05, heading))
+    # GTA furniture inside (room interior)
+    iy0, iy1 = sorted((fy - facing * WALL_T / 2, by + facing * WALL_T / 2))
+    ix0, ix1 = cx - w / 2 + WALL_T, cx + w / 2 - WALL_T
+    look_in = (heading + 180.0) % 360.0           # facing into the room
+    back_inner = by + facing * (WALL_T / 2 + 0.6)
+    FURNITURE.append(("sofa", round(cx, 2), round(back_inner, 2), 0.05, heading))   # back to the wall, facing the door
+    FURNITURE.append(("stol", round(cx, 2), round((iy0 + iy1) / 2, 2), 0.05, 0.0))
+    FURNITURE.append(("stolica", round(cx - 1.2, 2), round((iy0 + iy1) / 2, 2), 0.05, 90.0))
+    FURNITURE.append(("stolica", round(cx + 1.2, 2), round((iy0 + iy1) / 2, 2), 0.05, 270.0))
+    FURNITURE.append(("tv", round(ix0 + 0.4, 2), round((iy0 + iy1) / 2, 2), 0.05, 270.0))
+    FURNITURE.append(("biljka", round(ix1 - 0.6, 2), round(back_inner, 2), 0.05, 0.0))
+    FURNITURE.append(("biljka", round(ix0 + 0.6, 2), round(fy - facing * (WALL_T / 2 + 0.6), 2), 0.05, 0.0))
+
+
+def fake_entrance(name, cx, y_front, facing):
+    """closed front door look for buildings you can't enter"""
+    box(col, f"{name}_vrata", (cx, y_front + facing * 0.03, 0.1), (DOOR_W, 0.08, DOOR_H), M_DOORFRAME)
+    box(col, f"{name}_stepenica", (cx, y_front + facing * 0.45, 0.1), (DOOR_W + 0.6, 0.9, 0.12), M_WHITE_STONE)
+    box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
+
+
+# City blocks: buildings with windows + pitched roofs (every 3rd one can be entered)
 bid = 0
 for bx in range(len(CROSS_X) - 1):
     for (y0, y1) in [(-175, -16), (16, 120)]:
@@ -368,9 +430,16 @@ for bx in range(len(CROSS_X) - 1):
             mat = random.choice(M_PLASTER)
             for side, yy, facing in (("a", y0, -1), ("b", y1 - d, 1)):
                 cx, cy = x + w / 2, yy + d / 2
-                box(col, f"osrp_zgrada_{bid}_{side}", (cx, cy, 0), (w - 1, d, h), mat)
                 street_face = yy if facing == -1 else yy + d
-                windows(col, f"osrp_prozori_{bid}_{side}", cx, street_face, 0.8, w - 1, floors, floor_h, M_GLASS, facing)
+                if bid % 3 == 0:
+                    house_enterable(f"osrp_kuca_{bid}_{side}", cx, cy, w - 1, d, h, mat, facing)
+                    # windows only from the 1st floor up (the ground floor has the door)
+                    if floors > 1:
+                        windows(col, f"osrp_prozori_{bid}_{side}", cx, street_face, 0.8 + floor_h, w - 1, floors - 1, floor_h, M_GLASS, facing)
+                else:
+                    box(col, f"osrp_zgrada_{bid}_{side}", (cx, cy, 0), (w - 1, d, h), mat)
+                    windows(col, f"osrp_prozori_{bid}_{side}", cx, street_face, 0.8 + floor_h, w - 1, floors - 1, floor_h, M_GLASS, facing) if floors > 1 else None
+                    fake_entrance(f"osrp_ulaz_{bid}_{side}", cx, street_face, facing)
                 gable_roof(col, f"osrp_krov_{bid}_{side}", cx, cy, h, w - 1, d, random.uniform(3.5, 5.5), M_ROOF)
             bid += 1
             x += w
@@ -447,4 +516,4 @@ for i, x in enumerate((-225, -75, 75)):
 for i, x in enumerate(range(-350, 351, 50)):
     flower_bed(f"prom_{i}", x, PROM_Y - 0.5, 4.0, 1.2)
 
-print(f"[OSRP] Osijek map v1.0.9: {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.10: {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

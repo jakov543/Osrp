@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.9 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.10 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.9
-git push origin v1.0.9
+git tag v1.0.10
+git push origin v1.0.10
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -167,6 +167,12 @@ Short names are in `osrp_map/config.lua` and you can add your own. Props only ap
 On Linux it writes CodeWalker XML. On Windows, with Sollumz plus PyMateria, it writes the native `.ydr` / `.ytyp` files directly.
 
 **The finished files are already in `osrp_osijek/stream/`.** v1.0.9 has 36 models with real textures (asphalt, paving, grass, brick, roof tiles, plaster, water, stone, gravel, glass, wood), per-surface collision (tarmac, concrete paving, grass, gravel, brick, roof tile...), intersections open for cars, and 109 real GTA V trees placed by script. Converted with `tools/xml2gta` (CodeWalker.Core) and verified.
+
+v1.0.10: **30 enterable houses**. Each has a doorway with a real **GTA V door** (door system, unlocked; `Config.DoorsLocked`), a wooden floor, **GTA V furniture** (sofa, table, chairs, TV, plants) and a warm ceiling light. Every other building got a front door, a step and a canopy.
+
+| Entrance | Inside (furniture is added in-game) |
+|---|---|
+| ![house](map/blender/preview_house.png) | ![inside](map/blender/preview_house_inside.png) |
 Add `ensure osrp_osijek`. Players spawn in Osijek (`osrp_framework/config.lua`), and admins can use `/osijek` to teleport there.
 
 ## Osijek map in Blender
