@@ -4,6 +4,10 @@
   "serverAddress": "127.0.0.1:30120",
   "discord": "https://discord.gg/",
   "website": "",
+  "google": {
+    "clientId": "",
+    "clientSecret": ""
+  },
   "news": [
     { "tag": "NOVO", "title": "OSRP Launcher V1", "text": "Prva verzija OSRP launchera je izašla. Dobrodošli u Osijek Roleplay!" },
     { "tag": "INFO", "title": "Pravila servera", "text": "Prije igranja pročitaj pravila na našem Discordu." },

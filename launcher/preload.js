@@ -12,6 +12,13 @@ contextBridge.exposeInMainWorld('launcher', {
   reset: () => ipcRenderer.invoke('game:reset'),
   play: (mode) => ipcRenderer.invoke('game:play', mode),
   serverStatus: () => ipcRenderer.invoke('server:status'),
+  acceptFiveMLicense: () => ipcRenderer.invoke('fivem:acceptLicense'),
+  fivemStatus: () => ipcRenderer.invoke('fivem:status'),
+  onFiveMProgress: (cb) => ipcRenderer.on('fivem:progress', (_e, d) => cb(d)),
+  googleConfigured: () => ipcRenderer.invoke('google:configured'),
+  googleLogin: () => ipcRenderer.invoke('google:login'),
+  googleLogout: () => ipcRenderer.invoke('google:logout'),
+  skipLogin: () => ipcRenderer.invoke('account:skip'),
   openLink: (url) => ipcRenderer.invoke('link:open', url),
   minimize: () => ipcRenderer.send('win:minimize'),
   close: () => ipcRenderer.send('win:close')

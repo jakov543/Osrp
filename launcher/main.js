@@ -3,6 +3,10 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { execFile, spawn } = require('child_process');
+const http = require('http');
+const crypto = require('crypto');
+const { Readable } = require('stream');
+const { pipeline } = require('stream/promises');
 
 const APP_CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
@@ -13,14 +17,141 @@ const STORE_LINKS = {
   steam: 'https://store.steampowered.com/app/271590/',
   epic: 'https://store.epicgames.com/p/grand-theft-auto-v',
   rockstar: 'https://www.rockstargames.com/gta-v',
-  fivem: 'https://fivem.net/'
+  fivem: 'https://fivem.net/',
+  fivemLicense: 'https://fivem.net/terms'
 };
+// ---------- FiveM client (installed + started by the OSRP launcher) ----------
+const FIVEM_DOWNLOAD = 'https://runtime.fivem.net/client/FiveM.exe'; // official client (GTA V Legacy)
+const fivemDir = () => path.join(process.env.LOCALAPPDATA || app.getPath('appData'), 'FiveM');
+const fivemExe = () => path.join(fivemDir(), 'FiveM.exe');
+const fivemInstalled = () => exists(fivemExe()) && fs.existsSync(path.join(fivemDir(), 'FiveM.app'));
+
+function sendProgress(data) {
+  if (win && !win.isDestroyed()) win.webContents.send('fivem:progress', data);
+}
+
+async function downloadFiveM() {
+  fs.mkdirSync(fivemDir(), { recursive: true });
+  const tmp = fivemExe() + '.download';
+  const res = await fetch(FIVEM_DOWNLOAD);
+  if (!res.ok || !res.body) throw new Error('Preuzimanje nije uspjelo (HTTP ' + res.status + ').');
+  const total = Number(res.headers.get('content-length')) || 0;
+  let got = 0;
+  const body = Readable.fromWeb(res.body);
+  body.on('data', (chunk) => {
+    got += chunk.length;
+    sendProgress({ stage: 'download', fraction: total ? got / total : 0, mb: (got / 1048576).toFixed(1) });
+  });
+  await pipeline(body, fs.createWriteStream(tmp));
+  if (got < 100 * 1024) throw new Error('Preuzeta datoteka je neispravna.');
+  fs.renameSync(tmp, fivemExe());
+}
+
+function waitFor(check, timeoutMs, everyMs = 3000) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const t = setInterval(() => {
+      if (check()) { clearInterval(t); resolve(true); }
+      else if (Date.now() - start > timeoutMs) { clearInterval(t); resolve(false); }
+    }, everyMs);
+  });
+}
+
+// Installs FiveM if needed (player already accepted the license in the launcher), then connects to OSRP
+async function ensureFiveMAndConnect() {
+  if (!fivemInstalled()) {
+    if (!exists(fivemExe())) {
+      sendProgress({ stage: 'download', fraction: 0, mb: '0.0' });
+      await downloadFiveM();
+    }
+    sendProgress({ stage: 'install' });
+    const child = spawn(fivemExe(), [], { cwd: fivemDir(), detached: true, stdio: 'ignore' });
+    child.on('error', (e) => console.error('FiveM start error:', e.message));
+    child.unref();
+    const ok = await waitFor(fivemInstalled, 15 * 60 * 1000);
+    if (!ok) throw new Error('Instalacija klijenta traje predugo. Završi postavljanje u otvorenom prozoru pa pritisni IGRAJ ponovno.');
+    await new Promise((r) => setTimeout(r, 8000));
+  }
+  sendProgress({ stage: 'connect' });
+  return launchServer();
+}
+
+// ---------- Google login (OAuth 2.0 desktop flow with PKCE) ----------
+const b64url = (buf) => buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const googleConfigured = () => !!(APP_CONFIG.google && APP_CONFIG.google.clientId);
+
+function googleLogin() {
+  return new Promise((resolve, reject) => {
+    if (!googleConfigured()) return reject(new Error('Google prijava nije postavljena.'));
+    const { clientId, clientSecret } = APP_CONFIG.google;
+    const verifier = b64url(crypto.randomBytes(32));
+    const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
+    const state = b64url(crypto.randomBytes(16));
+    let finished = false;
+
+    const server = http.createServer(async (req, res) => {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      if (url.pathname !== '/') { res.writeHead(404); return res.end(); }
+      const code = url.searchParams.get('code');
+      const okState = url.searchParams.get('state') === state;
+      const page = (msg) => `<!DOCTYPE html><meta charset="utf-8"><body style="background:#07090d;color:#e8edf4;font-family:Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><h1 style="color:#19c3a6;letter-spacing:6px">OSRP</h1><p>${msg}</p></div>`;
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      if (!code || !okState) {
+        res.end(page('Prijava otkazana. Možeš zatvoriti ovu karticu.'));
+        return done(new Error('Prijava je otkazana.'));
+      }
+      res.end(page('Prijava uspjela! Vrati se u OSRP launcher.'));
+      try {
+        const redirect = `http://127.0.0.1:${server.address().port}`;
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code, client_id: clientId, client_secret: clientSecret || '',
+            redirect_uri: redirect, grant_type: 'authorization_code', code_verifier: verifier
+          })
+        });
+        const token = await tokenRes.json();
+        if (!token.access_token) throw new Error(token.error_description || 'Google nije vratio token.');
+        const info = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+          headers: { Authorization: 'Bearer ' + token.access_token }
+        }).then((r) => r.json());
+        const account = { name: info.name || info.email, email: info.email, picture: info.picture || null, id: info.sub };
+        saveSettings({ ...loadSettings(), account });
+        done(null, account);
+      } catch (e) { done(e); }
+    });
+
+    const timer = setTimeout(() => done(new Error('Prijava je istekla. Pokušaj ponovno.')), 5 * 60 * 1000);
+    function done(err, account) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      server.close();
+      if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.focus(); }
+      err ? reject(err) : resolve(account);
+    }
+
+    server.on('error', (e) => done(e));
+    server.listen(0, '127.0.0.1', () => {
+      const redirect = `http://127.0.0.1:${server.address().port}`;
+      const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      auth.search = new URLSearchParams({
+        client_id: clientId, redirect_uri: redirect, response_type: 'code',
+        scope: 'openid email profile', code_challenge: challenge, code_challenge_method: 'S256',
+        state, prompt: 'select_account'
+      }).toString();
+      shell.openExternal(auth.toString());
+    });
+  });
+}
+
 const ALLOWED_LINKS = new Set([...Object.values(STORE_LINKS), APP_CONFIG.discord, APP_CONFIG.website].filter(Boolean));
 
 // ---------- settings ----------
 function loadSettings() {
   try { return JSON.parse(fs.readFileSync(SETTINGS_FILE(), 'utf8')); }
-  catch { return { ownershipConfirmed: false, gamePath: null, platform: null }; }
+  catch { return { ownershipConfirmed: false, gamePath: null, platform: null, account: null, fivemLicense: false }; }
 }
 function saveSettings(s) {
   try {
@@ -284,14 +415,33 @@ ipcMain.handle('game:setPlatform', (_e, platform) => {
   if (!['steam', 'epic', 'rockstar'].includes(platform)) return loadSettings();
   return saveSettings({ ...loadSettings(), platform });
 });
-ipcMain.handle('game:reset', () => saveSettings({ ownershipConfirmed: false, gamePath: null, platform: null }));
+ipcMain.handle('game:reset', () => saveSettings({ ownershipConfirmed: false, gamePath: null, platform: null, account: null, fivemLicense: false }));
+ipcMain.handle('fivem:acceptLicense', () => saveSettings({ ...loadSettings(), fivemLicense: true }));
+ipcMain.handle('fivem:status', () => ({ installed: fivemInstalled() }));
+ipcMain.handle('google:configured', () => googleConfigured());
+ipcMain.handle('google:login', async () => {
+  try { return { ok: true, account: await googleLogin() }; }
+  catch (e) { return { ok: false, error: e.message }; }
+});
+ipcMain.handle('google:logout', () => saveSettings({ ...loadSettings(), account: null }));
+ipcMain.handle('account:skip', () => {
+  // Guest mode only exists while the server owner has not set up Google login
+  if (googleConfigured()) return loadSettings();
+  return saveSettings({ ...loadSettings(), account: { guest: true, name: 'Gost' } });
+});
 ipcMain.handle('game:play', async (_e, mode) => {
   const s = loadSettings();
   if (!s.ownershipConfirmed) return { ok: false, error: 'Prvo potvrdi da imaš igru.' };
   if (!s.gamePath || !validateExe(s.gamePath).ok) return { ok: false, error: 'GTA V nije pronađen. Odaberi GTA5.exe.' };
   try {
-    if (mode === 'server') await launchServer();
-    else await launchSingleplayer(s);
+    if (mode === 'server') {
+      if (!fivemInstalled() && !s.fivemLicense) return { ok: false, needLicense: true };
+      if (s.gamePath.toLowerCase().includes('enhanced') && !fivemInstalled()) {
+        shell.openExternal(STORE_LINKS.fivem);
+        return { ok: false, error: 'Za GTA V Enhanced preuzmi "FiveM for GTAV Enhanced" sa stranice koja se otvorila, pa pritisni IGRAJ.' };
+      }
+      await ensureFiveMAndConnect();
+    } else await launchSingleplayer(s);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e.message };

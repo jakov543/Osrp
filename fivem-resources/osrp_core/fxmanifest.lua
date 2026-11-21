@@ -12,3 +12,6 @@ server_script 'server.lua'
 
 -- Put your custom Osijek map files (.ymap / .ytyp / .ydr / .ytd) in the stream/ folder.
 this_is_a_map 'yes'
+
+-- When your Blender/CodeWalker map is ready (see map/BLENDER-MAP.md), uncomment:
+-- data_file 'DLC_ITYP_REQUEST' 'stream/osijek.ytyp'

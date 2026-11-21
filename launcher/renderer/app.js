@@ -14,6 +14,54 @@ function escapeHtml(s) {
 
 const PLATFORM_NAMES = { steam: 'Steam', epic: 'Epic Games', rockstar: 'Rockstar' };
 
+// ---------- Google login ----------
+async function initLogin() {
+  const configured = await window.launcher.googleConfigured();
+  $('googleNotice').hidden = configured;
+  $('btnGoogle').disabled = !configured;
+  $('btnGoogle').addEventListener('click', async () => {
+    $('loginErr').textContent = '';
+    $('btnGoogle').disabled = true;
+    $('googleText').textContent = 'Čekam prijavu u pregledniku...';
+    const r = await window.launcher.googleLogin();
+    $('btnGoogle').disabled = false;
+    $('googleText').textContent = 'Prijava s Googleom';
+    if (!r.ok) { $('loginErr').textContent = r.error; return; }
+    afterLogin();
+  });
+  $('btnGuest').addEventListener('click', async () => {
+    await window.launcher.skipLogin();
+    afterLogin();
+  });
+  $('btnLogout').addEventListener('click', async () => {
+    await window.launcher.googleLogout();
+    show('login');
+  });
+}
+
+async function afterLogin() {
+  const s = await window.launcher.getSettings();
+  renderProfile(s.account);
+  if (!s.ownershipConfirmed) show('own');
+  else if (!s.gamePath) goGameSetup();
+  else goMain();
+}
+
+function renderProfile(acc) {
+  const a = acc || { name: '—' };
+  $('pName').textContent = a.name || '—';
+  $('pEmail').textContent = a.guest ? 'Gost' : (a.email || '');
+  const av = $('avatar');
+  av.textContent = '';
+  if (a.picture && /^https:\/\/[\w.-]+\.googleusercontent\.com\//.test(a.picture)) {
+    const img = document.createElement('img');
+    img.src = a.picture;
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = () => { av.textContent = (a.name || '?')[0].toUpperCase(); };
+    av.appendChild(img);
+  } else av.textContent = (a.name || '?')[0].toUpperCase();
+}
+
 // ---------- ownership ----------
 function initOwnership() {
   $('ownCheck').addEventListener('change', (e) => ($('btnOwn').disabled = !e.target.checked));
@@ -110,11 +158,40 @@ async function refreshStatus() {
   applyStatus(await window.launcher.serverStatus());
 }
 
+function openLicense() {
+  $('licCheck').checked = false;
+  $('licOk').disabled = true;
+  $('licModal').classList.add('show');
+}
+
+function initLicense() {
+  $('licCheck').addEventListener('change', (e) => ($('licOk').disabled = !e.target.checked));
+  $('licLink').addEventListener('click', (e) => { e.preventDefault(); window.launcher.openLink(INFO.stores.fivemLicense); });
+  $('licCancel').addEventListener('click', () => $('licModal').classList.remove('show'));
+  $('licOk').addEventListener('click', async () => {
+    await window.launcher.acceptFiveMLicense();
+    $('licModal').classList.remove('show');
+    launch('server');
+  });
+  window.launcher.onFiveMProgress((d) => {
+    if (d.stage === 'download') {
+      $('ovText').textContent = `Preuzimam OSRP klijent... ${d.mb} MB`;
+      $('ovFill').style.width = Math.round((d.fraction || 0) * 100) + '%';
+    } else if (d.stage === 'install') {
+      $('ovText').textContent = 'Instalacija klijenta - završi postavljanje u prozoru koji se otvorio (Rockstar prijava)...';
+      $('ovFill').style.width = '100%';
+    } else if (d.stage === 'connect') {
+      $('ovText').textContent = 'Spajam se na OSRP...';
+      $('ovFill').style.width = '100%';
+    }
+  });
+}
+
 async function launch(mode) {
   $('playErr').textContent = '';
   $('overlay').classList.add('show');
   const steps = mode === 'server'
-    ? ['Provjeravam GTA V...', 'Pokrećem FiveM...', 'Spajam se na OSRP...']
+    ? ['Provjeravam GTA V...', 'Provjeravam OSRP klijent...']
     : ['Provjeravam GTA V...', 'Pokrećem GTA V...'];
   for (let i = 0; i < steps.length; i++) {
     $('ovText').textContent = steps[i];
@@ -125,6 +202,7 @@ async function launch(mode) {
   await sleep(600);
   $('overlay').classList.remove('show');
   $('ovFill').style.width = '0';
+  if (r.needLicense) return openLicense();
   if (!r.ok) $('playErr').textContent = r.error;
 }
 
@@ -146,10 +224,9 @@ function initMain() {
     await window.launcher.reset();
     $('ownCheck').checked = false;
     $('btnOwn').disabled = true;
-    show('own');
+    show('login');
   });
   $('lnkDiscord').addEventListener('click', () => window.launcher.openLink(INFO.config.discord));
-  $('lnkFivem').addEventListener('click', () => window.launcher.openLink(INFO.stores.fivem));
 }
 
 function goMain() {
@@ -165,6 +242,8 @@ function goMain() {
 
   INFO = await window.launcher.info();
   $('ver').textContent = 'v' + INFO.version;
+  await initLogin();
+  initLicense();
   initOwnership();
   initGameSetup();
   initMain();
@@ -172,7 +251,11 @@ function goMain() {
 
   const boot = await window.launcher.bootResult();
   const s = (boot && boot.settings) || (await window.launcher.getSettings());
-  if (!s.ownershipConfirmed) show('own');
+  renderProfile(s.account);
+  const configured = await window.launcher.googleConfigured();
+  const loggedIn = s.account && (!s.account.guest || !configured);
+  if (!loggedIn) show('login');
+  else if (!s.ownershipConfirmed) show('own');
   else if (!s.gamePath) goGameSetup();
   else {
     show('main');
