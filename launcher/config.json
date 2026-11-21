@@ -9,8 +9,25 @@
     "clientSecret": ""
   },
   "news": [
-    { "tag": "NOVO", "title": "OSRP Launcher V1", "text": "Prva verzija OSRP launchera je izašla. Dobrodošli u Osijek Roleplay!" },
-    { "tag": "INFO", "title": "Pravila servera", "text": "Prije igranja pročitaj pravila na našem Discordu." },
-    { "tag": "EVENT", "title": "Otvorenje grada", "text": "Pridruži se otvorenju grada Osijeka i upoznaj ekipu." }
+    {
+      "tag": "UPDATE",
+      "title": "OSRP Launcher v1.0.1",
+      "text": "Server je online! Pritisni IGRAJ i uđi u Osijek."
+    },
+    {
+      "tag": "NOVO",
+      "title": "OSRP Launcher V1",
+      "text": "Prva verzija OSRP launchera je izašla. Dobrodošli u Osijek Roleplay!"
+    },
+    {
+      "tag": "INFO",
+      "title": "Pravila servera",
+      "text": "Prije igranja pročitaj pravila na našem Discordu."
+    },
+    {
+      "tag": "EVENT",
+      "title": "Otvorenje grada",
+      "text": "Pridruži se otvorenju grada Osijeka i upoznaj ekipu."
+    }
   ]
 }

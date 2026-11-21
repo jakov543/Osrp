@@ -415,7 +415,7 @@ function createMain() {
 }
 
 // ---------- IPC ----------
-const APP_VERSION = require('./package.json').version; // stays 1.0.0 (V1)
+const APP_VERSION = require('./package.json').version; // V1 line (1.0.x)
 ipcMain.handle('app:info', () => ({ version: APP_VERSION, config: APP_CONFIG, stores: STORE_LINKS }));
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('ownership:confirm', () => saveSettings({ ...loadSettings(), ownershipConfirmed: true }));

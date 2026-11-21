@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.0 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.1 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -121,8 +121,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.1
+git push origin v1.0.1
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
