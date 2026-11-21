@@ -112,8 +112,12 @@ async function accountApi(method, route, body, token) {
     try { data = await res.json(); } catch { data = null; }
     if (!data) return { ok: false, status: res.status, error: res.status === 404 ? 'Sustav računa nije uključen na serveru (osrp_accounts).' : 'Greška servera.' };
     return { ...data, status: res.status };
-  } catch {
-    return { ok: false, offline: true, error: `Ne mogu se spojiti na server ${serverAddress()}. Je li server upaljen? (Promijeni server ispod)` };
+  } catch (e) {
+    const code = (e && e.cause && e.cause.code) || (e && e.name) || 'unknown';
+    const why = code === 'AbortError' ? 'server ne odgovara (timeout)'
+      : code === 'ECONNREFUSED' ? 'veza odbijena'
+      : code === 'ECONNRESET' ? 'veza prekinuta' : code;
+    return { ok: false, offline: true, error: `Ne mogu se spojiti na ${serverAddress()} (${why}). Provjeri je li server upaljen i ima li osrp_accounts.` };
   } finally {
     clearTimeout(t);
   }
@@ -401,8 +405,14 @@ async function accountAuth(kind, username, password) {
     saveSettings({ ...loadSettings(), account: { name: r.username, token: r.token } });
     return { ok: true, account: { name: r.username } };
   }
-  return { ok: false, error: r.error || 'Greška.' };
+  return { ok: false, offline: !!r.offline, error: r.error || 'Greška.' };
 }
+// When the account server can't be reached, players can still play (FiveM connects separately)
+ipcMain.handle('account:guest', (_e, name) => {
+  const n = /^[A-Za-z0-9_]{3,16}$/.test(String(name || '')) ? String(name) : 'Gost';
+  saveSettings({ ...loadSettings(), account: { name: n, guest: true } });
+  return { ok: true, account: { name: n } };
+});
 ipcMain.handle('account:login', (_e, u, p) => accountAuth('login', String(u || ''), String(p || '')));
 ipcMain.handle('account:register', (_e, u, p) => accountAuth('register', String(u || ''), String(p || '')));
 ipcMain.handle('account:logout', async () => {
@@ -414,6 +424,7 @@ ipcMain.handle('account:logout', async () => {
 // Checks the saved session with the server. Offline server = keep the saved login.
 ipcMain.handle('account:check', async () => {
   const s = loadSettings();
+  if (s.account && s.account.guest) return { loggedIn: true, account: { name: s.account.name, guest: true } };
   if (!s.account || !s.account.token) return { loggedIn: false };
   const r = await accountApi('GET', '/me', null, s.account.token);
   if (r.ok) return { loggedIn: true, account: { name: r.username } };

@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('launcher', {
   login: (u, p) => ipcRenderer.invoke('account:login', u, p),
   register: (u, p) => ipcRenderer.invoke('account:register', u, p),
   logout: () => ipcRenderer.invoke('account:logout'),
+  guest: (name) => ipcRenderer.invoke('account:guest', name),
   checkAccount: () => ipcRenderer.invoke('account:check'),
   openLink: (url) => ipcRenderer.invoke('link:open', url),
   minimize: () => ipcRenderer.send('win:minimize'),

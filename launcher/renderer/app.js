@@ -42,7 +42,12 @@ async function initLogin() {
     $('btnAuth').classList.add('loading');
     const r = authMode === 'register' ? await window.launcher.register(user, pass) : await window.launcher.login(user, pass);
     $('btnAuth').classList.remove('loading');
-    if (!r.ok) { $('loginErr').textContent = r.error; return; }
+    if (!r.ok) {
+      $('loginErr').textContent = r.error;
+      $('btnGuest').hidden = !r.offline;
+      return;
+    }
+    $('btnGuest').hidden = true;
     $('authPass').value = '';
     $('authPass2').value = '';
     afterLogin();
@@ -59,6 +64,11 @@ async function initLogin() {
     $('loginErr').textContent = '';
     $('loginAddrEdit').hidden = true;
     showAddr();
+  });
+  $('btnGuest').addEventListener('click', async () => {
+    await window.launcher.guest($('authUser').value.trim());
+    $('btnGuest').hidden = true;
+    afterLogin();
   });
   $('btnLogout').addEventListener('click', async () => {
     await window.launcher.logout();
@@ -78,7 +88,7 @@ async function afterLogin() {
 function renderProfile(acc) {
   const name = (acc && acc.name) || '—';
   $('pName').textContent = name;
-  $('pEmail').textContent = 'OSRP račun';
+  $('pEmail').textContent = acc && acc.guest ? 'Bez računa' : 'OSRP račun';
   $('avatar').textContent = name[0] ? name[0].toUpperCase() : '?';
 }
 
