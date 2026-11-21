@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.12 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.13 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.12
-git push origin v1.0.12
+git tag v1.0.13
+git push origin v1.0.13
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -187,6 +187,14 @@ v1.0.12 – **water, landmarks, HUD, logo**:
 - **new HUD** (`osrp_framework/client/hud.lua`): money and job card, street + zone + compass next to the minimap (real Osijek street names from `osrp_osijek/streets.lua`), speedometer with RPM, gear, fuel and engine
 - **new OSRP logo** (shield with the cathedral and the Drava) in the launcher, installer icon, loading screen and HUD; sources in `branding/`
 - the map export is ~30x faster (`tools/make_layout.py` writes `layout.lua`)
+
+v1.0.13 – **textures and roads**:
+- new texture generator `map/blender/osrp_textures.py`: seamless **1024 px textures with normal maps** (asphalt with aggregate and cracks, cobblestone on the Tvrđa square, paving slabs, granite curbs, brick, roof tiles, slate, stucco plaster, stone, grass, gravel, wood, cast iron)
+- all textures live in **one shared `osijek_txd.ytd`** (before: every chunk embedded its own copies), so the map is sharper and still ~20 MB
+- roads: double solid centre line, dashed lane lines and edge lines on Europska avenija, centre lines on the side streets, stop lines, manhole covers and drains
+- sidewalks along all side streets (blocks moved back 3 m), trees in the courtyards
+- **roads no longer vanish at the city edges**: long pieces are cut at the 100 m chunk lines (96 chunks), LOD distance 750 m
+- `xml2gta verify` now checks that every texture a chunk uses exists in the shared .ytd
 
 ![map](map/blender/preview_minimap.png)
 

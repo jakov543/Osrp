@@ -27,7 +27,7 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(argv[0] if argv else os.path.join(HERE, "export"))
 TEX = os.path.join(OUT, "_textures")
 CHUNK = 100.0
-LOD_DIST = 600.0
+LOD_DIST = 750.0
 os.makedirs(TEX, exist_ok=True)
 
 # ---------------------------------------------------------------- 1. city
@@ -97,6 +97,9 @@ RECIPES = {
     "road_line":      (0.15, 0.5, [], 2.0, "TARMAC_PAINTED"),
     "pavement":       (0.35, 0.6, grid(64), 2.0, "CONCRETE_PAVEMENT"),
     "curb":           (0.30, 0.6, grid(128, color="#00000040"), 1.0, "CONCRETE_PAVEMENT"),
+    "cobble":         (0.30, 0.6, [], 2.0, "COBBLESTONE"),
+    "manhole":        (0.30, 0.6, [], 1.0, "METAL_SOLID_SMALL"),
+    "plinth_stone":   (0.30, 0.6, [], 2.0, "STONE"),
     "gravel_path":    (0.80, 0.3, [], 2.0, "GRAVEL_SMALL"),
     "grass":          (0.70, 0.8, [], 3.0, "GRASS"),
     "park_grass":     (0.70, 0.8, [], 3.0, "GRASS"),
@@ -140,25 +143,46 @@ def make_texture(path, hexcol, strength, blur, extra, seed):
     subprocess.run(cmd, check=True)
 
 
+sys.path.insert(0, HERE)
+import osrp_textures  # noqa: E402  (v1.0.13: 1024px seamless textures + normal maps)
+
+
+def find_node(mat, name):
+    for n in mat.node_tree.nodes:
+        if n.bl_idname == "ShaderNodeTexImage" and n.name == name:
+            return n
+    return None
+
+
 new_mats, mat_tile, mat_col = {}, {}, {}
 for seed, mat in enumerate(sorted({m for o in objs for m in o.data.materials if m}, key=lambda m: m.name)):
     r, g, b = (to_srgb(c) for c in mat.diffuse_color[:3])
-    hexcol = "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
+    rgb = (int(r * 255), int(g * 255), int(b * 255))
+    hexcol = "#%02x%02x%02x" % rgb
     tex_name = "osrp_" + mat.name.replace("osrp_", "")[:40]
-    dds = os.path.join(TEX, tex_name + ".dds")
     strength, blur, extra, tile, colname = recipe_for(mat.name)
+    ndds = None
     if "lamp_light" in mat.name:
+        dds = os.path.join(TEX, tex_name + ".dds")
         subprocess.run(["convert", "-size", "16x16", "xc:" + hexcol, "-define", "dds:compression=dxt1", dds], check=True)
     else:
-        make_texture(dds, hexcol, strength, blur, extra, seed + 7)
+        dds, ndds, tile = osrp_textures.build(tex_name, rgb, seed + 7, TEX)
     img = bpy.data.images.load(dds)
     img.name = tex_name
-    shader = "emissive.sps" if "lamp_light" in mat.name else "default.sps"
+    shader = "emissive.sps" if "lamp_light" in mat.name else ("normal.sps" if ndds else "default.sps")
     sm = create_shader(shader)
     sm.name = "sz_" + mat.name
-    node = find_sampler(sm)
+    node = find_node(sm, "DiffuseSampler") or find_sampler(sm)
     node.image = img
     node.texture_properties.embedded = True
+    if ndds:
+        bump = find_node(sm, "BumpSampler")
+        if bump:
+            nimg = bpy.data.images.load(ndds)
+            nimg.name = tex_name + "_n"
+            nimg.colorspace_settings.name = "Non-Color"
+            bump.image = nimg
+            bump.texture_properties.embedded = True
     new_mats[mat.name] = sm
     mat_tile[sm.name] = tile
     mat_col[sm.name] = colname
@@ -292,5 +316,43 @@ bpy.ops.sollumz.export_assets(directory=OUT + os.sep)
 
 with open(os.path.join(OUT, "osijek_layout.json"), "w") as f:
     json.dump(layout, f, indent=1)
+
+
+# ---------------------------------------------------------------- 6. one shared texture dictionary (osijek_txd.ytd)
+# Every chunk used to embed its own copy of the textures (791 copies). Now all chunks point to one .ytd,
+# so the textures can be big (1024 px + normal maps) and the map is still smaller.
+def share_txd(out, txd="osijek_txd"):
+    import re
+    import shutil
+    folder = os.path.join(out, txd)
+    os.makedirs(folder, exist_ok=True)
+    for f in os.listdir(TEX):
+        if f.endswith(".dds"):
+            shutil.copy(os.path.join(TEX, f), folder)
+    items = []
+    for f in sorted(os.listdir(folder)):
+        items.append(
+            "  <Item>\n    <Name>%s</Name>\n    <Unk32 value=\"0\" />\n    <Usage>UNKNOWN</Usage>\n"
+            "    <ExtraFlags value=\"0\" />\n    <Width value=\"0\" />\n    <Height value=\"0\" />\n"
+            "    <MipLevels value=\"0\" />\n    <Format>D3DFMT_DXT1</Format>\n    <FileName>%s</FileName>\n  </Item>" % (f[:-4], f))
+    with open(os.path.join(out, txd + ".ytd.xml"), "w", encoding="utf-8") as fh:
+        fh.write('<?xml version="1.0" encoding="UTF-8"?>\n<TextureDictionary>\n' + "\n".join(items) + "\n</TextureDictionary>\n")
+    for f in os.listdir(out):
+        p = os.path.join(out, f)
+        if f.endswith(".ydr.xml"):
+            x = open(p, encoding="utf-8").read()
+            x = re.sub(r"\s*<TextureDictionary>.*?</TextureDictionary>", "", x, count=1, flags=re.S)
+            open(p, "w", encoding="utf-8").write(x)
+            d = p[:-len(".ydr.xml")]
+            if os.path.isdir(d):
+                shutil.rmtree(d)
+        elif f.endswith(".ytyp.xml"):
+            x = open(p, encoding="utf-8").read()
+            x = re.sub(r"<textureDictionary>[^<]*</textureDictionary>", f"<textureDictionary>{txd}</textureDictionary>", x)
+            open(p, "w", encoding="utf-8").write(x)
+    print(f"[OSRP] shared texture dictionary {txd}.ytd: {len(items)} textures")
+
+
+share_txd(OUT)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "osijek_sollumz.blend"))
 print(f"[OSRP] DONE -> {OUT}")

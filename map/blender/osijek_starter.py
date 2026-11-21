@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.12)
+OSRP - Osijek starter map for Blender (V1.0.13)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -80,8 +80,29 @@ def _mesh_obj(col, name, verts, faces, mat):
 _BOX_FACES = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
 
 
+GRID = 100.0   # must match CHUNK in osijek_export_gta.py
+
+
+def _cuts(c, half):
+    """split [c-half, c+half] at multiples of GRID -> list of (centre, half)"""
+    a0, a1 = c - half, c + half
+    pts = [a0] + [k * GRID for k in range(math.floor(a0 / GRID) + 1, math.ceil(a1 / GRID)) if a0 < k * GRID < a1] + [a1]
+    return [((p + q) / 2, (q - p) / 2) for p, q in zip(pts, pts[1:]) if q - p > 1e-3]
+
+
 def box(col, name, loc, size, mat, rot_z=0.0):
-    """loc = center of the bottom face, size = full (x, y, z) in meters"""
+    """loc = center of the bottom face, size = full (x, y, z) in meters.
+    v1.0.13: long axis-aligned boxes are cut at the 100 m chunk lines, so every piece streams with its own chunk
+    (a 1100 m road in one chunk vanished at the city edges)"""
+    if rot_z == 0.0 and (size[0] > GRID or size[1] > GRID):
+        for i, (cx, hx) in enumerate(_cuts(loc[0], size[0] / 2)):
+            for j, (cy, hy) in enumerate(_cuts(loc[1], size[1] / 2)):
+                _box(col, f"{name}_{i}_{j}", (cx, cy, loc[2]), (hx * 2, hy * 2, size[2]), mat)
+        return None
+    return _box(col, name, loc, size, mat, rot_z)
+
+
+def _box(col, name, loc, size, mat, rot_z=0.0):
     sx, sy, sz = size[0] / 2, size[1] / 2, size[2]
     c, s_ = math.cos(rot_z), math.sin(rot_z)
     verts = []
@@ -92,6 +113,15 @@ def box(col, name, loc, size, mat, rot_z=0.0):
 
 
 def plane(col, name, loc, size, mat):
+    if size[0] > GRID or size[1] > GRID:
+        for i, (cx, hx) in enumerate(_cuts(loc[0], size[0] / 2)):
+            for j, (cy, hy) in enumerate(_cuts(loc[1], size[1] / 2)):
+                _plane(col, f"{name}_{i}_{j}", (cx, cy, loc[2]), (hx * 2, hy * 2), mat)
+        return None
+    return _plane(col, name, loc, size, mat)
+
+
+def _plane(col, name, loc, size, mat):
     sx, sy = size[0] / 2, size[1] / 2
     verts = [(loc[0] - sx, loc[1] - sy, loc[2]), (loc[0] + sx, loc[1] - sy, loc[2]),
              (loc[0] + sx, loc[1] + sy, loc[2]), (loc[0] - sx, loc[1] + sy, loc[2])]
@@ -185,6 +215,8 @@ M_WALK = material("osrp_pavement", (0.50, 0.49, 0.46))
 M_CURB = material("osrp_curb", (0.62, 0.61, 0.58))
 M_PATH = material("osrp_gravel_path", (0.62, 0.55, 0.42))
 M_STONE = material("osrp_river_stone", (0.40, 0.38, 0.35))
+M_COBBLE = material("osrp_cobble", (0.47, 0.44, 0.40))
+M_IRON = material("osrp_manhole", (0.16, 0.16, 0.16), rough=0.6, metal=0.6)
 M_WATER = material("osrp_drava_water", (0.07, 0.20, 0.23), rough=0.05)
 M_BRICK = material("osrp_red_brick", (0.45, 0.14, 0.09))
 M_ROOF = material("osrp_roof_tiles", (0.42, 0.13, 0.07))
@@ -283,10 +315,34 @@ plane(col, "osrp_promenada", (0, PROM_Y, 0.12), (MAP_W, 16), M_WALK)
 # Europska avenija (y = 0): asphalt, dashed lines, curbs, sidewalks
 plane(col, "osrp_europska_avenija", (0, 0, 0.1), (MAP_W, ROAD_W), M_ROAD)
 CROSS_X = [-450, -300, -150, 0, 150, 300, 450]
-for i, x in enumerate(range(-545, 550, 12)):
-    if any(abs(x - cx) < 12 for cx in CROSS_X):
-        continue  # clean intersections
-    box(col, f"osrp_crta_{i}", (x, -0.1, 0.1), (5, 0.18, 0.02), M_LINE)
+
+
+def clear_of_cross_early(x, gap):
+    return all(abs(x - cx) >= gap for cx in CROSS_X)
+
+
+def open_segments_gap(x0, x1, gap_half):
+    cuts, segs, start = sorted(CROSS_X), [], x0
+    for cx in cuts:
+        if cx - gap_half > start:
+            segs.append((start, cx - gap_half))
+        start = max(start, cx + gap_half)
+    if start < x1:
+        segs.append((start, x1))
+    return segs
+
+
+# v1.0.13 road markings: double solid centre line, dashed lane lines, solid edge lines (gaps at intersections)
+for k, (a, b) in enumerate(open_segments_gap(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2 + 6)):
+    for off in (-0.18, 0.18):
+        box(col, f"osrp_crta_sred_{k}_{off}", ((a + b) / 2, off, 0.1), (b - a, 0.14, 0.02), M_LINE)
+    for side in (-1, 1):
+        box(col, f"osrp_crta_rub_{k}_{side}", ((a + b) / 2, side * (ROAD_W / 2 - 0.45), 0.1), (b - a, 0.16, 0.02), M_LINE)
+        xx = a + 3
+        n = 0
+        while xx + 3 < b:
+            box(col, f"osrp_crta_traka_{k}_{side}_{n}", (xx + 1.5, side * 3.9, 0.1), (3.0, 0.13, 0.02), M_LINE)
+            xx += 9; n += 1
 def open_segments(x0, x1, gap_half):
     """x ranges between the cross streets, so curbs/sidewalks leave the intersections open for cars"""
     cuts = sorted(CROSS_X)
@@ -346,6 +402,39 @@ for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
     for side in (-1, 1):
         for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)):
             box(col, f"osrp_rubnik_{name}_{side}_{k}", ((a + b) / 2, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.1), (b - a, 0.3, 0.18), M_CURB)
+            # v1.0.13: sidewalk along the side street (between the cross-street sidewalks)
+            sa, sb = a + 2.8, b - 2.8
+            if sb > sa:
+                box(col, f"osrp_plocnik_{name}_{side}_{k}", ((sa + sb) / 2, yc + side * (SIDE_ROAD_W / 2 + 1.55), 0.1), (sb - sa, 2.5, 0.16), M_WALK)
+    # dashed centre line
+    for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2 + 4)):
+        xx, n = a + 2, 0
+        while xx + 3 < b:
+            box(col, f"osrp_crta_{name}_{k}_{n}", (xx + 1.5, yc, 0.1), (3.0, 0.13, 0.02), M_LINE)
+            xx += 7; n += 1
+
+# stop lines: cross streets before the avenue (right lane) and the avenue before each crossing
+for i, x in enumerate(CROSS_X):
+    box(col, f"osrp_stop_p_s_{i}", (x - SIDE_ROAD_W / 4, ROAD_W / 2 + 11.2, 0.1), (SIDE_ROAD_W / 2 - 0.3, 0.45, 0.02), M_LINE)
+    box(col, f"osrp_stop_p_j_{i}", (x + SIDE_ROAD_W / 4, -ROAD_W / 2 - 11.2, 0.1), (SIDE_ROAD_W / 2 - 0.3, 0.45, 0.02), M_LINE)
+    box(col, f"osrp_stop_av_w_{i}", (x - SIDE_ROAD_W / 2 - 4.6, -ROAD_W / 4, 0.1), (0.45, ROAD_W / 2 - 0.6, 0.02), M_LINE)
+    box(col, f"osrp_stop_av_e_{i}", (x + SIDE_ROAD_W / 2 + 4.6, ROAD_W / 4, 0.1), (0.45, ROAD_W / 2 - 0.6, 0.02), M_LINE)
+
+# manhole covers in the lanes and rain drains along the kerbs
+mh = 0
+for x in range(-520, 521, 45):
+    if clear_of_cross_early(x, 14):
+        cylinder(col, f"osrp_sahta_av_{mh}", (x, 2.0 if mh % 2 else -2.0, 0.1), 0.36, 0.025, M_IRON, verts=12); mh += 1
+for yc in (-350, -180, 125):
+    for x in range(-505, 506, 60):
+        if clear_of_cross_early(x, 12):
+            cylinder(col, f"osrp_sahta_{yc}_{mh}", (x, yc + 2.4, 0.1), 0.36, 0.025, M_IRON, verts=12); mh += 1
+dr = 0
+for x in range(-530, 531, 24):
+    if clear_of_cross_early(x, 10):
+        for side in (-1, 1):
+            box(col, f"osrp_slivnik_{dr}_{side}", (x, side * (ROAD_W / 2 - 0.18), 0.1), (0.9, 0.36, 0.024), M_IRON)
+        dr += 1
 
 # Street lights: avenue both sides every 30 m, promenade every 25 m
 li = 0
@@ -363,7 +452,7 @@ for x in range(-535, 536, 25):
 
 # Tvrđa square + cathedral (east)
 TV_X, TV_Y = 225, 62
-plane(col, "osrp_tvrdja_trg", (TV_X, TV_Y, 0.14), (120, 95), M_WALK)
+plane(col, "osrp_tvrdja_trg", (TV_X, TV_Y, 0.14), (120, 95), M_COBBLE)
 # Co-cathedral of St. Peter and Paul: neo-gothic red brick, 90+ m tower with spire
 NAVE_Y = TV_Y + 16
 box(col, "osrp_katedrala_brod", (TV_X, NAVE_Y, 0), (20, 52, 24), M_BRICK)
@@ -485,7 +574,7 @@ def fake_entrance(name, cx, y_front, facing):
 # City blocks: buildings with windows + pitched roofs (every 3rd one can be entered)
 bid = 0
 for bx in range(len(CROSS_X) - 1):
-    for (y0, y1) in [(-345, -185), (-175, -16), (16, 120)]:
+    for (y0, y1) in [(-342.2, -187.8), (-172.2, -16), (16, 117.2)]:
         x0 = CROSS_X[bx] + SIDE_ROAD_W / 2 + 3
         x1 = CROSS_X[bx + 1] - SIDE_ROAD_W / 2 - 3
         if x1 > TV_X - 60 and x0 < TV_X + 60 and y1 > 0:      # Tvrđa square
@@ -518,6 +607,11 @@ for bx in range(len(CROSS_X) - 1):
                 gable_roof(col, f"osrp_krov_{bid}_{side}", cx, cy, h, w - 1, d, random.uniform(3.5, 5.5), M_ROOF)
             bid += 1
             x += w
+        # v1.0.13: courtyard trees behind the buildings (real GTA trees in-game)
+        for k in range(int((x1 - x0) / 22)):
+            tx = random.uniform(x0 + 6, x1 - 6)
+            ty = random.uniform(y0 + 25, y1 - 25)
+            tree(col, f"park_dvor_{bx}_{int(y0)}_{k}", tx, ty, random.uniform(0.9, 1.3))
 
 # Pedestrian bridge over the Drava (Pješački most) - deck level with the banks, you can walk on it
 BR_X = -80
@@ -611,6 +705,7 @@ MAPRECTS[:0] = [
 MAPRECTS += [("road", 0, 0, MAP_W, ROAD_W), ("road", 0, -180, MAP_W, SIDE_ROAD_W),
              ("road", 0, -350, MAP_W, SIDE_ROAD_W), ("road", 0, 125, MAP_W, SIDE_ROAD_W)]
 MAPRECTS += [("road", x, -112.5, SIDE_ROAD_W, 475) for x in CROSS_X]
+MAPRECTS += [("walk", 0, yc + sd * (SIDE_ROAD_W / 2 + 1.55), MAP_W, 2.5) for yc in (-350, -180, 125) for sd in (-1, 1)]
 
 LANDMARKS = [("Tvrđa - Konkatedrala", TV_X, TV_Y - 20), ("Trg Svetog Trojstva", PIL_X, PIL_Y),
              ("Gradski park", PCX, PCY), ("Pješački most", BR_X, RIVER_Y), ("Promenada uz Dravu", 0, PROM_Y),
@@ -652,4 +747,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.12: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.13: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
