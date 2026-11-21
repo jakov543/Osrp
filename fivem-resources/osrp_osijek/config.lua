@@ -9,3 +9,11 @@ Config.Origin = vector3(5500.0, -1500.0, 30.0)
 Config.SpawnOffset = vector4(175.0, -11.0, 1.0, 90.0)
 
 Config.StreamDistance = 900.0   -- chunks appear within this distance
+
+-- Real GTA V trees per area (the first model that exists in your GTA version is used, so nothing breaks)
+Config.TreeModels = {
+    av   = { 'prop_tree_birch_01', 'prop_tree_maple_02', 'prop_tree_birch_02' },   -- Europska avenija
+    prom = { 'prop_tree_birch_02', 'prop_tree_birch_01', 'prop_tree_maple_02' },   -- promenada uz Dravu
+    park = { 'prop_tree_oak_01', 'prop_tree_maple_02', 'prop_tree_cedar_02', 'prop_tree_birch_01' },
+    trg  = { 'prop_tree_maple_02', 'prop_tree_birch_01' },                         -- Tvrđa
+}

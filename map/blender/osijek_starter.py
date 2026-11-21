@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.4)
+OSRP - Osijek starter map for Blender (V1.0.9)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -196,7 +196,11 @@ def street_light(col, i, x, y, facing):
     box(col, f"osrp_lampa_svjetlo_{i}", (x, y + facing * 1.55, 6.65), (0.45, 0.7, 0.2), M_LAMP)
 
 
+TREES = []   # (x, y, scale, kind) - the GTA export swaps these for real GTA V tree props
+
+
 def tree(col, i, x, y, scale=1.0):
+    TREES.append((round(x, 2), round(y, 2), round(scale, 2), str(i).split("_")[0]))
     h = random.uniform(3.2, 4.5) * scale
     cylinder(col, f"osrp_drvo_deblo_{i}", (x, y, 0), 0.22 * scale, h, M_TRUNK, verts=8)
     for k in range(3):
@@ -243,16 +247,35 @@ for i, x in enumerate(range(-395, 400, 12)):
     if any(abs(x - cx) < 12 for cx in CROSS_X):
         continue  # clean intersections
     box(col, f"osrp_crta_{i}", (x, -0.1, 0.1), (5, 0.18, 0.02), M_LINE)
+def open_segments(x0, x1, gap_half):
+    """x ranges between the cross streets, so curbs/sidewalks leave the intersections open for cars"""
+    cuts = sorted(CROSS_X)
+    segs, start = [], x0
+    for cx in cuts:
+        a, b = cx - gap_half, cx + gap_half
+        if a > start:
+            segs.append((start, a))
+        start = max(start, b)
+    if start < x1:
+        segs.append((start, x1))
+    return segs
+
+
 for side in (-1, 1):
     y_edge = side * (ROAD_W / 2)
-    box(col, f"osrp_rubnik_{side}", (0, y_edge + side * 0.15, 0.1), (MAP_W, 0.3, 0.18), M_CURB)
-    box(col, f"osrp_plocnik_av_{side}", (0, y_edge + side * 3.3, 0.1), (MAP_W, 6, 0.16), M_WALK)
+    for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)):
+        box(col, f"osrp_rubnik_{side}_{k}", ((a + b) / 2, y_edge + side * 0.15, 0.1), (b - a, 0.3, 0.18), M_CURB)
+        box(col, f"osrp_plocnik_av_{side}_{k}", ((a + b) / 2, y_edge + side * 3.3, 0.1), (b - a, 6, 0.16), M_WALK)
 
 # Side streets
 plane(col, "osrp_ulica_jug", (0, -180, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
 plane(col, "osrp_ulica_rijeka", (0, 125, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
 for i, x in enumerate(CROSS_X):
-    plane(col, f"osrp_ulica_poprecna_{i}", (x, -27, 0.12), (SIDE_ROAD_W, 316), M_ROAD)
+    # two separate pieces so the cross street never overlaps the avenue or the side streets (no flicker)
+    y_s0, y_s1 = -180 + SIDE_ROAD_W / 2, -ROAD_W / 2
+    y_n0, y_n1 = ROAD_W / 2, 125 - SIDE_ROAD_W / 2
+    plane(col, f"osrp_ulica_poprecna_{i}_j", (x, (y_s0 + y_s1) / 2, 0.1), (SIDE_ROAD_W, y_s1 - y_s0), M_ROAD)
+    plane(col, f"osrp_ulica_poprecna_{i}_s", (x, (y_n0 + y_n1) / 2, 0.1), (SIDE_ROAD_W, y_n1 - y_n0), M_ROAD)
     # sidewalks + curbs on both sides of every cross street (not across the avenue)
     for side in (-1, 1):
         xe = x + side * SIDE_ROAD_W / 2
@@ -263,7 +286,7 @@ for i, x in enumerate(CROSS_X):
         for k, yy in enumerate(range(-170, 120, 10)):
             if abs(yy) < ROAD_W / 2 + 7:
                 continue
-            box(col, f"osrp_crta_p_{i}_{k}_{side}", (x, yy, 0.12), (0.15, 4, 0.02), M_LINE) if side == 1 else None
+            box(col, f"osrp_crta_p_{i}_{k}_{side}", (x, yy, 0.1), (0.15, 4, 0.02), M_LINE) if side == 1 else None
     # zebra crossings over the avenue (both sides of the intersection)
     for zs in (-1, 1):
         zx = x + zs * (SIDE_ROAD_W / 2 + 2.5)
@@ -273,12 +296,13 @@ for i, x in enumerate(CROSS_X):
     for zs in (-1, 1):
         zy = zs * (ROAD_W / 2 + 9)
         for k in range(5):
-            box(col, f"osrp_zebra_p_{i}_{zs}_{k}", (x - SIDE_ROAD_W / 2 + 1 + k * 2, zy, 0.12), (0.9, 3.0, 0.02), M_LINE)
+            box(col, f"osrp_zebra_p_{i}_{zs}_{k}", (x - SIDE_ROAD_W / 2 + 1 + k * 2, zy, 0.1), (0.9, 3.0, 0.02), M_LINE)
 
 # curbs along the side streets (south street and river street)
 for name, yc in (("jug", -180), ("rijeka", 125)):
     for side in (-1, 1):
-        box(col, f"osrp_rubnik_{name}_{side}", (0, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.1), (MAP_W, 0.3, 0.18), M_CURB)
+        for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)):
+            box(col, f"osrp_rubnik_{name}_{side}_{k}", ((a + b) / 2, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.1), (b - a, 0.3, 0.18), M_CURB)
 
 # Street lights: avenue both sides every 30 m, promenade every 25 m
 li = 0
@@ -423,4 +447,4 @@ for i, x in enumerate((-225, -75, 75)):
 for i, x in enumerate(range(-350, 351, 50)):
     flower_bed(f"prom_{i}", x, PROM_Y - 0.5, 4.0, 1.2)
 
-print(f"[OSRP] Osijek map v1.0.4: {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.9: {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

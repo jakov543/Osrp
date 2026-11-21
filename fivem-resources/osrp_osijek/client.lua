@@ -48,6 +48,63 @@ CreateThread(function()
     end
 end)
 
+-- ---------- real GTA V trees ----------
+local treeObjs = {}
+local validCache = {}
+
+local function pickTree(kind, i)
+    local list = Config.TreeModels[kind] or Config.TreeModels.park
+    local valid = validCache[kind]
+    if not valid then
+        valid = {}
+        for _, m in ipairs(list) do
+            if IsModelInCdimage(joaat(m)) then valid[#valid + 1] = m end
+        end
+        validCache[kind] = valid
+    end
+    if #valid == 0 then return nil end
+    return valid[(i % #valid) + 1]   -- same tree every time, mixed along the street
+end
+
+CreateThread(function()
+    while true do
+        local pos = GetEntityCoords(PlayerPedId())
+        for i, t in ipairs(Trees) do
+            local p = vector3(Config.Origin.x + t.x, Config.Origin.y + t.y, Config.Origin.z + t.z)
+            local d = #(pos - p)
+            local obj = treeObjs[i]
+            if d < 400.0 then
+                if not obj or not DoesEntityExist(obj) then
+                    local model = pickTree(t.kind, i)
+                    if model then
+                        local hash = joaat(model)
+                        RequestModel(hash)
+                        local tm = GetGameTimer()
+                        while not HasModelLoaded(hash) and GetGameTimer() - tm < 5000 do Wait(0) end
+                        if HasModelLoaded(hash) then
+                            local o = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
+                            SetEntityHeading(o, (i * 47) % 360 + 0.0)
+                            FreezeEntityPosition(o, true)
+                            SetModelAsNoLongerNeeded(hash)
+                            treeObjs[i] = o
+                        end
+                    end
+                end
+            elseif obj and d > 450.0 then
+                DeleteObject(obj)
+                treeObjs[i] = nil
+            end
+        end
+        Wait(2000)
+    end
+end)
+
+AddEventHandler('onResourceStop', function(res)
+    if res == GetCurrentResourceName() then
+        for _, o in pairs(treeObjs) do if DoesEntityExist(o) then DeleteObject(o) end end
+    end
+end)
+
 AddEventHandler('onResourceStop', function(res)
     if res ~= GetCurrentResourceName() then return end
     for _, obj in pairs(spawned) do
