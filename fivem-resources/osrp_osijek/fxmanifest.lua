@@ -5,12 +5,12 @@ lua54 'yes'
 name 'osrp_osijek'
 author 'Bandera'
 description 'OSRP - custom Osijek city (Blender -> Sollumz), placed in the sea east of Los Santos'
-version '1.0.10'
+version '1.0.11'
 
 this_is_a_map 'yes'
 
 data_file 'DLC_ITYP_REQUEST' 'stream/osijek.ytyp'
 
 shared_scripts { 'config.lua', 'layout.lua' }
-client_script 'client.lua'
+client_scripts { 'client.lua', 'life.lua' }
 server_script 'server.lua'

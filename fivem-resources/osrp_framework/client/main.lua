@@ -76,11 +76,14 @@ RegisterNetEvent('osrp:spawn', function(data)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeCreator' })
     local p = data.pos
+    local s = Config.Spawn
+    if p and p.x and #(vector3(p.x, p.y, p.z) - vector3(s.x, s.y, s.z)) > (Config.CityRadius or 900.0) then
+        p = nil   -- last position was outside Osijek (e.g. Los Santos) -> spawn in the city
+    end
     if p and p.x then
         OSRP.SpawnAt(p.x, p.y, p.z, p.h or 0.0, data.sex)
         notify(('Dobrodošao natrag, ~g~%s %s~s~!'):format(data.firstname, data.lastname))
     else
-        local s = Config.Spawn
         OSRP.SpawnAt(s.x, s.y, s.z, s.w, data.sex)
         notify(('Dobrodošao na ~g~OSRP~s~, %s!'):format(data.firstname))
     end

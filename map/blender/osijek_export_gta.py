@@ -40,6 +40,8 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
     json.dump([{"x": t[0], "y": t[1], "s": t[2], "kind": t[3]} for t in city["TREES"]], f)
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
+with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES")}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
     json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4]} for m in city["FURNITURE"]], f)
 objs = [o for o in col.objects if o.type == "MESH"]

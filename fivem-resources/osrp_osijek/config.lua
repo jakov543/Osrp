@@ -33,3 +33,27 @@ Config.FurnitureModels = {
 
 Config.InteriorDistance = 120.0       -- doors/furniture appear within this distance
 Config.InteriorLight = true           -- warm ceiling light in each house (always on)
+
+-- ===================== city life (v1.0.11) =====================
+Config.CityRadius = 750.0           -- size of Osijek (metres from the centre)
+Config.DrawMap = true               -- draw Osijek (roads, buildings, Drava, park) on the minimap + pause map
+
+Config.ParkedCars = true
+Config.ParkedModels = { 'asea', 'premier', 'emperor', 'ingot', 'primo', 'stanier', 'blista', 'dilettante', 'panto', 'issi2', 'rhapsody', 'fugitive' }
+
+Config.SignModels = {
+    stop     = { 'prop_sign_road_01a', 'prop_sign_road_01b' },
+    semafor  = { 'prop_traffic_01a', 'prop_traffic_01b', 'prop_traffic_03a' },
+    pjesacki = { 'prop_sign_road_05a', 'prop_sign_road_03a', 'prop_sign_road_01a' },
+}
+
+Config.Pedestrians = true
+Config.PedCount = 26                -- NPCs walking / sitting around you
+Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_01', 'a_f_y_hipster_01', 'a_m_y_hipster_01',
+                     'a_f_m_bevhills_01', 'a_m_y_vinewood_01', 'a_f_y_tourist_01', 'a_m_m_skater_01', 'a_f_y_eastsa_01' }
+
+Config.Traffic = true
+Config.TrafficCount = 10            -- cars with drivers driving around the city
+Config.TrafficModels = { 'asea', 'premier', 'blista', 'ingot', 'stanier', 'tailgater', 'fugitive', 'primo', 'dilettante', 'emperor' }
+Config.TrafficSpeed = 11.0          -- m/s (about 40 km/h)
+Config.DrivingStyle = 786603        -- normal, careful driving

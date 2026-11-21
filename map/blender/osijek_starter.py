@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.10)
+OSRP - Osijek starter map for Blender (V1.0.11)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -210,8 +210,12 @@ def tree(col, i, x, y, scale=1.0):
         blob(col, f"osrp_drvo_krosnja_{i}_{k}", (x + ox, y + oy, oz), r, random.choice(M_LEAVES), squash=0.85)
 
 
+BENCHES = []   # (x, y, heading) - NPCs sit here
+
+
 def bench(col, i, x, y, back=1):
     """bench along x; back=+1 backrest on the +y side (you sit facing -y), back=-1 the other way"""
+    BENCHES.append((round(x, 2), round(y, 2), 180.0 if back == 1 else 0.0))
     box(col, f"osrp_klupa_sjed_{i}", (x, y, 0.42), (1.8, 0.45, 0.06), M_WOOD)
     box(col, f"osrp_klupa_nasl_{i}", (x, y + 0.22 * back, 0.6), (1.8, 0.06, 0.45), M_WOOD)
     for k, dx in enumerate((-0.8, 0.8)):
@@ -222,13 +226,13 @@ def bench(col, i, x, y, back=1):
 col = get_collection(COL_NAME)
 clear_collection(col)
 
-MAP_W = 800
+MAP_W = 1100                 # v1.0.11: bigger city (7 cross streets, 3 rows of blocks)
 RIVER_Y, RIVER_W = 220, 90
 ROAD_W = 16                      # Europska avenija: 4 lanes
 SIDE_ROAD_W = 10
 
 # Ground
-plane(col, "osrp_ground_south", (0, -70, 0), (MAP_W, 460), M_GRASS)
+plane(col, "osrp_ground_south", (0, -105, 0), (MAP_W, 530), M_GRASS)
 plane(col, "osrp_ground_north", (0, RIVER_Y + RIVER_W / 2 + 40, 0), (MAP_W, 80), M_GRASS)
 
 # Drava + stone banks
@@ -242,8 +246,8 @@ plane(col, "osrp_promenada", (0, PROM_Y, 0.12), (MAP_W, 16), M_WALK)
 
 # Europska avenija (y = 0): asphalt, dashed lines, curbs, sidewalks
 plane(col, "osrp_europska_avenija", (0, 0, 0.1), (MAP_W, ROAD_W), M_ROAD)
-CROSS_X = [-300, -150, 0, 150, 300]
-for i, x in enumerate(range(-395, 400, 12)):
+CROSS_X = [-450, -300, -150, 0, 150, 300, 450]
+for i, x in enumerate(range(-545, 550, 12)):
     if any(abs(x - cx) < 12 for cx in CROSS_X):
         continue  # clean intersections
     box(col, f"osrp_crta_{i}", (x, -0.1, 0.1), (5, 0.18, 0.02), M_LINE)
@@ -269,6 +273,7 @@ for side in (-1, 1):
 
 # Side streets
 plane(col, "osrp_ulica_jug", (0, -180, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
+plane(col, "osrp_ulica_jug2", (0, -350, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
 plane(col, "osrp_ulica_rijeka", (0, 125, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
 for i, x in enumerate(CROSS_X):
     # two separate pieces so the cross street never overlaps the avenue or the side streets (no flicker)
@@ -276,15 +281,17 @@ for i, x in enumerate(CROSS_X):
     y_n0, y_n1 = ROAD_W / 2, 125 - SIDE_ROAD_W / 2
     plane(col, f"osrp_ulica_poprecna_{i}_j", (x, (y_s0 + y_s1) / 2, 0.1), (SIDE_ROAD_W, y_s1 - y_s0), M_ROAD)
     plane(col, f"osrp_ulica_poprecna_{i}_s", (x, (y_n0 + y_n1) / 2, 0.1), (SIDE_ROAD_W, y_n1 - y_n0), M_ROAD)
+    y_j0, y_j1 = -350 + SIDE_ROAD_W / 2, -180 - SIDE_ROAD_W / 2
+    plane(col, f"osrp_ulica_poprecna_{i}_j2", (x, (y_j0 + y_j1) / 2, 0.1), (SIDE_ROAD_W, y_j1 - y_j0), M_ROAD)
     # sidewalks + curbs on both sides of every cross street (not across the avenue)
     for side in (-1, 1):
         xe = x + side * SIDE_ROAD_W / 2
-        for (ya, yb, tag) in ((-175, -ROAD_W / 2 - 6.3, "j"), (ROAD_W / 2 + 6.3, 120, "s")):
+        for (ya, yb, tag) in ((-345, -185, "j2"), (-175, -ROAD_W / 2 - 6.3, "j"), (ROAD_W / 2 + 6.3, 120, "s")):
             box(col, f"osrp_rubnik_p_{i}_{side}_{tag}", (xe + side * 0.15, (ya + yb) / 2, 0.1), (0.3, yb - ya, 0.18), M_CURB)
             box(col, f"osrp_plocnik_p_{i}_{side}_{tag}", (xe + side * 1.55, (ya + yb) / 2, 0.1), (2.5, yb - ya, 0.16), M_WALK)
         # dashed centre line
-        for k, yy in enumerate(range(-170, 120, 10)):
-            if abs(yy) < ROAD_W / 2 + 7:
+        for k, yy in enumerate(range(-340, 120, 10)):
+            if abs(yy) < ROAD_W / 2 + 7 or abs(yy + 180) < 8:
                 continue
             box(col, f"osrp_crta_p_{i}_{k}_{side}", (x, yy, 0.1), (0.15, 4, 0.02), M_LINE) if side == 1 else None
     # zebra crossings over the avenue (both sides of the intersection)
@@ -299,7 +306,7 @@ for i, x in enumerate(CROSS_X):
             box(col, f"osrp_zebra_p_{i}_{zs}_{k}", (x - SIDE_ROAD_W / 2 + 1 + k * 2, zy, 0.1), (0.9, 3.0, 0.02), M_LINE)
 
 # curbs along the side streets (south street and river street)
-for name, yc in (("jug", -180), ("rijeka", 125)):
+for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
     for side in (-1, 1):
         for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)):
             box(col, f"osrp_rubnik_{name}_{side}_{k}", ((a + b) / 2, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.1), (b - a, 0.3, 0.18), M_CURB)
@@ -310,12 +317,12 @@ def clear_of_cross(x, gap):
     return all(abs(x - cx) >= gap for cx in CROSS_X)
 
 
-for x in range(-390, 391, 30):
+for x in range(-540, 541, 30):
     if clear_of_cross(x, 8):
         street_light(col, li, x, ROAD_W / 2 + 1.2, -1); li += 1
     if clear_of_cross(x + 15, 8):
         street_light(col, li, x + 15, -ROAD_W / 2 - 1.2, 1); li += 1
-for x in range(-385, 386, 25):
+for x in range(-535, 536, 25):
     street_light(col, li, x, PROM_Y + 6.5, 1); li += 1
 
 # Tvrđa square + cathedral (east)
@@ -348,6 +355,7 @@ for k in range(26):
         continue
     tree(col, f"park_{k}", x, y, random.uniform(0.9, 1.4))
 
+MAPRECTS = []    # (kind, cx, cy, w, h) - drawn on the GTA minimap / pause map by osrp_osijek
 DOORS = []       # (x, y, z, heading) - real GTA V doors placed in-game by osrp_osijek
 FURNITURE = []   # (kind, x, y, z, heading) - real GTA V furniture placed in-game
 M_FLOOR = material("osrp_floor_wood", (0.45, 0.30, 0.17))
@@ -413,7 +421,7 @@ def fake_entrance(name, cx, y_front, facing):
 # City blocks: buildings with windows + pitched roofs (every 3rd one can be entered)
 bid = 0
 for bx in range(len(CROSS_X) - 1):
-    for (y0, y1) in [(-175, -16), (16, 120)]:
+    for (y0, y1) in [(-345, -185), (-175, -16), (16, 120)]:
         x0 = CROSS_X[bx] + SIDE_ROAD_W / 2 + 3
         x1 = CROSS_X[bx + 1] - SIDE_ROAD_W / 2 - 3
         if x1 > TV_X - 60 and x0 < TV_X + 60 and y1 > 0:      # Tvrđa square
@@ -431,6 +439,7 @@ for bx in range(len(CROSS_X) - 1):
             for side, yy, facing in (("a", y0, -1), ("b", y1 - d, 1)):
                 cx, cy = x + w / 2, yy + d / 2
                 street_face = yy if facing == -1 else yy + d
+                MAPRECTS.append(("bld", round(cx, 1), round(cy, 1), round(w - 1, 1), round(d, 1)))
                 if bid % 3 == 0:
                     house_enterable(f"osrp_kuca_{bid}_{side}", cx, cy, w - 1, d, h, mat, facing)
                     # windows only from the 1st floor up (the ground floor has the door)
@@ -458,13 +467,13 @@ for side in (-1, 1):
         box(col, f"osrp_most_sajla_{side}_{k}", (BR_X + side * 2.3, yy, 3.5), (0.06, 0.06, max(0.5, top - 3.5)), M_STEEL)
 
 # Promenade: lindens with benches between them
-for i, x in enumerate(range(-380, 381, 25)):
+for i, x in enumerate(range(-530, 531, 25)):
     tree(col, f"prom_{i}", x + 12, PROM_Y - 4, 1.0)
     if i % 2 == 0:
         bench(col, i, x + 12, PROM_Y + 1.5)
 
 # Trees along the avenue sidewalks (between lamps)
-for i, x in enumerate(range(-375, 376, 30)):
+for i, x in enumerate(range(-525, 526, 30)):
     if clear_of_cross(x, 10):
         tree(col, f"av_s_{i}", x, -ROAD_W / 2 - 5.2, 0.8)
     if clear_of_cross(x + 15, 10):
@@ -508,12 +517,64 @@ cylinder(col, "osrp_fontana_stup", (FX, FY, 0.7), 0.35, 1.8, M_WHITE_STONE, vert
 cylinder(col, "osrp_fontana_zdjela", (FX, FY, 2.5), 1.2, 0.3, M_WHITE_STONE, verts=16)
 
 # Bus stops on Europska avenija
-for i, x in enumerate((-225, -75, 75)):
+for i, x in enumerate((-375, -225, -75, 75, 375)):
     bus_stop(i, x, -ROAD_W / 2 - 3.6, 1)
     bus_stop(i + 10, x + 40, ROAD_W / 2 + 3.6, -1)
 
 # Flower beds along the promenade
-for i, x in enumerate(range(-350, 351, 50)):
+for i, x in enumerate(range(-500, 501, 50)):
     flower_bed(f"prom_{i}", x, PROM_Y - 0.5, 4.0, 1.2)
 
-print(f"[OSRP] Osijek map v1.0.10: {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+
+# ---------------------------------------------------------------- city life data (used in-game by osrp_osijek)
+HALF = MAP_W / 2
+MAPRECTS[:0] = [
+    ("land", 0, -105, MAP_W, 530), ("land", 0, RIVER_Y + RIVER_W / 2 + 40, MAP_W, 80),
+    ("water", 0, RIVER_Y, MAP_W, RIVER_W), ("walk", 0, PROM_Y, MAP_W, 16),
+    ("park", PCX, PCY, PARK_X1 - PARK_X0, PARK_Y1 - PARK_Y0), ("square", TV_X, TV_Y, 120, 95),
+]
+MAPRECTS += [("road", 0, 0, MAP_W, ROAD_W), ("road", 0, -180, MAP_W, SIDE_ROAD_W),
+             ("road", 0, -350, MAP_W, SIDE_ROAD_W), ("road", 0, 125, MAP_W, SIDE_ROAD_W)]
+MAPRECTS += [("road", x, -112.5, SIDE_ROAD_W, 475) for x in CROSS_X]
+
+LANDMARKS = [("Tvrđa - Konkatedrala", TV_X, TV_Y - 20), ("Trg Svetog Trojstva", PIL_X, PIL_Y),
+             ("Gradski park", PCX, PCY), ("Pješački most", BR_X, RIVER_Y), ("Promenada uz Dravu", 0, PROM_Y),
+             ("Europska avenija", -250, 0)]
+
+PARKING = []        # (x, y, heading) parked cars along the curbs of the cross streets
+SIGNS = []          # (kind, x, y, heading)
+for i, x in enumerate(CROSS_X):
+    if abs(x) == 450:
+        continue        # the outer streets carry the traffic loops
+    for (ya, yb) in ((-340, -190), (-170, -30), (30, 115)):
+        for yy in range(int(ya) + 6, int(yb) - 6, 7):
+            if random.random() < 0.55:
+                PARKING.append((x + SIDE_ROAD_W / 2 - 1.3, yy, 0.0))      # east kerb, facing north
+            if random.random() < 0.55:
+                PARKING.append((x - SIDE_ROAD_W / 2 + 1.3, yy, 180.0))    # west kerb, facing south
+for x in CROSS_X:
+    # stop signs where the cross streets meet the avenue, traffic lights on the avenue corners
+    SIGNS.append(("stop", x + SIDE_ROAD_W / 2 + 0.9, -(ROAD_W / 2 + 7.5), 0.0))
+    SIGNS.append(("stop", x - SIDE_ROAD_W / 2 - 0.9, ROAD_W / 2 + 7.5, 180.0))
+    for sx, sy, h in ((1, -1, 90.0), (-1, 1, 270.0)):
+        SIGNS.append(("semafor", x + sx * (SIDE_ROAD_W / 2 + 1.0), sy * (ROAD_W / 2 + 1.2), h))
+    SIGNS.append(("stop", x - SIDE_ROAD_W / 2 - 0.9, -180 + SIDE_ROAD_W / 2 + 1.5, 180.0))
+    SIGNS.append(("pjesacki", x + SIDE_ROAD_W / 2 + 0.9, -(ROAD_W / 2 + 12), 0.0))
+
+WALKS = []          # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
+for a, b in open_segments(-HALF, HALF, SIDE_ROAD_W / 2 + 1):
+    for y in (ROAD_W / 2 + 3.3, -(ROAD_W / 2 + 3.3)):
+        WALKS.append((a + 2, y, b - 2, y))
+WALKS.append((-HALF + 10, PROM_Y + 3, HALF - 10, PROM_Y + 3))
+for x in CROSS_X:
+    for sgn in (-1, 1):
+        WALKS.append((x + sgn * (SIDE_ROAD_W / 2 + 1.55), -170, x + sgn * (SIDE_ROAD_W / 2 + 1.55), -20))
+        WALKS.append((x + sgn * (SIDE_ROAD_W / 2 + 1.55), 22, x + sgn * (SIDE_ROAD_W / 2 + 1.55), 115))
+
+# traffic loops (right-hand traffic, lane centres)
+ROUTES = [
+    [(-452.5, 127.5), (-452.5, -4.0), (452.5, -4.0), (452.5, 127.5)],     # avenue east -> river street west
+    [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
+]
+
+print(f"[OSRP] Osijek map v1.0.11: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

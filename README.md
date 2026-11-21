@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.10 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.11 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.10
-git push origin v1.0.10
+git tag v1.0.11
+git push origin v1.0.11
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -169,6 +169,16 @@ On Linux it writes CodeWalker XML. On Windows, with Sollumz plus PyMateria, it w
 **The finished files are already in `osrp_osijek/stream/`.** v1.0.9 has 36 models with real textures (asphalt, paving, grass, brick, roof tiles, plaster, water, stone, gravel, glass, wood), per-surface collision (tarmac, concrete paving, grass, gravel, brick, roof tile...), intersections open for cars, and 109 real GTA V trees placed by script. Converted with `tools/xml2gta` (CodeWalker.Core) and verified.
 
 v1.0.10: **30 enterable houses**. Each has a doorway with a real **GTA V door** (door system, unlocked; `Config.DoorsLocked`), a wooden floor, **GTA V furniture** (sofa, table, chairs, TV, plants) and a warm ceiling light. Every other building got a front door, a step and a canopy.
+
+v1.0.11 – **a living city**:
+- bigger: 7 cross streets, 3 rows of blocks, 73 chunks, **80 enterable houses**
+- Osijek is drawn on the **minimap and pause map** (roads, buildings, Drava, park, Tvrđa, landmarks)
+- **always spawn in Osijek**: saved positions in Los Santos are ignored (`osrp_framework` `Config.CityRadius`)
+- **parked cars** (269 spots), **stop signs, traffic lights**, **pedestrians** walking and sitting on benches, and **traffic** (cars with drivers driving loops)
+
+These are local per player, like GTA's own ambient life. Settings are in `osrp_osijek/config.lua`.
+
+![map](map/blender/preview_minimap.png)
 
 | Entrance | Inside (furniture is added in-game) |
 |---|---|
