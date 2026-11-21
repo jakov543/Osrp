@@ -26,6 +26,7 @@ ensure osrp_loading
 ensure osrp_core
 ensure osrp_framework
 ensure osrp_accounts
+ensure osrp_map
 
 # ---------- admins ----------
 # Join the server once - the console prints your license line. Paste it here:

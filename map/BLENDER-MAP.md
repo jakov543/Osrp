@@ -17,7 +17,11 @@ Installing Sollumz: Blender → *Edit → Preferences → Add-ons → Install fr
 
 ## 2. Make the starter city
 1. Open Blender → **Scripting** tab → *Open* → `map/blender/osijek_starter.py` → **Run Script**.
-2. You get the `OSRP_Osijek` collection: the Drava with its banks, the promenade, Europska avenija and side streets, Tvrđa square with the cathedral, city blocks, the pedestrian bridge and trees.
+2. You get the `OSRP_Osijek` collection (about 1,100 objects):
+   - the Drava with stone banks, and the promenade with lindens, benches and lamps
+   - Europska avenija: 4 lanes, dashed lines, curbs, sidewalks, street lights on both sides (the lamps glow at night)
+   - buildings with rows of windows and pitched tile roofs
+   - Tvrđa square with the cathedral, a city park with paths, the pedestrian bridge with cables
 3. Now build it out: replace the boxes with real buildings, add details, and so on. **1 unit = 1 meter.**
 
 > Tip: keep each piece **under ~300 m**. Big pieces load badly in GTA. Split the city into sections, for example `osijek_centar`, `osijek_tvrdja`, `osijek_drava`.

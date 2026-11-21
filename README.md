@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.2 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.3 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -33,6 +33,7 @@ fivem-resources/
   osrp_loading/        in-game loading screen with the OSRP logo
   osrp_framework/      own roleplay framework (characters, money, jobs, /me /do, admin)
   osrp_accounts/       own account system for the launcher (register / login)
+  osrp_map/            in-game map builder with real GTA V props (street lights, trees, benches)
 server/                setup-server.bat + start-server.bat (own test server on your PC)
 branding/              OSRP logo (svg + png)
 .github/workflows/     builds the .exe automatically on GitHub
@@ -97,6 +98,7 @@ ensure osrp_loading
 ensure osrp_core
 ensure osrp_framework
 ensure osrp_accounts
+ensure osrp_map
 sets mapname "Osijek"
 ```
 
@@ -123,8 +125,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.2
-git push origin v1.0.2
+git tag v1.0.3
+git push origin v1.0.3
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -135,10 +137,31 @@ GitHub Actions builds the Windows installer and puts it on the **Releases** page
 - Add `ensure osrp_accounts` to `server.cfg` (already in the template).
 - Note: the connection to the server is plain HTTP, so tell players not to reuse a password from other sites.
 
+## Build the city in-game with GTA V props (`osrp_map`)
+Admins place real GTA V props in-game. Everything is saved on the server and everyone sees it. GTA street lights light up at night by themselves.
+
+| Command | What it does |
+|---|---|
+| `/prop lampa` | street light in front of you (`lampa2` = modern) |
+| `/prop drvo` | random leafy tree (birch, maple, oak). `bor` = pine, `grm` = bush |
+| `/prop klupa` / `/prop kanta` | bench / bin |
+| `/prop prop_bench_09` | **any** GTA V prop by its name |
+| `/proplinija lampa 10 25 2` | a row: 10 lamps, every 25 m, **on both sides** of where you face (a whole street in one command) |
+| `/proplinija drvo 15 12` | an alley of 15 trees, every 12 m |
+| `/propobrisi` | delete the nearest placed prop (within 5 m) |
+| `/propundo` | delete the last placed prop |
+| `/propovi` | list of short names |
+
+Short names are in `osrp_map/config.lua` and you can add your own. Props only appear within 250 m, so FPS stays high.
+
 ## Osijek map in Blender
 Starter city script and full guide: [`map/BLENDER-MAP.md`](map/BLENDER-MAP.md)
 
 ![Osijek starter map](map/blender/preview.png)
+
+| Street | Night |
+|---|---|
+| ![street](map/blender/preview_street.png) | ![night](map/blender/preview_night.png) |
 
 ## Requirements for players
 - Windows 10/11
