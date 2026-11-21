@@ -137,7 +137,7 @@ async function refreshSettings() {
   const s = await window.launcher.getSettings();
   $('setPath').textContent = s.gamePath || '—';
   $('setPlatform').textContent = PLATFORM_NAMES[s.platform] || '—';
-  $('setServer').textContent = INFO.config.serverAddress;
+  if (document.activeElement !== $('addrInput')) $('addrInput').value = await window.launcher.getServerAddress();
   $('setVer').textContent = 'v' + INFO.version + ' (V1)';
   $('miniGame').textContent = s.gamePath ? (PLATFORM_NAMES[s.platform] || 'GTA V') : 'Nije pronađen';
 }
@@ -146,7 +146,7 @@ function applyStatus(st) {
   const on = !!(st && st.online);
   ['sDot', 'sDot2'].forEach((id) => ($(id).className = 'sdot ' + (on ? 'on' : 'off')));
   $('sTitle').textContent = on ? 'OSRP je ONLINE' : 'Server je offline';
-  $('sSub').textContent = on ? `${st.players} / ${st.max} igrača` : INFO.config.serverAddress;
+  $('sSub').textContent = on ? `${st.players} / ${st.max} igrača` : (st.address || '');
   $('sTitle2').textContent = on ? 'Online' : 'Offline';
   $('sSub2').textContent = on ? `${st.players} / ${st.max} igrača` : 'Server trenutno nije dostupan';
   $('ssFill').style.width = on ? Math.min(100, (st.players / st.max) * 100) + '%' : '0';
@@ -220,6 +220,12 @@ function initMain() {
   $('btnPlay').addEventListener('click', () => launch('server'));
   $('btnSingle').addEventListener('click', () => launch('single'));
   $('btnChangeGame').addEventListener('click', goGameSetup);
+  $('btnAddr').addEventListener('click', async () => {
+    const r = await window.launcher.setServerAddress($('addrInput').value);
+    $('addrMsg').className = 'addr-msg ' + (r.ok ? 'ok' : 'bad');
+    $('addrMsg').textContent = r.ok ? 'Spremljeno: ' + r.address : r.error;
+    if (r.ok) { $('addrInput').value = r.address; refreshStatus(); }
+  });
   $('btnReset').addEventListener('click', async () => {
     await window.launcher.reset();
     $('ownCheck').checked = false;

@@ -189,3 +189,12 @@ h2 { margin-bottom: 18px; }
 .modal.show { display: flex; animation: fade .3s; }
 .modal .row .btn { flex: 1; margin: 0; }
 .check a { color: var(--accent); }
+
+/* Server address */
+.addr { display: flex; gap: 8px; }
+.addr input { width: 230px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: #05070a; color: var(--accent);
+  font-family: Consolas, monospace; font-size: 13px; outline: none; user-select: text; }
+.addr input:focus { border-color: var(--accent); }
+.addr .btn { padding: 9px 14px; }
+.addr-msg { font-size: 12px; color: var(--muted); padding: 8px 0 14px; border-bottom: 1px solid var(--line); }
+.addr-msg.ok { color: var(--ok); } .addr-msg.bad { color: var(--danger); }

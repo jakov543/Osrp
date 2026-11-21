@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Character creator -->
+  <div id="creator" class="creator hidden">
+    <div class="panel">
+      <div class="brand"><span class="hex">OS</span><div><b>OSRP</b><small>OSIJEK ROLEPLAY</small></div></div>
+      <h1>Novi lik</h1>
+      <p class="muted">Napravi svog lika za Osijek Roleplay.</p>
+      <label>Ime<input id="firstname" maxlength="20" placeholder="npr. Marko" /></label>
+      <label>Prezime<input id="lastname" maxlength="20" placeholder="npr. Horvat" /></label>
+      <label>Datum rođenja<input id="dob" type="date" min="1940-01-01" max="2008-12-31" value="2000-01-01" /></label>
+      <div class="sex">
+        <button class="on" data-sex="m">Muško</button>
+        <button data-sex="f">Žensko</button>
+      </div>
+      <div class="err" id="err"></div>
+      <button class="go" id="go">Uđi u Osijek</button>
+    </div>
+  </div>
+
+  <!-- Money HUD (GTA HUD stays as normal) -->
+  <div id="hud" class="hud hidden">
+    <div class="h-name" id="hName">—</div>
+    <div class="h-job" id="hJob">—</div>
+    <div class="h-row"><span>Gotovina</span><b class="cash" id="hCash">$0</b></div>
+    <div class="h-row"><span>Banka</span><b class="bank" id="hBank">$0</b></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

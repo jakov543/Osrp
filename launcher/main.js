@@ -281,9 +281,16 @@ function launchSingleplayer(settings) {
 
 function launchServer() {
   // FiveM uses the player's own GTA V install
-  const addr = APP_CONFIG.serverAddress;
+  const addr = serverAddress();
   if (!/^[\w.-]+(:\d+)?$/.test(addr)) return Promise.reject(new Error('Bad server address'));
   return shell.openExternal(`fivem://connect/${addr}`);
+}
+
+// ---------- server address (config.json default, player can change it in Settings) ----------
+const ADDR_RE = /^[a-zA-Z0-9.-]{1,253}:\d{2,5}$/;
+function serverAddress() {
+  const s = loadSettings();
+  return s.serverAddress && ADDR_RE.test(s.serverAddress) ? s.serverAddress : APP_CONFIG.serverAddress;
 }
 
 // ---------- server status ----------
@@ -291,15 +298,15 @@ async function getServerStatus() {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 4000);
-    const base = `http://${APP_CONFIG.serverAddress}`;
+    const base = `http://${serverAddress()}`;
     const [info, players] = await Promise.all([
       fetch(`${base}/info.json`, { signal: ctrl.signal }).then((r) => r.json()),
       fetch(`${base}/players.json`, { signal: ctrl.signal }).then((r) => r.json())
     ]);
     clearTimeout(t);
-    return { online: true, players: players.length, max: Number(info.vars && info.vars.sv_maxClients) || 48 };
+    return { online: true, address: serverAddress(), players: players.length, max: Number(info.vars && info.vars.sv_maxClients) || 48 };
   } catch {
-    return { online: false };
+    return { online: false, address: serverAddress() };
   }
 }
 
@@ -448,6 +455,14 @@ ipcMain.handle('game:play', async (_e, mode) => {
   }
 });
 ipcMain.handle('server:status', () => getServerStatus());
+ipcMain.handle('server:getAddress', () => serverAddress());
+ipcMain.handle('server:setAddress', (_e, addr) => {
+  const a = String(addr || '').trim();
+  if (a === '') { saveSettings({ ...loadSettings(), serverAddress: null }); return { ok: true, address: serverAddress() }; }
+  if (!ADDR_RE.test(a)) return { ok: false, error: 'Upiši adresu kao IP:port, npr. 127.0.0.1:30120' };
+  saveSettings({ ...loadSettings(), serverAddress: a });
+  return { ok: true, address: a };
+});
 ipcMain.handle('boot:result', () => bootResult);
 ipcMain.handle('link:open', (_e, url) => {
   if (ALLOWED_LINKS.has(url)) shell.openExternal(url);

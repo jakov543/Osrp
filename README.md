@@ -31,17 +31,46 @@ launcher/              Electron app (Windows)
 fivem-resources/
   osrp_core/           map name "Osijek", OSRP pause menu, keeps the GTA V HUD, stream/ for your map
   osrp_loading/        in-game loading screen with the OSRP logo
+  osrp_framework/      own roleplay framework (characters, money, jobs, /me /do, admin)
+server/                setup-server.bat + start-server.bat (own test server on your PC)
 branding/              OSRP logo (svg + png)
 .github/workflows/     builds the .exe automatically on GitHub
 ```
 
+## Start your own OSRP test server (Windows, free)
+1. Download this repo (green **Code** button → *Download ZIP*) and unzip it.
+2. Open the `server` folder and double-click **`setup-server.bat`**. It:
+   - downloads the official server (FXServer) and the base resources
+   - copies all OSRP resources into the server
+   - asks for your **free server key** from [portal.cfx.re](https://portal.cfx.re) (Server Keys → Generate; use `127.0.0.1` for testing)
+3. Double-click **`start-server.bat`**. Wait until the console shows the server started.
+4. In the **OSRP Launcher**, go to *Postavke → Server adresa*, enter `127.0.0.1:30120`, *Spremi*, then **IGRAJ**.
+5. The first time you join, the console prints an `add_principal ...` line with your license. Paste it into `server/OSRP-Server/server-data/server.cfg` and restart the server. That makes you admin.
+
+Friends can join through the launcher with your public IP (`your.ip:30120`) once you open **port 30120 (TCP + UDP)** on your router and allow it in the Windows firewall.
+
+## OSRP framework (own, no ESX/QBCore)
+| What | How |
+|---|---|
+| Character creator | first join: first name, last name, date of birth, gender |
+| Spawn / save | spawn point in `osrp_framework/config.lua`; position saved every 60 s |
+| Money | cash + bank, HUD at top right, `/novac`, `/daj [id] [amount]` |
+| Jobs + salary | Unemployed, Police, EMS, Mechanic, Taxi; pay every 10 min |
+| Death | respawn at the hospital after 15 s (`E`) |
+| Roleplay | `/me`, `/do` (3D text + chat, players nearby only) |
+| Admin | `/car [model]`, `/dv`, `/tpm`, `/revive [id]`, `/setjob [id] [job]`, `/givemoney [id] [cash/bank] [amount]`, `/resetlik [id]` |
+
+For other scripts: `exports.osrp_framework:GetPlayer(src)`, `AddMoney(src, 'cash', 100)`, `RemoveMoney(...)`, `SetJob(src, 'police')`.
+No database needed for V1 (data is stored with FiveM KVP).
+
 ## Setup
 
 ### 1. Server
-Copy `fivem-resources/osrp_core` and `osrp_loading` into your server's `resources/` folder and add to `server.cfg`:
+Easiest: use `server/setup-server.bat` (above). By hand: copy `fivem-resources/osrp_core`, `osrp_loading` and `osrp_framework` into your server's `resources/` folder and add to `server.cfg`:
 ```
 ensure osrp_loading
 ensure osrp_core
+ensure osrp_framework
 sets mapname "Osijek"
 ```
 

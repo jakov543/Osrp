@@ -1,0 +1,33 @@
+# ============================================
+#   OSRP | Osijek Roleplay - server.cfg (V1)
+# ============================================
+
+endpoint_add_tcp "0.0.0.0:30120"
+endpoint_add_udp "0.0.0.0:30120"
+
+sv_hostname "OSRP | Osijek Roleplay V1"
+sets sv_projectName "OSRP - Osijek Roleplay"
+sets sv_projectDesc "Osijek Roleplay - tvoj grad, tvoja priča."
+sets locale "hr-HR"
+sets tags "roleplay, osijek, hrvatska, balkan"
+sv_maxclients 48
+onesync on
+
+# Your free key from https://portal.cfx.re (Server Keys) - the setup script fills this in
+sv_licenseKey "__LICENSE_KEY__"
+
+# ---------- base resources ----------
+ensure sessionmanager
+ensure hardcap
+ensure chat
+
+# ---------- OSRP ----------
+ensure osrp_loading
+ensure osrp_core
+ensure osrp_framework
+
+# ---------- admins ----------
+# Join the server once - the console prints your license line. Paste it here:
+# add_principal identifier.license:PUT_YOUR_LICENSE_HERE group.admin
+add_ace group.admin osrp.admin allow
+add_ace group.admin command allow

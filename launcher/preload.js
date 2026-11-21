@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('launcher', {
   setPlatform: (p) => ipcRenderer.invoke('game:setPlatform', p),
   reset: () => ipcRenderer.invoke('game:reset'),
   play: (mode) => ipcRenderer.invoke('game:play', mode),
+  getServerAddress: () => ipcRenderer.invoke('server:getAddress'),
+  setServerAddress: (a) => ipcRenderer.invoke('server:setAddress', a),
   serverStatus: () => ipcRenderer.invoke('server:status'),
   acceptFiveMLicense: () => ipcRenderer.invoke('fivem:acceptLicense'),
   fivemStatus: () => ipcRenderer.invoke('fivem:status'),

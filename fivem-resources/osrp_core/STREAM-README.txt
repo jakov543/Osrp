@@ -1,4 +1,4 @@
-Put your Osijek map files here (.ymap, .ytyp, .ydr, .ytd, .ybn).
+Put your Osijek map files in the stream/ folder (.ymap, .ytyp, .ydr, .ytd, .ybn).
 FiveM streams everything in this folder automatically.
 
 How to build them in Blender (free): see map/BLENDER-MAP.md in the repo.
