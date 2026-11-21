@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.11 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.12 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.11
-git push origin v1.0.11
+git tag v1.0.12
+git push origin v1.0.12
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -177,6 +177,16 @@ v1.0.11 – **a living city**:
 - **parked cars** (269 spots), **stop signs, traffic lights**, **pedestrians** walking and sitting on benches, and **traffic** (cars with drivers driving loops)
 
 These are local per player, like GTA's own ambient life. Settings are in `osrp_osijek/config.lua`.
+
+v1.0.12 – **water, landmarks, HUD, logo**:
+- the **Drava is real GTA water**: the city now sits 3 m above sea level (`Config.Origin` z = 3) and the river bed is open; stone quay walls go down into the water all around the city
+- new **suspension footbridge** level with the banks (walkable, railings, cables) and a rebuilt **co-cathedral** (94 m spire, aisles, buttresses, apse, clock, rose window)
+- facades got **cornices and stone bases**
+- **cars no longer fly**: parked cars, traffic, peds and signs spawn only when the ground under them is loaded, and parked cars are no longer frozen in the air
+- the map uses **GTA radar colours** (dark land, light roads, blue river)
+- **new HUD** (`osrp_framework/client/hud.lua`): money and job card, street + zone + compass next to the minimap (real Osijek street names from `osrp_osijek/streets.lua`), speedometer with RPM, gear, fuel and engine
+- **new OSRP logo** (shield with the cathedral and the Drava) in the launcher, installer icon, loading screen and HUD; sources in `branding/`
+- the map export is ~30x faster (`tools/make_layout.py` writes `layout.lua`)
 
 ![map](map/blender/preview_minimap.png)
 

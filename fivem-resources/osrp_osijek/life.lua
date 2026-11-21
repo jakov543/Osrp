@@ -19,19 +19,38 @@ local function load(hash)
     return HasModelLoaded(hash)
 end
 
+-- v1.0.12: real ground height under (x, y) in city coords, or nil while the map collision there is not loaded yet.
+-- Spawning only on loaded ground is what stops cars/peds from falling or hanging in the air.
+local function groundAt(x, y, extraZ)
+    local w = W(x, y, 0.0)
+    RequestCollisionAtCoord(w.x, w.y, w.z)
+    local ok, gz = GetGroundZFor_3dCoord(w.x, w.y, w.z + 8.0, false)
+    if not ok or math.abs(gz - w.z) > 3.0 then return nil end      -- no ground yet, or hit a roof/bridge
+    return vector3(w.x, w.y, gz + (extraZ or 0.0))
+end
+
+local function settleVehicle(v)
+    SetEntityCollision(v, true, true)
+    SetVehicleOnGroundProperly(v)
+    local t = GetGameTimer()
+    while not HasCollisionLoadedAroundEntity(v) and GetGameTimer() - t < 3000 do Wait(0) end
+    SetVehicleOnGroundProperly(v)
+end
+
 local function inCity(pos, extra)
     return #(vec2(pos.x, pos.y) - vec2(Config.Origin.x, Config.Origin.y)) < (Config.CityRadius + (extra or 0.0))
 end
 
 -- ===================================================================== map / minimap
 local MAP_COLOURS = {        -- blip colour, alpha
-    land   = { 25, 110 },    -- green-grey land
-    water  = { 38, 200 },    -- Drava
-    walk   = { 4, 120 },
-    park   = { 2, 170 },
-    square = { 5, 140 },
-    road   = { 40, 255 },    -- dark grey roads
-    bld    = { 39, 210 },    -- buildings
+    -- v1.0.12: GTA radar style - dark land, light roads, grey buildings, green parks, blue river
+    land   = { 40, 255 },    -- dark grey ground
+    water  = { 38, 255 },    -- Drava (dark blue like the GTA sea)
+    walk   = { 39, 200 },    -- sidewalks
+    park   = { 25, 230 },    -- parks
+    square = { 39, 220 },    -- squares
+    road   = { 4, 255 },     -- light roads
+    bld    = { 62, 255 },    -- buildings
 }
 
 CreateThread(function()
@@ -76,17 +95,18 @@ CreateThread(function()
             for i, p in ipairs(Life.PARKING) do
                 local wp = W(p[1], p[2], 0.4)
                 local d = #(pos - wp)
-                if d < 180.0 and not (parked[i] and DoesEntityExist(parked[i])) then
+                local ground = (d < 150.0 and not (parked[i] and DoesEntityExist(parked[i]))) and groundAt(p[1], p[2], 0.6) or nil
+                if ground then
                     local list = Config.ParkedModels
                     local hash = firstModel({ list[(i % #list) + 1], list[1] })
                     if load(hash) then
-                        local v = CreateVehicle(hash, wp.x, wp.y, wp.z, p[3], false, false)
-                        SetVehicleOnGroundProperly(v)
+                        local v = CreateVehicle(hash, ground.x, ground.y, ground.z, p[3], false, false)
+                        settleVehicle(v)
                         SetVehicleDoorsLocked(v, 2)
                         SetVehicleColours(v, (i * 7) % 160, (i * 11) % 160)
                         SetVehicleNumberPlateText(v, ('OS %03d'):format(i))
                         SetEntityAsMissionEntity(v, true, true)
-                        FreezeEntityPosition(v, true)
+                        SetVehicleHasBeenOwnedByPlayer(v, false)
                         SetModelAsNoLongerNeeded(hash)
                         parked[i] = v
                     end
@@ -99,10 +119,11 @@ CreateThread(function()
         for i, s in ipairs(Life.SIGNS) do
             local wp = W(s[2], s[3], 0.26)
             local d = #(pos - wp)
-            if d < 200.0 and not (signs[i] and DoesEntityExist(signs[i])) then
+            local ground = (d < 200.0 and not (signs[i] and DoesEntityExist(signs[i]))) and groundAt(s[2], s[3]) or nil
+            if ground then
                 local hash = firstModel(Config.SignModels[s[1]])
                 if load(hash) then
-                    local o = CreateObjectNoOffset(hash, wp.x, wp.y, wp.z, false, false, false)
+                    local o = CreateObjectNoOffset(hash, ground.x, ground.y, ground.z, false, false, false)
                     SetEntityHeading(o, s[4])
                     FreezeEntityPosition(o, true)
                     SetModelAsNoLongerNeeded(hash)
@@ -129,9 +150,10 @@ local function newWalker(i)
     local w = Life.WALKS[math.random(#Life.WALKS)]
     local t = math.random()
     local x, y = w[1] + (w[3] - w[1]) * t, w[2] + (w[4] - w[2]) * t
+    local wp = groundAt(x, y, 0.05)
+    if not wp then return end
     local hash = pedModel(i)
     if not load(hash) then return end
-    local wp = W(x, y, 0.3)
     local p = CreatePed(4, hash, wp.x, wp.y, wp.z, 0.0, false, true)
     SetBlockingOfNonTemporaryEvents(p, false)
     SetPedKeepTask(p, true)
@@ -145,9 +167,10 @@ end
 
 local function newSitter(i)
     local b = Life.BENCHES[math.random(#Life.BENCHES)]
+    local wp = groundAt(b[1], b[2], 0.05)
+    if not wp then return end
     local hash = pedModel(i + 3)
     if not load(hash) then return end
-    local wp = W(b[1], b[2], 0.2)
     local p = CreatePed(4, hash, wp.x, wp.y, wp.z, b[3], false, true)
     SetModelAsNoLongerNeeded(hash)
     TaskStartScenarioAtPosition(p, 'PROP_HUMAN_SEAT_BENCH', wp.x, wp.y, wp.z + 0.5, b[3], 0, true, true)
@@ -201,10 +224,13 @@ local function spawnCar(i)
     local list = Config.TrafficModels
     local vhash = firstModel({ list[(i % #list) + 1], list[1] })
     local phash = pedModel(i + 7)
+    local wp = groundAt(x, y, 0.6)
+    if not wp then return end                                   -- road there not loaded yet, try again next round
+    local me = GetEntityCoords(PlayerPedId())
+    if #(me - wp) > 220.0 or #(me - wp) < 25.0 then return end  -- only near you, never on top of you
     if not load(vhash) or not load(phash) then return end
-    local wp = W(x, y, 0.5)
     local v = CreateVehicle(vhash, wp.x, wp.y, wp.z, heading, false, false)
-    SetVehicleOnGroundProperly(v)
+    settleVehicle(v)
     SetVehicleEngineOn(v, true, true, false)
     local d = CreatePedInsideVehicle(v, 4, phash, -1, false, true)
     SetBlockingOfNonTemporaryEvents(d, true)

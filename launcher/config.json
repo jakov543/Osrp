@@ -7,6 +7,11 @@
   "news": [
     {
       "tag": "NOVO",
+      "title": "Nova Drava, HUD i logo",
+      "text": "v1.0.12: Drava je prava voda, novi most i katedrala, auti više ne lete, novi HUD s ulicama i brzinomjerom, novi OSRP logo."
+    },
+    {
+      "tag": "NOVO",
       "title": "Osijek živi!",
       "text": "v1.0.11: veći grad, Osijek na mapi i minimapi, promet, pješaci, parkirani auti, znakovi i semafori."
     },

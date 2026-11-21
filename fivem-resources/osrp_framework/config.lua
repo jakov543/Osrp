@@ -1,8 +1,8 @@
 Config = {}
 
 -- Where new players and respawns appear (change to your Osijek map later)
-Config.Spawn = vector4(5675.0, -1511.0, 31.0, 90.0)          -- Osijek, Europska avenija (osrp_osijek)
-Config.Hospital = vector4(5700.0, -1470.0, 31.0, 180.0)       -- Osijek, Tvrđa square (respawn after death)
+Config.Spawn = vector4(5675.0, -1511.0, 4.0, 90.0)          -- Osijek, Europska avenija (osrp_osijek)
+Config.Hospital = vector4(5700.0, -1470.0, 4.0, 180.0)       -- Osijek, Tvrđa square (respawn after death)
 
 -- Saved positions further than this from Config.Spawn (e.g. still in Los Santos) are ignored:
 -- the player spawns in Osijek instead.

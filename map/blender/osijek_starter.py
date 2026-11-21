@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.11)
+OSRP - Osijek starter map for Blender (V1.0.12)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -65,49 +65,76 @@ def _link(col, obj, mat):
     return obj
 
 
+def _mesh_obj(col, name, verts, faces, mat):
+    """create an object straight from vertex data (much faster than bpy.ops in a big scene)"""
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.update()
+    obj = bpy.data.objects.new(name, me)
+    col.objects.link(obj)
+    if mat:
+        me.materials.append(mat)
+    return obj
+
+
+_BOX_FACES = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+
+
 def box(col, name, loc, size, mat, rot_z=0.0):
     """loc = center of the bottom face, size = full (x, y, z) in meters"""
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(loc[0], loc[1], loc[2] + size[2] / 2), rotation=(0, 0, rot_z))
-    obj = bpy.context.active_object
-    obj.name = name
-    obj.scale = size
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    return _link(col, obj, mat)
+    sx, sy, sz = size[0] / 2, size[1] / 2, size[2]
+    c, s_ = math.cos(rot_z), math.sin(rot_z)
+    verts = []
+    for z in (0.0, sz):
+        for (x, y) in ((-sx, -sy), (sx, -sy), (sx, sy), (-sx, sy)):
+            verts.append((loc[0] + x * c - y * s_, loc[1] + x * s_ + y * c, loc[2] + z))
+    return _mesh_obj(col, name, verts, _BOX_FACES, mat)
 
 
 def plane(col, name, loc, size, mat):
-    bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
-    obj = bpy.context.active_object
-    obj.name = name
-    obj.scale = (size[0], size[1], 1)
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    return _link(col, obj, mat)
+    sx, sy = size[0] / 2, size[1] / 2
+    verts = [(loc[0] - sx, loc[1] - sy, loc[2]), (loc[0] + sx, loc[1] - sy, loc[2]),
+             (loc[0] + sx, loc[1] + sy, loc[2]), (loc[0] - sx, loc[1] + sy, loc[2])]
+    return _mesh_obj(col, name, verts, [(0, 1, 2, 3)], mat)
 
 
 def cylinder(col, name, loc, radius, height, mat, verts=10):
-    bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=radius, depth=height,
-                                        location=(loc[0], loc[1], loc[2] + height / 2))
-    obj = bpy.context.active_object
-    obj.name = name
-    return _link(col, obj, mat)
+    vs = []
+    for z in (0.0, height):
+        for k in range(verts):
+            a = k / verts * math.tau
+            vs.append((loc[0] + math.cos(a) * radius, loc[1] + math.sin(a) * radius, loc[2] + z))
+    faces = [tuple(range(verts - 1, -1, -1)), tuple(range(verts, 2 * verts))]
+    faces += [(k, (k + 1) % verts, verts + (k + 1) % verts, verts + k) for k in range(verts)]
+    return _mesh_obj(col, name, vs, faces, mat)
 
 
 def blob(col, name, loc, radius, mat, squash=1.0):
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=radius, location=loc)
-    obj = bpy.context.active_object
-    obj.name = name
-    obj.scale = (1, 1, squash)
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    bpy.ops.object.shade_smooth()
-    return _link(col, obj, mat)
+    import bmesh
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=radius)
+    for v in bm.verts:
+        v.co.z *= squash
+        v.co.x += loc[0]; v.co.y += loc[1]; v.co.z += loc[2]
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    obj = bpy.data.objects.new(name, me)
+    col.objects.link(obj)
+    if mat:
+        me.materials.append(mat)
+    for poly in me.polygons:
+        poly.use_smooth = True
+    return obj
 
 
 def pyramid(col, name, loc, base, height, mat):
-    bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=base, depth=height,
-                                    location=(loc[0], loc[1], loc[2] + height / 2), rotation=(0, 0, math.pi / 4))
-    obj = bpy.context.active_object
-    obj.name = name
-    return _link(col, obj, mat)
+    """4-sided spire; base = half diagonal (like the old cone radius), rotated 45 deg"""
+    r = base
+    pts = [(loc[0] + r * math.cos(a), loc[1] + r * math.sin(a), loc[2]) for a in (math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4)]
+    verts = pts + [(loc[0], loc[1], loc[2] + height)]
+    faces = [(3, 2, 1, 0), (0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)]
+    return _mesh_obj(col, name, verts, faces, mat)
 
 
 def gable_roof(col, name, cx, cy, z, w, d, h, mat, rot_z=0.0):
@@ -127,26 +154,26 @@ def gable_roof(col, name, cx, cy, z, w, d, h, mat, rot_z=0.0):
 
 
 def windows(col, name, cx, face_y, z0, width, floors, floor_h, mat, facing):
-    """one object per facade: a window + Array modifiers (columns x floors), applied"""
+    """all windows of one facade in one mesh: glass + a stone sill under each window"""
     cols = max(1, int((width - 2) // 3.2))
     step = (width - 2) / cols
     x0 = cx - (width - 2) / 2 + step / 2
-    y = face_y + 0.06 * facing
-    win = box(col, name, (x0, y, z0 + 1.0), (1.3, 0.12, 1.6), mat)
-    arr_x = win.modifiers.new("cols", 'ARRAY')
-    arr_x.use_relative_offset = False
-    arr_x.use_constant_offset = True
-    arr_x.constant_offset_displace = (step, 0, 0)
-    arr_x.count = cols
-    arr_z = win.modifiers.new("floors", 'ARRAY')
-    arr_z.use_relative_offset = False
-    arr_z.use_constant_offset = True
-    arr_z.constant_offset_displace = (0, 0, floor_h)
-    arr_z.count = floors
-    bpy.context.view_layer.objects.active = win
-    for m in list(win.modifiers):
-        bpy.ops.object.modifier_apply(modifier=m.name)
-    return win
+    verts, faces = [], []
+
+    def add_box(bx, by, bz, sx, sy, sz):
+        base = len(verts)
+        for z in (bz, bz + sz):
+            for (x, y) in ((-sx / 2, -sy / 2), (sx / 2, -sy / 2), (sx / 2, sy / 2), (-sx / 2, sy / 2)):
+                verts.append((bx + x, by + y, z))
+        faces.extend(tuple(base + i for i in f) for f in _BOX_FACES)
+
+    for f in range(floors):
+        for c in range(cols):
+            x = x0 + c * step
+            z = z0 + 1.0 + f * floor_h
+            add_box(x, face_y + 0.06 * facing, z, 1.3, 0.12, 1.6)            # glass
+            add_box(x, face_y + 0.12 * facing, z - 0.12, 1.55, 0.24, 0.12)   # sill
+    return _mesh_obj(col, name, verts, faces, mat)
 
 
 # ---------------------------------------------------------------- materials
@@ -236,9 +263,18 @@ plane(col, "osrp_ground_south", (0, -105, 0), (MAP_W, 530), M_GRASS)
 plane(col, "osrp_ground_north", (0, RIVER_Y + RIVER_W / 2 + 40, 0), (MAP_W, 80), M_GRASS)
 
 # Drava + stone banks
-plane(col, "osrp_drava", (0, RIVER_Y, -1.6), (MAP_W, RIVER_W), M_WATER)
-box(col, "osrp_obala_jug", (0, RIVER_Y - RIVER_W / 2 - 1.5, -2), (MAP_W, 3, 2.05), M_STONE)
-box(col, "osrp_obala_sjever", (0, RIVER_Y + RIVER_W / 2 + 1.5, -2), (MAP_W, 3, 2.05), M_STONE)
+# v1.0.12: no fake water plane - the river bed is open, so the real GTA sea water fills the Drava
+# (the city sits 3 m above sea level, see osrp_osijek Config.Origin). Stone walls go down into the water.
+box(col, "osrp_obala_jug", (0, RIVER_Y - RIVER_W / 2 - 1.5, -12), (MAP_W, 3, 12.05), M_STONE)
+box(col, "osrp_obala_sjever", (0, RIVER_Y + RIVER_W / 2 + 1.5, -12), (MAP_W, 3, 12.05), M_STONE)
+# outer quay walls: the city stands 3 m above the GTA sea, these walls go down into the water so it is not a floating plate
+S0, S1 = -105 - 265, -105 + 265           # south land band (y)
+N0, N1 = RIVER_Y + RIVER_W / 2, RIVER_Y + RIVER_W / 2 + 80
+box(col, "osrp_rub_jug", (0, S0 - 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
+box(col, "osrp_rub_sjever", (0, N1 + 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
+for sx in (-1, 1):
+    box(col, f"osrp_rub_istok_jug_{sx}", (sx * (MAP_W / 2 + 1.5), (S0 + S1) / 2, -12), (3, S1 - S0, 12.05), M_STONE)
+    box(col, f"osrp_rub_istok_sjever_{sx}", (sx * (MAP_W / 2 + 1.5), (N0 + N1) / 2, -12), (3, N1 - N0, 12.05), M_STONE)
 
 # Promenade (south bank)
 PROM_Y = RIVER_Y - RIVER_W / 2 - 11
@@ -328,15 +364,42 @@ for x in range(-535, 536, 25):
 # Tvrđa square + cathedral (east)
 TV_X, TV_Y = 225, 62
 plane(col, "osrp_tvrdja_trg", (TV_X, TV_Y, 0.14), (120, 95), M_WALK)
-box(col, "osrp_katedrala_brod", (TV_X, TV_Y + 14, 0), (24, 56, 24), M_BRICK)
-gable_roof(col, "osrp_katedrala_krov", TV_X, TV_Y + 14, 24, 56, 24, 10, M_ROOF, rot_z=math.pi / 2)
-box(col, "osrp_katedrala_toranj", (TV_X, TV_Y - 20, 0), (12, 12, 58), M_BRICK)
-pyramid(col, "osrp_katedrala_vrh", (TV_X, TV_Y - 20, 58), 8.6, 32, M_SPIRE)
-for k, (dx, dy) in enumerate(((-10, 36), (10, 36))):
-    box(col, f"osrp_katedrala_mali_toranj_{k}", (TV_X + dx, TV_Y + dy, 0), (5, 5, 30), M_BRICK)
-    pyramid(col, f"osrp_katedrala_mali_vrh_{k}", (TV_X + dx, TV_Y + dy, 30), 3.6, 9, M_SPIRE)
+# Co-cathedral of St. Peter and Paul: neo-gothic red brick, 90+ m tower with spire
+NAVE_Y = TV_Y + 16
+box(col, "osrp_katedrala_brod", (TV_X, NAVE_Y, 0), (20, 52, 24), M_BRICK)
+gable_roof(col, "osrp_katedrala_krov", TV_X, NAVE_Y, 24, 52, 20, 11, M_ROOF, rot_z=math.pi / 2)
+for side in (-1, 1):   # side aisles with lean-to roofs, buttresses, tall pointed windows
+    box(col, f"osrp_katedrala_lada_{side}", (TV_X + side * 14, NAVE_Y, 0), (8, 48, 13), M_BRICK)
+    box(col, f"osrp_katedrala_lada_krov_{side}", (TV_X + side * 14, NAVE_Y, 13), (8.6, 48.6, 0.6), M_ROOF)
+    for k in range(7):
+        yy = NAVE_Y - 21 + k * 7
+        box(col, f"osrp_katedrala_potporanj_{side}_{k}", (TV_X + side * 18.6, yy, 0), (1.4, 1.6, 15), M_BRICK)
+        pyramid(col, f"osrp_katedrala_potporanj_vrh_{side}_{k}", (TV_X + side * 18.6, yy, 15), 1.1, 3.5, M_SPIRE)
+        box(col, f"osrp_katedrala_prozor_{side}_{k}", (TV_X + side * 10.05, yy + 3.5, 14.5), (0.2, 1.8, 8.0), M_GLASS)
+        box(col, f"osrp_katedrala_prozor_n_{side}_{k}", (TV_X + side * 18.05, yy + 3.5, 2.5), (0.2, 1.6, 7.5), M_GLASS)
+# apse (rounded end)
+cylinder(col, "osrp_katedrala_apsida", (TV_X, NAVE_Y + 26, 0), 10, 20, M_BRICK, verts=10)
+pyramid(col, "osrp_katedrala_apsida_krov", (TV_X, NAVE_Y + 26, 20), 11, 7, M_ROOF)
+# main tower with corner pinnacles, clock, rose window and the spire (total ~94 m)
+T_Y = TV_Y - 16
+box(col, "osrp_katedrala_toranj", (TV_X, T_Y, 0), (14, 14, 64), M_BRICK)
+box(col, "osrp_katedrala_toranj_vijenac", (TV_X, T_Y, 64), (15.2, 15.2, 1.2), M_WHITE_STONE)
+pyramid(col, "osrp_katedrala_vrh", (TV_X, T_Y, 65.2), 9.6, 29, M_SPIRE)
+for k, (dx, dy) in enumerate(((-6, -6), (6, -6), (-6, 6), (6, 6))):
+    box(col, f"osrp_katedrala_tornjic_{k}", (TV_X + dx, T_Y + dy, 65.2), (1.6, 1.6, 5), M_BRICK)
+    pyramid(col, f"osrp_katedrala_tornjic_vrh_{k}", (TV_X + dx, T_Y + dy, 70.2), 1.3, 5, M_SPIRE)
+for face in range(4):
+    a_ = face * math.pi / 2
+    fx, fy = math.sin(a_) * 7.05, -math.cos(a_) * 7.05
+    box(col, f"osrp_katedrala_sat_{face}", (TV_X + fx, T_Y + fy, 52), (3.2 if face % 2 == 0 else 0.15, 0.15 if face % 2 == 0 else 3.2, 3.2), M_WHITE_STONE)
+    box(col, f"osrp_katedrala_zvono_{face}", (TV_X + fx, T_Y + fy, 40), (2.2 if face % 2 == 0 else 0.15, 0.15 if face % 2 == 0 else 2.2, 8), M_GLASS)
+box(col, "osrp_katedrala_rozeta", (TV_X, T_Y - 7.1, 22), (4.5, 0.2, 4.5), M_GLASS)
+box(col, "osrp_katedrala_portal", (TV_X, T_Y - 7.1, 0.14), (3.6, 0.3, 6.5), M_WOOD)
+for k, (dx, dy) in enumerate(((-12, 40), (12, 40))):
+    box(col, f"osrp_katedrala_mali_toranj_{k}", (TV_X + dx, NAVE_Y + dy - 16, 0), (4, 4, 28), M_BRICK)
+    pyramid(col, f"osrp_katedrala_mali_vrh_{k}", (TV_X + dx, NAVE_Y + dy - 16, 28), 3.2, 9, M_SPIRE)
 for k in range(8):   # trees around the square (k=6 would stand in front of the Trinity column)
-    if k == 6:
+    if k in (2, 6):   # 2 = behind the apse, 6 = in front of the Trinity column
         continue
     a = k / 8 * math.tau
     tree(col, f"trg_{k}", TV_X + math.cos(a) * 50, TV_Y + math.sin(a) * 40, 1.1)
@@ -359,6 +422,7 @@ MAPRECTS = []    # (kind, cx, cy, w, h) - drawn on the GTA minimap / pause map b
 DOORS = []       # (x, y, z, heading) - real GTA V doors placed in-game by osrp_osijek
 FURNITURE = []   # (kind, x, y, z, heading) - real GTA V furniture placed in-game
 M_FLOOR = material("osrp_floor_wood", (0.45, 0.30, 0.17))
+M_RIVER_PLINTH = material("osrp_plinth_stone", (0.48, 0.46, 0.43))
 M_DOORFRAME = material("osrp_door_frame", (0.20, 0.14, 0.09))
 M_CANOPY = material("osrp_canopy", (0.25, 0.27, 0.30), rough=0.5, metal=0.5)
 
@@ -440,6 +504,7 @@ for bx in range(len(CROSS_X) - 1):
                 cx, cy = x + w / 2, yy + d / 2
                 street_face = yy if facing == -1 else yy + d
                 MAPRECTS.append(("bld", round(cx, 1), round(cy, 1), round(w - 1, 1), round(d, 1)))
+                box(col, f"osrp_vijenac_{bid}_{side}", (cx, cy, h - 0.45), (w - 0.6, d + 0.4, 0.45), M_WHITE_STONE)   # cornice
                 if bid % 3 == 0:
                     house_enterable(f"osrp_kuca_{bid}_{side}", cx, cy, w - 1, d, h, mat, facing)
                     # windows only from the 1st floor up (the ground floor has the door)
@@ -447,24 +512,34 @@ for bx in range(len(CROSS_X) - 1):
                         windows(col, f"osrp_prozori_{bid}_{side}", cx, street_face, 0.8 + floor_h, w - 1, floors - 1, floor_h, M_GLASS, facing)
                 else:
                     box(col, f"osrp_zgrada_{bid}_{side}", (cx, cy, 0), (w - 1, d, h), mat)
+                    box(col, f"osrp_podnozje_{bid}_{side}", (cx, cy, 0), (w - 0.8, d + 0.2, 0.9), M_RIVER_PLINTH)   # stone base
                     windows(col, f"osrp_prozori_{bid}_{side}", cx, street_face, 0.8 + floor_h, w - 1, floors - 1, floor_h, M_GLASS, facing) if floors > 1 else None
                     fake_entrance(f"osrp_ulaz_{bid}_{side}", cx, street_face, facing)
                 gable_roof(col, f"osrp_krov_{bid}_{side}", cx, cy, h, w - 1, d, random.uniform(3.5, 5.5), M_ROOF)
             bid += 1
             x += w
 
-# Pedestrian bridge over the Drava (Pješački most)
+# Pedestrian bridge over the Drava (Pješački most) - deck level with the banks, you can walk on it
 BR_X = -80
-box(col, "osrp_most_paluba", (BR_X, RIVER_Y, 2.0), (5, RIVER_W + 30, 0.8), M_STEEL)
+DECK_TOP = 0.25
+box(col, "osrp_most_paluba", (BR_X, RIVER_Y, DECK_TOP - 0.6), (5, RIVER_W + 8, 0.6), M_STEEL)
+box(col, "osrp_most_hodnik", (BR_X, RIVER_Y, DECK_TOP - 0.02), (4.2, RIVER_W + 8, 0.04), M_FLOOR)
 for k, yy in enumerate((RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5)):
-    box(col, f"osrp_most_pilon_{k}", (BR_X, yy, 0), (3, 3, 24), M_STEEL)
+    box(col, f"osrp_most_pilon_{k}", (BR_X - 3.2, yy, -12), (1.2, 1.2, 36), M_STEEL)
+    box(col, f"osrp_most_pilon_{k}b", (BR_X + 3.2, yy, -12), (1.2, 1.2, 36), M_STEEL)
+    box(col, f"osrp_most_greda_{k}", (BR_X, yy, 22.5), (7.6, 1.0, 1.0), M_STEEL)
 for side in (-1, 1):
-    box(col, f"osrp_most_ograda_{side}", (BR_X + side * 2.3, RIVER_Y, 2.8), (0.2, RIVER_W + 30, 1.1), M_STEEL)
-    for k in range(12):   # suspension cables
-        t = k / 11
+    box(col, f"osrp_most_ograda_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP), (0.1, RIVER_W + 8, 1.1), M_STEEL)
+    box(col, f"osrp_most_rukohvat_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP + 1.05), (0.18, RIVER_W + 8, 0.08), M_STEEL)
+    for k in range(13):   # suspension hangers
+        t = k / 12
         yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
-        top = 24 - 16 * math.sin(t * math.pi)
-        box(col, f"osrp_most_sajla_{side}_{k}", (BR_X + side * 2.3, yy, 3.5), (0.06, 0.06, max(0.5, top - 3.5)), M_STEEL)
+        top = 22.5 - 18 * math.sin(t * math.pi)
+        box(col, f"osrp_most_sajla_{side}_{k}", (BR_X + side * 2.6, yy, DECK_TOP + 1.1), (0.06, 0.06, max(0.4, top - DECK_TOP - 1.1)), M_STEEL)
+    for k in range(48):   # main cable (stepped segments following the sag curve)
+        t = (k + 0.5) / 48
+        yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
+        box(col, f"osrp_most_kabel_{side}_{k}", (BR_X + side * 2.6, yy, 22.5 - 18 * math.sin(t * math.pi) - 0.15), (0.25, (RIVER_W - 10) / 48 * 1.9, 0.3), M_STEEL)
 
 # Promenade: lindens with benches between them
 for i, x in enumerate(range(-530, 531, 25)):
@@ -577,4 +652,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.11: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.12: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

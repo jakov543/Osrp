@@ -5,7 +5,7 @@ lua54 'yes'
 name 'osrp_framework'
 author 'Bandera'
 description 'OSRP V1 - own roleplay framework (no ESX/QBCore): characters, spawn, money, jobs, death, /me /do, admin'
-version '1.0.11'
+version '1.0.12'
 
 shared_script 'config.lua'
 server_scripts {
@@ -15,12 +15,14 @@ server_scripts {
 client_scripts {
     'client/main.lua',
     'client/death.lua',
-    'client/roleplay.lua'
+    'client/roleplay.lua',
+    'client/hud.lua'
 }
 
 ui_page 'html/index.html'
 files {
     'html/index.html',
     'html/style.css',
-    'html/app.js'
+    'html/app.js',
+    'html/emblem.png'
 }
