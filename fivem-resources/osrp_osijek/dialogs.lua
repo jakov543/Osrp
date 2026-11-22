@@ -6,7 +6,7 @@
 
 OsijekDialogPlaces = {     -- local map coordinates (same as the Blender map) for act = 'gps'
     hospital = { -330, -372 }, airport = { 200, -425 }, beach = { -300, 278 }, tvrdja = { 225, 40 },
-    promenade = { 0, 164 }, park = { -150, 60 }, marina = { 140, 180 }, wreck = { 330, 175 },
+    promenade = { 0, 164 }, police = { -60, -381 }, park = { -150, 60 }, marina = { 140, 180 }, wreck = { 330, 175 },
 }
 
 local BYE = { hr = 'Doviđenja!', en = 'Goodbye!' }
@@ -43,6 +43,8 @@ local CITY = {
     airport = { text = { hr = 'Zračna luka je sasvim na jugu, iza bolnice. Samo prati cestu prema jugu.',
                          en = 'The airport is at the far south, behind the hospital. Just follow the road south.' },
         opts = { { t = { hr = 'Postavi GPS do zračne luke.', en = 'Set GPS to the airport.' }, act = 'gps', arg = 'airport', go = 'thanks' } } },
+    policegps = { text = { hr = 'Policijska uprava je na jugu grada, između bolnice i zračne luke.', en = 'The police station is in the south of town, between the hospital and the airport.' },
+        opts = { { t = { hr = 'Postavi GPS do policije.', en = 'Set GPS to the police.' }, act = 'gps', arg = 'police', go = 'thanks' } } },
     thanks = { text = { hr = 'Nema na čemu! Još nešto?', en = 'You are welcome! Anything else?' }, opts = {} },
 }
 
@@ -63,7 +65,7 @@ OsijekDialogs = {
         start = { text = { { hr = 'Bok! Kako ti mogu pomoći?', en = 'Hi! How can I help you?' },
                            { hr = 'Dobar dan! Treba li ti nešto?', en = 'Good day! Do you need something?' },
                            { hr = 'Hej! Nisam te prije vidio ovdje.', en = 'Hey! I have not seen you around here before.' } },
-            opts = { WAY[1], WAY[2], WAY[3],
+            opts = { WAY[1], WAY[2], WAY[3], WAY[4],
                      { t = { hr = 'Odakle si?', en = 'Where are you from?' }, go = 'from' },
                      { t = { hr = 'Ima li posla u Osijeku?', en = 'Is there any work in Osijek?' }, go = 'job' } } },
         from = { text = { { hr = 'Rođen sam ovdje, u Donjem gradu. Osijek je najbolji!', en = 'I was born here, in the lower town. Osijek is the best!' },
@@ -151,6 +153,33 @@ OsijekDialogs = {
         welcome = { text = { hr = 'Hvala! Što mi preporučuješ vidjeti?', en = 'Thanks! What should I see?' }, opts = { WAY[1] } },
     }) },
 
+    -- ---------------------------------------------------------------- police station (PU Osijek)
+    police = { title = { hr = 'Policija', en = 'Police' }, prefix = { hr = 'Policajac', en = 'Officer' }, nodes = merge({
+        start = { text = { hr = 'Dobar dan! Kako vam mogu pomoći, građanine?', en = 'Hello! How can I help you at the moment, citizen?' },
+            opts = { { t = { hr = 'Želim prijaviti kazneno djelo.', en = 'I need to file a police report.' }, go = 'report' },
+                     { t = { hr = 'Trebam dozvolu za oružje, kako je dobiti?', en = 'I need a gun licence, how can I get one?' }, go = 'gun' },
+                     { t = { hr = 'Moram platiti kaznu.', en = 'I need to pay a fine.' }, go = 'fine' },
+                     { t = { hr = 'Želim se zaposliti u policiji.', en = 'I want to join the police.' }, go = 'job' },
+                     { t = { hr = 'Izgubio sam osobnu iskaznicu.', en = 'I lost my ID card.' }, go = 'lostid' } } },
+        report = { text = { hr = 'Razumijem. Što se dogodilo?', en = 'I understand. What happened?' },
+            opts = { { t = { hr = 'Ukradeno mi je vozilo.', en = 'My car was stolen.' }, go = 'reported' },
+                     { t = { hr = 'Netko me napao.', en = 'Somebody attacked me.' }, go = 'reported' },
+                     { t = { hr = 'Opljačkali su me / ukrali novčanik.', en = 'I was robbed / my wallet was stolen.' }, go = 'reported' },
+                     { t = { hr = 'Vidio sam prometnu nesreću.', en = 'I saw a traffic accident.' }, go = 'accident' } } },
+        reported = { text = { hr = 'Zapisao sam prijavu pod brojem {case}. Naši policajci će provjeriti i javiti vam se.', en = 'I wrote the report down, number {case}. Our officers will check it and contact you.' },
+            opts = { { t = { hr = 'Hvala vam.', en = 'Thank you.' }, go = 'thanks' } } },
+        accident = { text = { hr = 'Hvala na dojavi. Ako ima ozlijeđenih, odmah zovite 112 (/hitna).', en = 'Thanks for telling us. If somebody is hurt, call 112 (/hitna) right away.' }, opts = {} },
+        gun = { text = { hr = 'Trebate biti punoljetni, bez kaznenog dosjea i proći tečaj rukovanja oružjem. Zahtjev predajete ovdje na šalteru.',
+                         en = 'You must be an adult, have no criminal record and pass a weapons course. You hand in the request here at the desk.' },
+            opts = { { t = { hr = 'Koliko to traje?', en = 'How long does it take?' }, go = 'gun2' } } },
+        gun2 = { text = { hr = 'Obično tjedan dana. Javit ćemo vam kad je dozvola gotova.', en = 'Usually a week. We will call you when the licence is ready.' }, opts = {} },
+        fine = { text = { hr = 'Kaznu možete platiti ovdje ili u banci. Imate li broj prekršajnog naloga?', en = 'You can pay the fine here or at the bank. Do you have the ticket number?' },
+            opts = { { t = { hr = 'Nemam ga kod sebe.', en = 'I do not have it with me.' }, go = 'fine2' } } },
+        fine2 = { text = { hr = 'Onda dođite kad ga nađete. Kazna se mora platiti u roku od 8 dana.', en = 'Then come back when you find it. The fine must be paid within 8 days.' }, opts = {} },
+        job = { text = { hr = 'Odlično! Javite se upravi servera za prijem. Uniformu dobivate u svlačionici iza šaltera.', en = 'Great! Talk to the server staff to join. You get your uniform in the locker room behind the desk.' }, opts = {} },
+        lostid = { text = { hr = 'Novu osobnu možete dobiti pri izradi lika ili kod službenika. Pazite gdje je ostavljate!', en = 'You can get a new ID from the clerk. Be careful where you leave it!' }, opts = {} },
+    }) },
+
     -- ---------------------------------------------------------------- beach
     lifeguard = { title = { hr = 'Spasilac', en = 'Lifeguard' }, nodes = merge({
         start = { text = { hr = 'Bok! Pazim na kupače. Treba li ti nešto?', en = 'Hi! I am watching the swimmers. Need something?' },
@@ -178,6 +207,7 @@ OsijekDialogs = {
 OsijekDialogRoles = {
     s_m_m_doctor_01 = 'doctor', s_f_y_scrubs_01 = 'nurse', s_m_m_paramedic_01 = 'paramedic',
     s_f_y_airhostess_01 = 'hostess', s_m_m_security_01 = 'security', s_m_m_pilot_01 = 'pilot',
+    s_m_y_cop_01 = 'police', s_f_y_cop_01 = 'police',
     s_m_y_baywatch_01 = 'lifeguard', s_f_y_baywatch_01 = 'lifeguard', s_f_y_beachbarstaff_01 = 'bartender',
 }
 

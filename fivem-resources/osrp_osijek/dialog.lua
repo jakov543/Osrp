@@ -37,7 +37,8 @@ local function fill(text, d)
     return (text:gsub('{name}', d.name.first)
         :gsub('{flight}', fl[math.random(#fl)])
         :gsub('{time}', ('%02d:%02d'):format(h, math.random(0, 11) * 5))
-        :gsub('{gate}', tostring(math.random(1, 6))))
+        :gsub('{gate}', tostring(math.random(1, 6)))
+        :gsub('{case}', ('%d/%d'):format(math.random(100, 999), 2026)))
 end
 
 local function show(nodeId)

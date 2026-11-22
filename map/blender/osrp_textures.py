@@ -405,12 +405,47 @@ def terrazzo(rng, n, base):
     return colorize(base, shade), 0.5 - 0.3 * joint
 
 
+def rust_hull(rng, n, base, dark=False):
+    """v1.0.26: sunken steel hull - welded plates with rivets, orange-brown rust, dark streaks, green algae and shells"""
+    tid, u, v, edge = tiles(n, 2, 4, stagger=0.5)
+    yy, xx = np.mgrid[0:n, 0:n].astype(float)
+    var = per_tile(rng, tid, 0.10)
+    rust = fbm(rng, n, [n / 6, n / 18, n / 60], [1, 0.6, 0.4])
+    streak = np.clip(noise(rng, n, 2.0, sx=0.25, sy=14.0), 0, 1)
+    seam = np.clip(1 - edge / 3.0, 0, 1)
+    rivet = ((np.abs(edge - 9.0) < 2.2) & ((xx + yy).astype(int) % 22 < 4)).astype(float)
+    pits = speckles(rng, n, 0.02, 1.0)
+    shade = (0.85 + var + 0.35 * rust - 0.30 * streak) * (1 - 0.45 * seam) * (1 + 0.25 * rivet) * (1 - 0.3 * pits)
+    img = colorize(base, shade).astype(float)
+    orange = np.array([140, 62, 22], float) if not dark else np.array([70, 40, 24], float)
+    k = np.clip(rust * 0.9, 0, 1)[..., None]
+    img = img * (1 - 0.55 * k) + orange * (0.55 * k) * (0.8 + 0.4 * rng.random())
+    algae = np.clip(fbm(rng, n, [n / 5, n / 15], [1, 0.5]) - 0.25, 0, 1)[..., None]
+    img = img * (1 - 0.6 * algae) + np.array([38, 62, 30], float) * 0.6 * algae
+    shells = speckles(rng, n, 0.0025, 0.9)[..., None]
+    img = img * (1 - 0.8 * shells) + 205 * 0.8 * shells
+    return np.clip(img, 0, 255).astype(np.uint8), 0.5 + 0.3 * rust - 0.4 * seam + 0.5 * rivet + 0.3 * shells[..., 0]
+
+
+def rotten_wood(rng, n, base):
+    """v1.0.26: waterlogged old wood with algae"""
+    img, h = wood(rng, n, base, 6)
+    img = img.astype(float)
+    algae = np.clip(fbm(rng, n, [n / 4, n / 12], [1, 0.5]) - 0.2, 0, 1)[..., None]
+    img = img * (0.75 - 0.4 * algae) + np.array([40, 60, 32], float) * 0.5 * algae
+    return np.clip(img, 0, 255).astype(np.uint8), h
+
+
 def flat(rng, n, base):
     return colorize(base, 1 + 0.05 * noise(rng, n, 1.0)), None
 
 
 # material-name key -> (recipe, texture size, tile size in metres, normal strength or 0)
 TABLE = [
+    ("rust_wreck",   lambda r, n, b: rust_hull(r, n, b),      1024, 3.0, 2.5),     # v1.0.26 sunken boat
+    ("rust_dark",    lambda r, n, b: rust_hull(r, n, b, True), 1024, 3.0, 2.5),
+    ("wood_wreck",   lambda r, n, b: rotten_wood(r, n, b),     512, 1.5, 1.5),
+    ("plaster_police", lambda r, n, b: facade_panels(r, n, b, 4, 3), 1024, 6.0, 1.5),
     ("plaster_hospital", lambda r, n, b: facade_panels(r, n, b, 4, 3), 1024, 6.0, 1.5),    # v1.0.25
     ("plaster_terminal", lambda r, n, b: facade_panels(r, n, b, 3, 2, 3.0), 1024, 6.0, 1.5),
     ("pavement_hospital", lambda r, n, b: vinyl(r, n, b),     1024, 2.4, 0.8),

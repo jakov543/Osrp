@@ -1044,3 +1044,31 @@ end)
 AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then airDown() end
 end)
+
+
+-- ===================================================================== v1.0.26: police station locker room (E = uniform)
+CreateThread(function()
+    while true do
+        local sleep = 1000
+        local P = Life.POLICE
+        if P and P.locker then
+            local me = PlayerPedId()
+            local pos = GetEntityCoords(me)
+            for _, l in ipairs(P.locker) do
+                local w = W(l[1], l[2], P.z[1])
+                local d = #(pos - w)
+                if d < 12.0 then
+                    sleep = 0
+                    DrawMarker(27, w.x, w.y, w.z + 0.03, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.2, 1.2, 1.0, 40, 90, 220, 160, false, false, 2, true, nil, nil, false)
+                    if d < 1.4 then
+                        BeginTextCommandDisplayHelp('STRING')
+                        AddTextComponentSubstringPlayerName(Config.NpcLanguage == 'en' and '~INPUT_CONTEXT~ Police uniform' or '~INPUT_CONTEXT~ Policijska uniforma')
+                        EndTextCommandDisplayHelp(0, false, false, -1)
+                        if IsControlJustReleased(0, 38) then TriggerEvent('osrp:policeLocker') end
+                    end
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)

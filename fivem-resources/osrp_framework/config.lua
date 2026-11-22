@@ -63,3 +63,11 @@ Config.Outfits = {
         { [11] = { 9, 0 }, [3] = { 0, 0 }, [8] = { 15, 0 }, [4] = { 3, 0 }, [6] = { 3, 0 } },
     },
 }
+
+-- v1.0.26 police uniform (locker room in PU Osijek). GTA freemode clothing: [component] = { drawable, texture }
+-- 3 arms, 4 pants, 6 shoes, 8 undershirt, 11 shirt/jacket, 9 vest, 10 badge, hat = prop (-1 = none)
+Config.PoliceUniformJobOnly = true      -- only players with job 'police' can take the uniform
+Config.PoliceUniform = {
+    m = { [11] = { 55, 0 }, [8] = { 58, 0 }, [3] = { 41, 0 }, [4] = { 25, 0 }, [6] = { 25, 0 }, [9] = { 0, 0 }, [10] = { 0, 0 }, hat = { -1, 0 } },
+    f = { [11] = { 48, 0 }, [8] = { 35, 0 }, [3] = { 44, 0 }, [4] = { 34, 0 }, [6] = { 27, 0 }, [9] = { 0, 0 }, [10] = { 0, 0 }, hat = { -1, 0 } },
+}

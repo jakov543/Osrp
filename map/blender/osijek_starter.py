@@ -579,7 +579,7 @@ for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
         if name == "rijeka" and side == 1:
             segs = [(-MAP_W / 2, MAP_W / 2)]
         elif name == "jug2" and side == -1:
-            segs = cut_segments([(-MAP_W / 2, MAP_W / 2)], DRIVEWAYS + [150], 5.5)
+            segs = cut_segments([(-MAP_W / 2, MAP_W / 2)], DRIVEWAYS + [150, -60], 5.5)
         else:
             segs = open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)
         for k, (a, b) in enumerate(segs):
@@ -842,8 +842,17 @@ def house_enterable(name, cx, cy, w, d, h, mat, facing):
 
 def fake_entrance(name, cx, y_front, facing):
     """closed front door look for buildings you can't enter"""
-    box(col, f"{name}_vrata", (cx, y_front + facing * 0.03, 0.1), (DOOR_W, 0.08, DOOR_H - 0.3), M_DOORFRAME)
-    box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
+    # v1.0.26: real-looking door - stone step, frame, two panels with glass, handle, canopy right above on brackets
+    box(col, f"{name}_prag", (cx, y_front + facing * 0.35, 0.0), (DOOR_W + 0.8, 0.7, 0.28), M_WHITE_STONE)
+    box(col, f"{name}_okvir_l", (cx - DOOR_W / 2 - 0.06, y_front + facing * 0.06, 0.28), (0.14, 0.14, DOOR_H - 0.2), M_WHITE_STONE)
+    box(col, f"{name}_okvir_d", (cx + DOOR_W / 2 + 0.06, y_front + facing * 0.06, 0.28), (0.14, 0.14, DOOR_H - 0.2), M_WHITE_STONE)
+    box(col, f"{name}_okvir_g", (cx, y_front + facing * 0.06, DOOR_H + 0.08), (DOOR_W + 0.26, 0.14, 0.16), M_WHITE_STONE)
+    box(col, f"{name}_vrata", (cx, y_front + facing * 0.03, 0.28), (DOOR_W, 0.06, DOOR_H - 0.2), M_DOORFRAME)
+    box(col, f"{name}_staklo", (cx, y_front + facing * 0.065, 1.55), (DOOR_W - 0.5, 0.02, 1.0), M_GLASS)
+    box(col, f"{name}_kvaka", (cx + DOOR_W / 2 - 0.18, y_front + facing * 0.09, 1.2), (0.05, 0.05, 0.25), M_GOLD)
+    box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.5, DOOR_H + 0.24), (DOOR_W + 1.0, 1.0, 0.1), M_CANOPY)
+    for sx in (-1, 1):
+        box(col, f"{name}_nosac_{sx}", (cx + sx * (DOOR_W / 2 + 0.35), y_front + facing * 0.45, DOOR_H - 0.3), (0.06, 0.9, 0.06), M_STEEL)
 
 
 # City blocks: buildings with windows + pitched roofs (every 3rd one can be entered)
@@ -1005,6 +1014,9 @@ def line(name, x, y, sx, sy, mat=None, z=0.1):
 
 # ---------- v1.0.15: block letters (signs, runway numbers) ----------
 FONT = {
+    'P': ["#### ", "#   #", "#   #", "#### ", "#    ", "#    ", "#    "],
+    'R': ["#### ", "#   #", "#   #", "#### ", "# #  ", "#  # ", "#   #"],
+    'U': ["#   #", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "],
     'O': [" ### ", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "],
     'S': [" ####", "#    ", "#    ", " ### ", "    #", "    #", "#### "],
     'I': ["#####", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "#####"],
@@ -1290,7 +1302,7 @@ line("osrp_cesta_aerodrom_crta", 150, -376, 0.13, 34)
 # v1.0.24: curbs + sidewalks along the airport road and the service roads (no more road edge floating over the grass)
 for sx in (-1, 1):
     box(col, f"osrp_rubnik_aerodrom_{sx}", (150 + sx * 5.15, -376.5, 0.0), (0.3, 37, 0.28), M_CURB)
-    box(col, f"osrp_plocnik_aerodrom_{sx}", (150 + sx * 6.55, -378.0, 0.0), (2.5, 34, 0.26), M_WALK)
+    box(col, f"osrp_plocnik_aerodrom_{sx}", (150 + sx * 6.55, -376.6, 0.0), (2.5, 36.8, 0.26), M_WALK)     # v1.0.26: up to the street sidewalk
     for k, (a, b) in enumerate(((-460, -418.2), (-407.8, -395)) if sx < 0 else ((-460, -395),)):   # open where the link road joins
         box(col, f"osrp_rubnik_servisna_{sx}_{k}", (312 + sx * 5.15, (a + b) / 2, 0.0), (0.3, b - a, 0.28), M_CURB)
 for sy in (-1, 1):
@@ -1400,12 +1412,25 @@ def sand_z(y):
     return 0.12 + (y - SAND_TOP) * (0.12 + 10.5) / (SAND_TOP - SAND_LOW)
 
 
+# v1.0.26: the beach is one solid sand wedge from the shore down to the river bed (no thin floating sheets under water)
+PROFILE = [(SAND_TOP, 0.12), (SAND_LOW, -10.5), (SAND_LOW - 24, BED_Z + 0.02), (SAND_LOW - 24, BED_Z - 0.5), (SAND_TOP, BED_Z - 0.5)]
+
+
+def extrude_x(name, a, b, prof, mat):
+    n = len(prof)
+    vs = [(a, y, z) for (y, z) in prof] + [(b, y, z) for (y, z) in prof]
+    fs = []
+    for k in range(n):
+        k2 = (k + 1) % n
+        fs.append((k, k2, n + k2, n + k))
+    fs.append(tuple(range(n - 1, -1, -1)))
+    fs.append(tuple(range(n, 2 * n)))
+    fs = fs + [tuple(reversed(f)) for f in fs]           # both sides: always visible
+    return _mesh_obj(col, name, vs, fs, mat)
+
+
 for i, (cx_, hx_) in enumerate(_cuts((BEACH_X0 + BEACH_X1) / 2, (BEACH_X1 - BEACH_X0) / 2)):
-    a, b = cx_ - hx_, cx_ + hx_
-    _mesh_obj(col, f"osrp_plaza_kosina_{i}", [(a, SAND_LOW, -10.5), (b, SAND_LOW, -10.5), (b, SAND_TOP, 0.12), (a, SAND_TOP, 0.12)], [(0, 1, 2, 3)], M_SAND)
-for i, (cx_, hx_) in enumerate(_cuts((BEACH_X0 + BEACH_X1) / 2, (BEACH_X1 - BEACH_X0) / 2)):     # v1.0.24: on down to the river bed
-    a, b = cx_ - hx_, cx_ + hx_
-    _mesh_obj(col, f"osrp_plaza_kosina_dno_{i}", [(a, SAND_LOW - 24, BED_Z + 0.02), (b, SAND_LOW - 24, BED_Z + 0.02), (b, SAND_LOW, -10.5), (a, SAND_LOW, -10.5)], [(0, 1, 2, 3)], M_SAND)
+    extrude_x(f"osrp_plaza_kosina_{i}", cx_ - hx_, cx_ + hx_, PROFILE, M_SAND)
 for k, x in enumerate((BEACH_X0 - 0.5, BEACH_X1 + 0.5)):     # stone side walls where the quay stops
     box(col, f"osrp_plaza_zid_{k}", (x, (SAND_LOW + QN + 3) / 2 - 8, BED_Z), (1.0, QN + 3 - SAND_LOW + 16, -BED_Z + 0.17), M_STONE)
 # pier on posts, 0.7 m above the water, from the sand out into the river
@@ -1434,16 +1459,32 @@ tower, trail = [], []
 nst = 7
 for k in range(nst):         # stair 1: next to the pier, along -y, from the deck up to the 3 m platform
     z = PIER_Z + (k + 1) * (T3 - PIER_Z) / nst
-    tower.append((TW_X0 + 0.8, PIER_Y1 + 9.5 - k * 1.0, z - 0.2, 1.6, 1.0, 0.2))
+    tower.append((TW_X0 + 0.8, PIER_Y1 + 9.5 - k * 1.0, z - 0.3, 1.6, 1.02, 0.3))
 tower.append((TW_X0 + 2.0, PIER_Y1 + 1.0, T3 - 0.25, 4.0, 4.0, 0.25))          # 3 m platform (y PIER_Y1-1 .. +3)
 for k in range(nst - 2):     # stair 2: along +y from the 3 m platform up to 5 m
     z = T3 + (k + 1) * (T5 - T3) / (nst - 2)
-    tower.append((TW_X0 + 3.4, PIER_Y1 + 3.5 + k * 1.0, z - 0.2, 1.2, 1.0, 0.2))
+    tower.append((TW_X0 + 3.4, PIER_Y1 + 3.5 + k * 1.0, z - 0.3, 1.2, 1.02, 0.3))
 tower.append((TW_X0 + 3.4, PIER_Y1 + 9.5, T5 - 0.25, 3.0, 3.0, 0.25))          # 5 m platform
 for (px, py) in ((TW_X0 + 0.2, PIER_Y1 - 0.8), (TW_X0 + 3.8, PIER_Y1 - 0.8), (TW_X0 + 0.2, PIER_Y1 + 2.8), (TW_X0 + 3.8, PIER_Y1 + 2.8),
                  (TW_X0 + 2.1, PIER_Y1 + 8.2), (TW_X0 + 4.7, PIER_Y1 + 8.2), (TW_X0 + 2.1, PIER_Y1 + 10.8), (TW_X0 + 4.7, PIER_Y1 + 10.8)):
     top = T3 - 0.25 if py < PIER_Y1 + 5 else T5 - 0.25
     tower.append((px, py, BED_Z, 0.25, 0.25, top - BED_Z))
+# v1.0.26: stair stringers (side beams) and handrails so the steps are not floating blocks
+for (x0, y_lo, y_hi, z_lo, z_hi, w) in ((TW_X0 + 0.8, PIER_Y1 + 3.0, PIER_Y1 + 10.0, PIER_Z, T3, 1.6), (TW_X0 + 3.4, PIER_Y1 + 3.0, PIER_Y1 + 8.0, T3, T5, 1.2)):
+    up = 1 if x0 > TW_X0 + 2 else -1
+    for sx in (-1, 1):
+        x = x0 + sx * (w / 2 + 0.06)
+        ys = (y_lo, y_hi) if up > 0 else (y_hi, y_lo)
+        vs = [(x - 0.06, ys[0], z_lo - 0.35), (x + 0.06, ys[0], z_lo - 0.35), (x + 0.06, ys[1], z_hi - 0.35), (x - 0.06, ys[1], z_hi - 0.35),
+              (x - 0.06, ys[0], z_lo + 0.05), (x + 0.06, ys[0], z_lo + 0.05), (x + 0.06, ys[1], z_hi + 0.05), (x - 0.06, ys[1], z_hi + 0.05)]
+        _mesh_obj(col, f"osrp_plaza_toranj_nosac_{x0}_{sx}", vs, _BOX_FACES + [tuple(reversed(f)) for f in _BOX_FACES], M_WHITE_STONE)
+        rv = [(x - 0.03, ys[0], z_lo + 0.95), (x + 0.03, ys[0], z_lo + 0.95), (x + 0.03, ys[1], z_hi + 0.95), (x - 0.03, ys[1], z_hi + 0.95),
+              (x - 0.03, ys[0], z_lo + 1.02), (x + 0.03, ys[0], z_lo + 1.02), (x + 0.03, ys[1], z_hi + 1.02), (x - 0.03, ys[1], z_hi + 1.02)]
+        _mesh_obj(col, f"osrp_plaza_toranj_rukohvat_{x0}_{sx}", rv, _BOX_FACES + [tuple(reversed(f)) for f in _BOX_FACES], M_POLE)
+        for t in (0.0, 0.5, 1.0):
+            yy = ys[0] + (ys[1] - ys[0]) * t
+            zz = z_lo + (z_hi - z_lo) * t
+            tower.append((x, yy, zz, 0.05, 0.05, 1.0))          # handrail posts
 boxes_mesh("osrp_plaza_toranj", tower, M_WHITE_STONE)
 # railings (open on the jump sides: 3 m to the south, 5 m to the east)
 trail += [(TW_X0 + 0.02, PIER_Y1 + 0.5, T3, 0.05, 3.0, 1.0)]
@@ -1560,10 +1601,99 @@ MAPRECTS += [
     ("bld", -30, -540, 60, 40), ("bld", -82, -530, 26, 12),
 ] + [("road", x, (TW_Y - 9 + RW_Y + RW_W / 2) / 2, 18, TW_Y - 9 - RW_Y - RW_W / 2) for x in (-410, 0, 410)]
 
+# ---------- v1.0.26 PU Osijek - police station (south of the street "jug2", between the hospital and the airport road) ----------
+PSX, PSY = -60.0, -398.0                  # centre of the building
+PW, PD, PH, PG = 50.0, 28.0, 10.0, 4.2    # width, depth, height, ground floor height
+PFRONT = PSY + PD / 2                     # north face (y)
+M_POLWALL = material("osrp_plaster_police", (0.86, 0.87, 0.88))
+M_POLBLUE = material("osrp_canopy_police_blue", (0.04, 0.14, 0.40))
+M_POLFLOOR = material("osrp_pavement_hospital_police", (0.62, 0.66, 0.70))
+M_BARS = M_STEEL
+# shell: solid upper floor, hollow ground floor
+box(col, "osrp_policija_kat", (PSX, PSY, PG), (PW, PD, PH - PG), M_POLWALL)
+box(col, "osrp_policija_krov", (PSX, PSY, PH), (PW + 0.6, PD + 0.6, 0.4), M_STONE)
+box(col, "osrp_policija_pod", (PSX, PSY, 0.0), (PW, PD, FLOOR_Z), M_POLFLOOR)
+box(col, "osrp_policija_strop", (PSX, PSY, PG - 0.06), (PW - 0.6, PD - 0.6, 0.06), M_CEIL)
+box(col, "osrp_policija_zid_j", (PSX, PSY - PD / 2 + 0.15, 0), (PW, 0.3, PG), M_POLWALL)
+for sx in (-1, 1):
+    box(col, f"osrp_policija_zid_bok_{sx}", (PSX + sx * (PW / 2 - 0.15), PSY, 0), (0.3, PD, PG), M_POLWALL)
+# front: glass + 5 m sliding doors in the middle, blue band and POLICIJA sign
+for sx in (-1, 1):
+    a, b = 2.5, PW / 2
+    box(col, f"osrp_policija_front_podnozje_{sx}", (PSX + sx * (a + b) / 2, PFRONT - 0.15, 0), (b - a, 0.3, 0.9), M_POLBLUE)
+    box(col, f"osrp_policija_front_staklo_{sx}", (PSX + sx * (a + b) / 2, PFRONT - 0.15, 0.9), (b - a, 0.2, PG - 0.9), M_CLEAR)
+    for x in range(4, int(b), 4):
+        box(col, f"osrp_policija_front_stup_{sx}_{x}", (PSX + sx * x, PFRONT - 0.15, 0.9), (0.15, 0.32, PG - 0.9), M_STEEL)
+box(col, "osrp_policija_staklo_nad", (PSX, PFRONT - 0.15, FLOOR_Z + 3.0), (5, 0.2, PG - FLOOR_Z - 3.0), M_CLEAR)
+SLIDEDOORS.append((PSX, PFRONT - 0.55, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
+box(col, "osrp_policija_pojas", (PSX, PFRONT + 0.02, PG), (PW, 0.1, 1.3), M_POLBLUE)
+block_text("osrp_policija_natpis", "POLICIJA", (PSX - text_width("POLICIJA", 0.16) / 2, PFRONT + 0.1, PG + 0.15), 0.16, (1, 0, 0), (0, 0, 1), M_SIGN)
+block_text("osrp_policija_natpis2", "PU OSIJEK", (PSX - text_width("PU OSIJEK", 0.1) / 2 + PW / 2 - 14, PFRONT + 0.1, PG + 0.35), 0.1, (1, 0, 0), (0, 0, 1), M_SIGN)
+box(col, "osrp_policija_nadstresnica", (PSX, PFRONT + 3.0, 3.6), (12, 6, 0.35), M_POLBLUE)
+for sx in (-1, 1):
+    cylinder(col, f"osrp_policija_stup_{sx}", (PSX + sx * 5.5, PFRONT + 5.5, 0.1), 0.2, 3.5, M_STEEL, verts=8)
+box(col, "osrp_policija_svjetlo", (PSX, PFRONT + 5.9, 3.25), (3.0, 0.15, 0.35), M_SIGN_BLUE)
+windows(col, "osrp_policija_prozori_s", PSX, PFRONT, PG + 1.6, PW - 4, 1, 3.6, M_GLASS, 1)
+windows(col, "osrp_policija_prozori_j", PSX, PSY - PD / 2, PG + 1.6, PW - 4, 1, 3.6, M_GLASS, -1)
+# forecourt: car park with marked bays for police cars, curb and sidewalk to the street
+plane(col, "osrp_policija_parking", (PSX, (PFRONT + (-358.0)) / 2, 0.1), (PW + 30, -358.0 - PFRONT), M_ROAD)
+for k in range(8):
+    line(f"osrp_policija_mjesto_{k}", PSX - 34 + k * 4 if k < 4 else PSX + 22 + (k - 4) * 4, PFRONT + 6.5, 0.12, 5.0)
+SPECIAL += [(PSX - 32, PFRONT + 6.5, None, 180.0, "police", 0), (PSX - 28, PFRONT + 6.5, None, 180.0, "police", 0),
+            (PSX + 24, PFRONT + 6.5, None, 180.0, "police3", 0), (PSX + 28, PFRONT + 6.5, None, 180.0, "policet", 0)]
+for sx in (-1, 1):
+    flower_bed(f"policija_{sx}", PSX + sx * 12, PFRONT + 1.2, 6.0, 1.2)
+# inside: lobby with the front desk, waiting chairs; corridor; offices (west), lockers (middle), cells (east)
+IN_Y = PSY + 2.0                           # wall between lobby (north) and the back rooms
+for k, (a, b) in enumerate(((-PW / 2 + 0.3, -2.0), (2.0, PW / 2 - 0.3))):
+    box(col, f"osrp_policija_zid_hodnik_{k}", (PSX + (a + b) / 2, IN_Y, FLOOR_Z), (b - a, 0.2, PG - FLOOR_Z), M_INTWALL)
+box(col, "osrp_policija_zid_hodnik_nad", (PSX, IN_Y, FLOOR_Z + 2.4), (4.0, 0.2, PG - FLOOR_Z - 2.4), M_INTWALL)
+for x in (-9.0, 8.0):                      # room walls offices | lockers | cells
+    for k, (a, b) in enumerate(((PSY - PD / 2 + 0.3, IN_Y - 3.2), (IN_Y - 1.4, IN_Y))):
+        box(col, f"osrp_policija_zid_soba_{x}_{k}", (PSX + x, (a + b) / 2, FLOOR_Z), (0.2, b - a, PG - FLOOR_Z), M_INTWALL)
+    box(col, f"osrp_policija_zid_soba_nad_{x}", (PSX + x, IN_Y - 2.3, FLOOR_Z + 2.4), (0.2, 1.8, PG - FLOOR_Z - 2.4), M_INTWALL)
+box(col, "osrp_policija_pult", (PSX, PSY + 7.5, FLOOR_Z), (9.0, 0.9, 1.1), M_POLBLUE)
+box(col, "osrp_policija_pult_ploca", (PSX, PSY + 7.5, FLOOR_Z + 1.1), (9.3, 1.1, 0.06), M_WHITE_STONE)
+block_text("osrp_policija_natpis_unutra", "POLICIJA", (PSX - text_width("POLICIJA", 0.09) / 2, IN_Y + 0.11, 2.6), 0.09, (1, 0, 0), (0, 0, 1), M_SIGN_BLUE)
+for k in range(3):
+    cprop("wchairs", PSX - 18 + k * 3.2, PFRONT - 1.2, FLOOR_Z, 180.0)
+    cprop("wchairs", PSX + 12 + k * 3.2, PFRONT - 1.2, FLOOR_Z, 180.0)
+cprop("planter", PSX - 22, PSY + 5, FLOOR_Z, 0.0)
+cprop("planter", PSX + 22, PSY + 5, FLOOR_Z, 0.0)
+for k in range(3):                         # offices: desks with a PC and chair
+    dx = PSX - 22 + k * 5
+    box(col, f"osrp_policija_stol_{k}", (dx, PSY - 6, FLOOR_Z), (1.8, 0.9, 0.75), M_WOOD)
+    box(col, f"osrp_policija_monitor_{k}", (dx, PSY - 6.25, FLOOR_Z + 0.75), (0.6, 0.06, 0.4), M_SCREEN if "M_SCREEN" in globals() else M_GLASS)
+    FURNITURE.append(("stolica", round(dx, 2), round(PSY - 5.2, 2), FLOOR_Z, 0.0, 0.0))
+lockers = []
+for k in range(8):                         # locker room - put on the police uniform here
+    lockers.append((PSX - 7.5 + k * 1.0, PSY - PD / 2 + 0.6, FLOOR_Z, 0.9, 0.6, 2.0))
+boxes_mesh("osrp_policija_ormarici", lockers, M_STEEL)
+box(col, "osrp_policija_klupa_svlacionica", (PSX - 4, PSY - 8.5, FLOOR_Z), (5.0, 0.5, 0.45), M_WOOD)
+cells = []
+for c in range(3):                         # three cells with bars and a bench
+    x0 = PSX + 8.3 + c * 5.5
+    box(col, f"osrp_policija_celija_klupa_{c}", (x0 + 2.7, PSY - PD / 2 + 0.8, FLOOR_Z), (4.6, 0.8, 0.45), M_WHITE_STONE)
+    if c > 0:
+        box(col, f"osrp_policija_celija_zid_{c}", (x0, PSY - 8.5, FLOOR_Z), (0.2, 10.4, PG - FLOOR_Z), M_INTWALL)
+    for k in range(22):
+        if 8 <= k <= 11:
+            continue                       # door gap
+        cells.append((x0 + 0.25 + k * 0.24, PSY - 3.3, FLOOR_Z, 0.05, 0.05, PG - FLOOR_Z - 0.1))
+    cells.append((x0 + 2.75, PSY - 3.3, PG - 0.4, 5.5, 0.08, 0.08))
+boxes_mesh("osrp_policija_resetke", cells, M_BARS)
+INTERIOR_LIGHTS += [(PSX + dx, PSY + dy, PG - 0.3, 9.0, 40.0) for dx in (-15, 0, 15) for dy in (8, -6)]
+STAFF += [("s_m_y_cop_01", PSX, PSY + 6.6, 0.0, "WORLD_HUMAN_CLIPBOARD"), ("s_f_y_cop_01", PSX - 20, PSY - 5.2, 180.0, "PROP_HUMAN_SEAT_CHAIR"),
+          ("s_m_y_cop_01", PSX + 30, PFRONT + 3, 270.0, "WORLD_HUMAN_COP_IDLES"), ("s_m_y_cop_01", PSX + 14, PSY - 1.5, 90.0, "WORLD_HUMAN_GUARD_STAND")]
+POLICE = {"locker": [(PSX - 4.0, PSY - 9.5)], "door": [(PSX, PFRONT + 2)], "z": [FLOOR_Z]}
+PLACES["police"] = (PSX, PFRONT + 3)
+PLACES["police_locker"] = (PSX - 4.0, PSY - 9.5)
+MAPRECTS.append(("bld", PSX, PSY, PW, PD))
+
 LANDMARKS = [("Tvrđa - Konkatedrala", TV_X, TV_Y - 20), ("Trg Svetog Trojstva", PIL_X, PIL_Y),
              ("Gradski park", PCX, PCY), ("Pješački most", BR_X, RIVER_Y), ("Promenada uz Dravu", 0, PROM_Y),
              ("Europska avenija", -250, 0), ("KBC Osijek - Bolnica", HX, HY), ("Zračna luka Osijek", TX, TY),
-             ("Kupalište Copacabana", -300, BEACH_Y)]
+             ("Kupalište Copacabana", -300, BEACH_Y), ("PU Osijek - Policija", PSX, PSY)]
 
 PARKING = []        # (x, y, heading) parked cars along the curbs of the cross streets
 SIGNS = []          # (kind, x, y, heading)
@@ -1595,8 +1725,8 @@ for bx in range(len(CROSS_X) - 1):
 for k in range(int((PARK_X1 - PARK_X0) / 9)):
     for y in (PARK_Y0 + 3.0, PARK_Y1 - 3.0):
         GREEN.append(("grm", PARK_X0 + 4 + k * 9, y, random.uniform(0, 360)))
-for k in range(12):
-    GREEN.append(("grm", -405 + k * 20, BEACH_Y + 24, random.uniform(0, 360)))
+for k in range(12):                                   # v1.0.26: on the grass, not on the walkway
+    GREEN.append(("grm", -405 + k * 20, RIVER_Y + RIVER_W / 2 + 38 + 12, random.uniform(0, 360)))
 for k in range(10):
     if not (HX - 57 < HX - 50 + k * 11 < HX - 23):      # v1.0.23: not inside the back wing
         GREEN.append(("grm", HX - 50 + k * 11, HY - 26, random.uniform(0, 360)))
@@ -1659,7 +1789,7 @@ def _declutter():
     for t in TREES:      # move a tree along the sidewalk to a free spot, otherwise drop it
         x, y = t[0], t[1]
         for dx in (0, 2.5, -2.5, 4.5, -4.5):
-            if free(x + dx, y, 1.4) and not in_solid(x + dx, y, 1.5):
+            if free(x + dx, y, 1.4) and not in_solid(x + dx, y, 2.6):
                 placed.append((x + dx, y, 1.4))
                 trees.append((round(x + dx, 2), y) + tuple(t[2:]))
                 break
@@ -1693,4 +1823,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.25: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.26: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
