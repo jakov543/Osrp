@@ -41,7 +41,7 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
 with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
-    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH", "AIRPORT", "POLICE")}
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH", "AIRPORT", "POLICE", "GUNSHOP")}
               | {"PLACES": {k: list(v) for k, v in city["PLACES"].items()}}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
     json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4], "r": (m[5] if len(m) > 5 else 0.0)} for m in city["FURNITURE"]], f)
@@ -170,7 +170,16 @@ for seed, mat in enumerate(sorted({m for o in objs + prop_parts for m in o.data.
     tex_name = "osrp_" + mat.name.replace("osrp_", "")[:40]
     strength, blur, extra, tile, colname = recipe_for(mat.name)
     ndds = None
-    if "clear_glass" in mat.name:
+    if "signtex_" in mat.name:
+        # v1.0.27: Croatian traffic sign / shop sign face, drawn by osrp_signs.py, mapped 0..1 over the face
+        import osrp_signs
+        key = mat.name.split("signtex_")[1]
+        png = os.path.join(TEX, tex_name + ".png")
+        osrp_signs.draw(key).save(png)
+        dds = os.path.join(TEX, tex_name + ".dds")
+        subprocess.run(["convert", png, "-define", "dds:compression=dxt1", "-define", "dds:mipmaps=6", dds], check=True)
+        ndds, tile = None, -1.0
+    elif "clear_glass" in mat.name:
         # v1.0.25: see-through glass (glass_pv shader, alpha texture) - hospital + terminal fronts, sliding doors
         dds = os.path.join(TEX, tex_name + ".dds")
         subprocess.run(["convert", "-size", "64x64", f"xc:rgba({rgb[0]},{rgb[1]},{rgb[2]},0.30)",
@@ -216,6 +225,17 @@ def world_uv(o):
         tile = mat_tile.get(m.name, 2.0) if m else 2.0
         n = rot @ poly.normal
         ax = max(range(3), key=lambda i: abs(n[i]))
+        if tile < 0:      # sign face: the whole picture over the face, readable from the front
+            pts = [mw @ me.vertices[me.loops[li].vertex_index].co for li in poly.loop_indices]
+            ha = 1 if ax == 0 else 0                    # horizontal axis in the face plane
+            hs = [p[ha] for p in pts]
+            zs = [p[2] for p in pts]
+            h0, h1, z0, z1 = min(hs), max(hs), min(zs), max(zs)
+            flip = (n[1] > 0) if ax == 1 else (n[0] < 0)
+            for li, p in zip(poly.loop_indices, pts):
+                u = (p[ha] - h0) / max(1e-6, h1 - h0)
+                uv.data[li].uv = ((1 - u) if flip else u, (p[2] - z0) / max(1e-6, z1 - z0))
+            continue
         coords = []
         for li in poly.loop_indices:
             co = mw @ me.vertices[me.loops[li].vertex_index].co

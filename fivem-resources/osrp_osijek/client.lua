@@ -426,3 +426,14 @@ CreateThread(function()
         Wait(active and 0 or 500)
     end
 end)
+
+
+-- ===================================================================== v1.0.27 police livery (runtime texture swap)
+CreateThread(function()
+    local L = Config.PoliceLivery
+    if not (L and L.Enabled) then return end
+    local txd = CreateRuntimeTxd('osrp_livery')
+    local ok = CreateRuntimeTextureFromImage(txd, 'policija_hr', L.Image)
+    if not ok then return print('[osrp_osijek] livery image missing: ' .. L.Image) end
+    for _, r in ipairs(L.Replace) do AddReplaceTexture(r.txd, r.tex, 'osrp_livery', 'policija_hr') end
+end)

@@ -188,8 +188,8 @@ def grass(rng, n, base, park=False):
     hue = rng.uniform(0, 1, nb)
     lit = rng.uniform(0.75, 1.15, nb)
     root = np.array([22, 52, 14], float)
-    tip_a = np.array([118, 178, 42], float)       # lime
-    tip_b = np.array([62, 120, 30], float)        # deeper green
+    tip_a = np.array([92, 142, 40], float)        # v1.0.27: less lime, more natural
+    tip_b = np.array([52, 100, 28], float)        # deeper green
     if park:
         tip_a = np.array([96, 158, 44], float)
     steps = 14
@@ -436,12 +436,21 @@ def rotten_wood(rng, n, base):
     return np.clip(img, 0, 255).astype(np.uint8), h
 
 
+def plaster_smooth(rng, n, base):
+    """v1.0.27: painted interior wall - fine roller texture, no cracks"""
+    fine = noise(rng, n, 0.6)
+    blot = fbm(rng, n, [n / 6], [1])
+    return colorize(base, 1 + 0.025 * fine + 0.02 * blot), 0.5 + 0.1 * fine
+
+
 def flat(rng, n, base):
     return colorize(base, 1 + 0.05 * noise(rng, n, 1.0)), None
 
 
 # material-name key -> (recipe, texture size, tile size in metres, normal strength or 0)
 TABLE = [
+    ("plaster_interior", lambda r, n, b: plaster_smooth(r, n, b), 512, 3.0, 0.4),     # v1.0.27
+    ("plaster_ceiling", lambda r, n, b: plaster_smooth(r, n, b),  512, 3.0, 0.3),
     ("rust_wreck",   lambda r, n, b: rust_hull(r, n, b),      1024, 3.0, 2.5),     # v1.0.26 sunken boat
     ("rust_dark",    lambda r, n, b: rust_hull(r, n, b, True), 1024, 3.0, 2.5),
     ("wood_wreck",   lambda r, n, b: rotten_wood(r, n, b),     512, 1.5, 1.5),

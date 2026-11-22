@@ -224,3 +224,30 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 .d-key.off { opacity: .35; }
 .d-key.done span { border-color: #22c55e; box-shadow: 0 0 14px rgba(34,197,94,.5); }
 .d-status { margin-top: 12px; font-size: 14px; color: #ffd166; min-height: 18px; text-shadow: 0 2px 6px rgba(0,0,0,.9); }
+
+/* ---------- v1.0.27 new clean HUD: no big card - money like GTA text top right, round status rings above the location ---------- */
+.hud { background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; width: auto !important;
+  top: 18px !important; right: 24px !important; text-align: right; }
+.hud .h-top { justify-content: flex-end; gap: 8px; margin: 0 0 4px !important; padding: 0 !important; border: none !important; }
+.hud .h-emb { width: 26px !important; height: 26px !important; }
+.hud .h-name { font-size: 13px !important; text-shadow: 0 1px 4px #000; }
+.hud .h-job { display: inline-block; font-size: 10px !important; }
+.hud .h-money { background: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+.hud .h-row { justify-content: flex-end; gap: 10px; padding: 1px 0 !important; background: none !important; }
+.hud .h-row i, .hud .h-row span { display: none !important; }
+.hud .h-row b { font-size: 26px !important; font-weight: 800; letter-spacing: .5px; font-family: "Pricedown", "Segoe UI", Arial, sans-serif;
+  text-shadow: 0 0 2px #000, 0 2px 6px rgba(0,0,0,.9); }
+.hud .h-row.cash b { color: #72d16a !important; }
+.hud .h-row.bank b { color: #7fb8ff !important; font-size: 20px !important; }
+.hud .h-row.cash b::before { content: ""; }
+.hud .h-foot { justify-content: flex-end; gap: 12px; margin-top: 2px !important; padding: 0 !important; border: none !important;
+  font-size: 11px !important; color: #dfe6ee !important; text-shadow: 0 1px 4px #000; }
+.stbar { position: absolute; display: flex; gap: 8px; z-index: 5; }
+.stbar .st { position: relative; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: conic-gradient(var(--c) calc(var(--v, 100) * 1%), rgba(255,255,255,.12) 0); box-shadow: 0 3px 10px rgba(0,0,0,.45); }
+.stbar .st::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: rgba(10,13,18,.88); }
+.stbar .st svg { position: relative; width: 16px; height: 16px; fill: var(--c); stroke: none; }
+.stbar .st i { display: none !important; }
+.stbar .st.hp { --c: #ef4444; } .stbar .st.ar { --c: #3b82f6; } .stbar .st.sta { --c: #f5c542; }
+.stbar .st.mic { --c: #6b7280; --v: 100; } .stbar .st.mic.on { --c: #22c55e; }
+.stbar .st.mic svg { fill: none; stroke: var(--c); stroke-width: 2; }

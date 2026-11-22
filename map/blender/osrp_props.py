@@ -18,7 +18,7 @@ def build_props(h):
         "blue": material("osrp_fabric_seat_blue", (0.10, 0.22, 0.42)), "teal": material("osrp_fabric_teal", (0.05, 0.40, 0.38)),
         "mattress": material("osrp_fabric_bedding", (0.75, 0.77, 0.80)), "curtain": material("osrp_fabric_curtain", (0.45, 0.62, 0.70)),
         "red": h["M_RED"], "wood": h["M_WOOD"], "yellow": material("osrp_paint_yellow", (0.85, 0.62, 0.05)),
-        "rubber": material("osrp_screen_rubber", (0.04, 0.04, 0.04)), "case1": material("osrp_fabric_case_red", (0.45, 0.06, 0.05)),
+        "rubber": material("osrp_screen_rubber", (0.04, 0.04, 0.04)), "white": material("osrp_paint_white", (0.9, 0.9, 0.9)), "blue": material("osrp_paint_blue", (0.05, 0.2, 0.6)), "case1": material("osrp_fabric_case_red", (0.45, 0.06, 0.05)),
         "case2": material("osrp_fabric_case_navy", (0.06, 0.09, 0.22)), "green": h["M_LEAVES"][0],
         "sign_blue": h["M_SIGN_BLUE"], "sign": h["M_SIGN"], "sign_y": material("osrp_lamp_light_amber", (1.0, 0.7, 0.1), emit=6.0),
         "umb1": material("osrp_fabric_umbrella_red", (0.62, 0.08, 0.06)), "umb2": material("osrp_fabric_umbrella_white", (0.85, 0.85, 0.82)),
@@ -460,5 +460,92 @@ def build_props(h):
         hgt = rr.uniform(1.2, 3.2)
         B(p, f"list_{k}", (x, y, 0), (0.18, 0.04, hgt), "weed")
         B(p, f"list2_{k}", (x + 0.1, y, 0), (0.04, 0.18, hgt * 0.8), "weed")
+
+    # ---------------- v1.0.27 Croatian traffic signs, road works, playground, gun shop (front = +Y)
+    def signtex(key):
+        return material(f"osrp_signtex_{key}", (1.0, 1.0, 1.0))
+    M["signback"] = material("osrp_bridge_steel_signback", (0.55, 0.57, 0.6))
+
+    def face(prop, part, verts_xz, y, mat):
+        vs = [(x, y, z) for (x, z) in verts_xz]
+        n = len(vs)
+        return _mesh_obj(pcol, f"osrp{prop}__{part}", vs, [tuple(range(n)), tuple(range(n - 1, -1, -1))], mat)
+
+    def shape(kind, cx, cz, r):
+        if kind == "oct":
+            return [(cx + r * math.cos(math.pi / 8 + i * math.pi / 4), cz + r * math.sin(math.pi / 8 + i * math.pi / 4)) for i in range(8)]
+        if kind == "circle":
+            return [(cx + r * math.cos(i * math.pi / 12), cz + r * math.sin(i * math.pi / 12)) for i in range(24)]
+        if kind == "diamond":
+            return [(cx + r, cz), (cx, cz + r), (cx - r, cz), (cx, cz - r)]
+        if kind == "tri":
+            return [(cx - r, cz - r * 0.75), (cx + r, cz - r * 0.75), (cx, cz + r * 0.95)]
+        return [(cx - r, cz - r), (cx + r, cz - r), (cx + r, cz + r), (cx - r, cz + r)]      # square
+
+    for key, kind, r, hgt in (("stop", "oct", 0.42, 2.1), ("crossing", "square", 0.38, 2.3), ("priority", "diamond", 0.45, 2.3),
+                              ("noentry", "circle", 0.38, 2.2), ("speed50", "circle", 0.38, 2.2), ("works", "tri", 0.45, 1.4)):
+        p = f"sign_{key}"; names.append(p)
+        C(p, "stup", (0, -0.05, 0), 0.04, hgt + r, "pole", 8)
+        sh = shape(kind, 0, hgt, r)
+        face("prop_" + p, "lice", sh, 0.02, signtex(key))
+        face("prop_" + p, "ledja", shape(kind, 0, hgt, r + 0.02), -0.005, M["signback"])
+        if key == "works":                         # on a little A-frame stand, not a pole
+            for sx in (-0.35, 0.35):
+                B(p, f"noga_{sx}", (sx, -0.25, 0), (0.06, 0.06, 1.0), "pole")
+    for key in ("closed", "detour"):               # big boards on a red/white barrier
+        p = f"board_{key}"; names.append(p)
+        face("prop_" + p, "lice", [(-0.7, 0.75), (0.7, 0.75), (0.7, 2.15), (-0.7, 2.15)], 0.03, signtex(key))
+        B(p, "ploca", (0, 0, 0.75), (1.44, 0.04, 1.42), "signback")
+        for sx in (-0.65, 0.65):
+            B(p, f"noga_{sx}", (sx, 0, 0), (0.08, 0.5, 0.8), "pole")
+        for k in range(4):
+            B(p, f"traka_{k}", (-0.6 + k * 0.4, 0.04, 0.35), (0.2, 0.03, 0.25), "red" if k % 2 == 0 else "white")
+    p = "sign_street"; names.append(p)            # blue street plate on a post
+    C(p, "stup", (0, -0.05, 0), 0.04, 2.9, "pole", 8)
+    face("prop_" + p, "lice", [(-0.45, 2.5), (0.45, 2.5), (0.45, 2.9), (-0.45, 2.9)], 0.02, signtex("street"))
+    p = "gunshop_sign"; names.append(p)            # shop sign board (on the wall, origin = wall)
+    face("prop_" + p, "lice", [(-1.6, 0), (1.6, 0), (1.6, 1.6), (-1.6, 1.6)], 0.09, signtex("gunshop"))
+    B(p, "ploca", (0, 0.04, -0.05), (3.3, 0.08, 1.7), "black")
+
+    p = "swing"; names.append(p)                   # playground swing (2 seats)
+    for sx in (-1.6, 1.6):
+        for sy in (-0.7, 0.7):
+            B(p, f"noga_{sx}_{sy}", (sx, sy * 0.6, 0), (0.1, 0.1, 2.4), "yellow")
+    B(p, "greda", (0, 0, 2.35), (3.4, 0.12, 0.12), "yellow")
+    for sx in (-0.7, 0.7):
+        for dx in (-0.22, 0.22):
+            B(p, f"lanac_{sx}_{dx}", (sx + dx, 0, 0.55), (0.02, 0.02, 1.8), "steel")
+        B(p, f"sjedalo_{sx}", (sx, 0, 0.5), (0.5, 0.22, 0.05), "rubber")
+    p = "slide"; names.append(p)                   # slide with ladder
+    B(p, "platforma", (0, -1.0, 1.4), (0.9, 0.9, 0.08), "red")
+    for sx in (-0.4, 0.4):
+        for sy in (-1.4, -0.6):
+            B(p, f"noga_{sx}_{sy}", (sx, sy, 0), (0.08, 0.08, 1.45), "yellow")
+    for k in range(5):
+        B(p, f"ljestve_{k}", (0, -1.6, 0.25 + k * 0.28), (0.7, 0.06, 0.05), "steel")
+    for k in range(8):
+        B(p, f"tobogan_{k}", (0, -0.45 + k * 0.3, 1.35 - k * 0.17), (0.6, 0.32, 0.06), "blue")
+    B(p, "rub_l", (-0.33, 0.6, 0.2), (0.05, 2.4, 0.15), "blue")
+    B(p, "rub_d", (0.33, 0.6, 0.2), (0.05, 2.4, 0.15), "blue")
+    p = "sandbox"; names.append(p)
+    for k, (x, y, sx, sy) in enumerate(((0, -1.5, 3.2, 0.2), (0, 1.5, 3.2, 0.2), (-1.5, 0, 0.2, 3.0), (1.5, 0, 0.2, 3.0))):
+        B(p, f"rub_{k}", (x, y, 0), (sx, sy, 0.3), "wood")
+    B(p, "pijesak", (0, 0, 0), (2.8, 2.8, 0.18), "sand")
+
+    p = "gunwall"; names.append(p)                 # wall rack with rifles and pistols (origin = wall, things on +Y)
+    B(p, "ploca", (0, 0.03, 0.6), (3.0, 0.06, 1.8), "oldwood" if "oldwood" in M else "wood")
+    for k in range(6):
+        x = -1.25 + k * 0.5
+        B(p, f"puska_kundak_{k}", (x, 0.1, 0.8), (0.07, 0.06, 0.35), "wood")
+        B(p, f"puska_cijev_{k}", (x, 0.1, 1.15), (0.04, 0.05, 0.95), "black")
+    for k in range(5):
+        B(p, f"pistolj_{k}", (-1.1 + k * 0.55, 0.1, 2.15), (0.22, 0.05, 0.14), "black")
+        B(p, f"pistolj_drska_{k}", (-1.17 + k * 0.55, 0.1, 2.02), (0.06, 0.05, 0.13), "black")
+    p = "guncase"; names.append(p)                 # glass display counter
+    B(p, "tijelo", (0, 0, 0), (2.0, 0.7, 0.75), "black")
+    B(p, "staklo", (0, 0, 0.75), (2.0, 0.7, 0.3), "glass")
+    for k in range(3):
+        B(p, f"pistolj_{k}", (-0.6 + k * 0.6, 0, 0.77), (0.24, 0.12, 0.05), "steel")
+    B(p, "ploca", (0, 0, 1.05), (2.04, 0.74, 0.03), "black")
 
     return pcol, names

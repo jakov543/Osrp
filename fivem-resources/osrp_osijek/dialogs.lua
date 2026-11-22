@@ -6,7 +6,7 @@
 
 OsijekDialogPlaces = {     -- local map coordinates (same as the Blender map) for act = 'gps'
     hospital = { -330, -372 }, airport = { 200, -425 }, beach = { -300, 278 }, tvrdja = { 225, 40 },
-    promenade = { 0, 164 }, police = { -60, -381 }, park = { -150, 60 }, marina = { 140, 180 }, wreck = { 330, 175 },
+    promenade = { 0, 164 }, police = { -60, -381 }, gunshop = { 30, -385 }, park = { -150, 60 }, marina = { 140, 180 }, wreck = { 330, 175 },
 }
 
 local BYE = { hr = 'Doviđenja!', en = 'Goodbye!' }
@@ -180,6 +180,28 @@ OsijekDialogs = {
         lostid = { text = { hr = 'Novu osobnu možete dobiti pri izradi lika ili kod službenika. Pazite gdje je ostavljate!', en = 'You can get a new ID from the clerk. Be careful where you leave it!' }, opts = {} },
     }) },
 
+    -- ---------------------------------------------------------------- gun shop (Oružarnica) + road workers
+    gunshop = { title = { hr = 'Oružarnica', en = 'Gun shop' }, nodes = merge({
+        start = { text = { hr = 'Dobro došli u Oružarnicu! Lov, sport i samoobrana. Što vas zanima?', en = 'Welcome to the gun shop! Hunting, sport and self defence. What are you looking for?' },
+            opts = { { t = { hr = 'Pištolj ($750)', en = 'Pistol ($750)' }, act = 'gun', arg = 'pistol', go = 'bought' },
+                     { t = { hr = 'Municija za pištolj ($60)', en = 'Pistol ammo ($60)' }, act = 'gun', arg = 'ammo', go = 'bought' },
+                     { t = { hr = 'Nož ($120)', en = 'Knife ($120)' }, act = 'gun', arg = 'knife', go = 'bought' },
+                     { t = { hr = 'Palica ($80)', en = 'Bat ($80)' }, act = 'gun', arg = 'bat', go = 'bought' },
+                     { t = { hr = 'Svjetiljka ($40)', en = 'Flashlight ($40)' }, act = 'gun', arg = 'flashlight', go = 'bought' },
+                     { t = { hr = 'Trebam li dozvolu?', en = 'Do I need a licence?' }, go = 'licence' } } },
+        bought = { text = { hr = 'Izvolite. Pažljivo s tim, i čuvajte račun!', en = 'Here you go. Be careful with it, and keep the receipt!' }, opts = {} },
+        licence = { text = { hr = 'Za vatreno oružje vam treba dozvola iz policijske uprave. Hladno oružje možete kupiti odmah.', en = 'For firearms you need a licence from the police station. Melee weapons you can buy right away.' },
+            opts = { { t = { hr = 'Gdje je policija?', en = 'Where is the police?' }, go = 'policegps' } } },
+    }) },
+    worker = { title = { hr = 'Radnik na cesti', en = 'Road worker' }, nodes = merge({
+        start = { text = { { hr = 'Pazi, ovdje se radi! Ne prilazi rupi.', en = 'Careful, work in progress! Stay away from the hole.' },
+                           { hr = 'Bok. Mijenjamo cijevi, cesta je djelomično zatvorena.', en = 'Hi. We are changing the pipes, the road is partly closed.' } },
+            opts = { { t = { hr = 'Koliko dugo traju radovi?', en = 'How long will the works take?' }, go = 'long' },
+                     { t = { hr = 'Treba li vam pomoć?', en = 'Do you need help?' }, go = 'help' }, WAY[1] } },
+        long = { text = { hr = 'Još dva tjedna, ako ne bude kiše. Kao i uvijek!', en = 'Two more weeks if it does not rain. As always!' }, opts = {} },
+        help = { text = { hr = 'Hvala, ali bez kacige ne smiješ ovdje. Pitaj u gradu za posao.', en = 'Thanks, but without a helmet you cannot be here. Ask in town for a job.' }, opts = {} },
+    }) },
+
     -- ---------------------------------------------------------------- beach
     lifeguard = { title = { hr = 'Spasilac', en = 'Lifeguard' }, nodes = merge({
         start = { text = { hr = 'Bok! Pazim na kupače. Treba li ti nešto?', en = 'Hi! I am watching the swimmers. Need something?' },
@@ -207,7 +229,8 @@ OsijekDialogs = {
 OsijekDialogRoles = {
     s_m_m_doctor_01 = 'doctor', s_f_y_scrubs_01 = 'nurse', s_m_m_paramedic_01 = 'paramedic',
     s_f_y_airhostess_01 = 'hostess', s_m_m_security_01 = 'security', s_m_m_pilot_01 = 'pilot',
-    s_m_y_cop_01 = 'police', s_f_y_cop_01 = 'police',
+    s_m_y_cop_01 = 'police', s_f_y_cop_01 = 'police', s_m_y_ammucity_01 = 'gunshop',
+    s_m_y_construct_01 = 'worker', s_m_y_construct_02 = 'worker',
     s_m_y_baywatch_01 = 'lifeguard', s_f_y_baywatch_01 = 'lifeguard', s_f_y_beachbarstaff_01 = 'bartender',
 }
 

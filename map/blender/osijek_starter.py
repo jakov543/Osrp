@@ -579,7 +579,7 @@ for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
         if name == "rijeka" and side == 1:
             segs = [(-MAP_W / 2, MAP_W / 2)]
         elif name == "jug2" and side == -1:
-            segs = cut_segments([(-MAP_W / 2, MAP_W / 2)], DRIVEWAYS + [150, -60], 5.5)
+            segs = cut_segments([(-MAP_W / 2, MAP_W / 2)], DRIVEWAYS + [150, -60, 30], 5.5)
         else:
             segs = open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)
         for k, (a, b) in enumerate(segs):
@@ -855,6 +855,11 @@ def fake_entrance(name, cx, y_front, facing):
         box(col, f"{name}_nosac_{sx}", (cx + sx * (DOOR_W / 2 + 0.35), y_front + facing * 0.45, DOOR_H - 0.3), (0.06, 0.9, 0.06), M_STEEL)
 
 
+HEDGES = []          # v1.0.27 courtyard hedges (added to GREEN later)
+M_GRAVEL = material("osrp_gravel_path_dvor", (0.42, 0.38, 0.32))
+M_POLBLUE_EARLY = material("osrp_canopy_awning_green", (0.06, 0.30, 0.16))
+M_AWN_RED = material("osrp_canopy_awning_red", (0.55, 0.06, 0.05))
+M_PLAYSAND = material("osrp_beach_sand_playground", (0.78, 0.68, 0.48))
 # City blocks: buildings with windows + pitched roofs (every 3rd one can be entered)
 bid = 0
 for bx in range(len(CROSS_X) - 1):
@@ -888,14 +893,60 @@ for bx in range(len(CROSS_X) - 1):
                     box(col, f"osrp_podnozje_{bid}_{side}", (cx, cy, 0), (w - 0.8, d + 0.2, 0.9), M_RIVER_PLINTH)   # stone base
                     windows(col, f"osrp_prozori_{bid}_{side}", cx, street_face, 0.8 + floor_h, w - 1, floors - 1, floor_h, M_GLASS, facing) if floors > 1 else None
                     fake_entrance(f"osrp_ulaz_{bid}_{side}", cx, street_face, facing)
-                gable_roof(col, f"osrp_krov_{bid}_{side}", cx, cy, h, w - 1, d, random.uniform(3.5, 5.5), M_ROOF)
+                rh = random.uniform(3.5, 5.5)
+                gable_roof(col, f"osrp_krov_{bid}_{side}", cx, cy, h, w - 1, d, rh, M_ROOF)
+                # v1.0.27: nicer facades - band between ground floor and 1st floor, balconies, chimneys, shop fronts
+                deco, rails = [], []
+                deco.append((cx, street_face + facing * 0.08, floor_h + 0.55, w - 1.0, 0.16, 0.22))       # string course
+                if floors >= 3 and bid % 2 == 0:
+                    ncol = max(1, int((w - 1 - 2) // 3.2))
+                    step = (w - 1 - 2) / ncol
+                    for f in range(1, floors):
+                        for c in range(0, ncol, 2):
+                            bxx = cx - (w - 1 - 2) / 2 + step / 2 + c * step
+                            zb = 0.8 + f * floor_h + 0.85
+                            deco.append((bxx, street_face + facing * 0.55, zb, 2.1, 1.0, 0.14))            # slab
+                            rails.append((bxx, street_face + facing * 1.02, zb + 0.14, 2.1, 0.05, 0.05 + 0.95))
+                            for sx in (-1, 1):
+                                rails.append((bxx + sx * 1.03, street_face + facing * 0.55, zb + 0.14, 0.05, 0.95, 1.0))
+                if bid % 3 != 0 and bid % 4 == 1:          # shop on the ground floor: shop window + coloured awning
+                    deco.append((cx - (w - 1) / 4 - 1, street_face + facing * 0.05, 0.9, (w - 1) / 2 - 3, 0.1, 2.0))
+                for k in range(1 + bid % 2):              # chimneys on the roof
+                    chx = cx + (-1 if k == 0 else 1) * (w - 1) * 0.25
+                    deco.append((chx, cy + d * 0.12, h + rh * 0.55, 0.7, 0.7, rh * 0.45 + 1.0))
+                boxes_mesh(f"osrp_kuca_ukras_{bid}_{side}", deco, M_WHITE_STONE)
+                if rails:
+                    boxes_mesh(f"osrp_kuca_balkon_ograda_{bid}_{side}", rails, M_POLE)
+                if bid % 3 != 0 and bid % 4 == 1:
+                    box(col, f"osrp_kuca_izlog_{bid}_{side}", (cx - (w - 1) / 4 - 1, street_face + facing * 0.12, 1.0), ((w - 1) / 2 - 3.4, 0.06, 1.8), M_GLASS)
+                    box(col, f"osrp_kuca_tenda_{bid}_{side}", (cx - (w - 1) / 4 - 1, street_face + facing * 0.7, 3.0), ((w - 1) / 2 - 2.6, 1.4, 0.12), random.choice((M_AWN_RED, M_CANOPY, M_POLBLUE_EARLY)))
             bid += 1
             x += w
-        # v1.0.13: courtyard trees behind the buildings (real GTA trees in-game)
-        for k in range(int((x1 - x0) / 22)):
-            tx = random.uniform(x0 + 6, x1 - 6)
-            ty = random.uniform(y0 + 25, y1 - 25)
-            tree(col, f"park_dvor_{bx}_{int(y0)}_{k}", tx, ty, random.uniform(0.9, 1.3))
+        # v1.0.27: every courtyard is a little park - cross paths, rows of trees, hedges, benches, a playground
+        cxm, cym = (x0 + x1) / 2, (y0 + y1) / 2
+        yin0, yin1 = y0 + 24, y1 - 24                     # free area between the two rows of houses
+        if yin1 - yin0 > 20 and x1 - x0 > 40:
+            tag = f"{bx}_{int(y0)}"
+            plane(col, f"osrp_dvor_staza_x_{tag}", (cxm, cym, 0.05), (x1 - x0 - 16, 3.0), M_GRAVEL)
+            plane(col, f"osrp_dvor_staza_y_{tag}", (cxm, cym, 0.051), (3.0, yin1 - yin0), M_GRAVEL)
+            for xx in range(int(x0 + 14), int(x1 - 8), 14):          # tree rows along both sides of the long path
+                for yy in (cym - 7, cym + 7):
+                    tree(col, f"park_dvor_{tag}_{xx}_{int(yy)}", xx, yy, 1.0)
+            for yy in range(int(yin0 + 6), int(yin1 - 4), 12):
+                if abs(yy - cym) > 10:
+                    tree(col, f"park_dvor_{tag}_y_{yy}", cxm - 7, yy, 1.0)
+                    tree(col, f"park_dvor_{tag}_y2_{yy}", cxm + 7, yy, 1.0)
+            for xx in range(int(x0 + 10), int(x1 - 8), 5):            # low hedges along the path
+                if abs(xx - cxm) > 6:
+                    HEDGES.append(("grm", xx, cym - 2.6, 0.0))
+            for k, xx in enumerate((cxm - 20, cxm + 20)):
+                BENCHES.append((round(xx, 1), round(cym + 2.3, 1), 180.0))
+                BENCHES.append((round(xx, 1), round(cym - 2.3, 1), 0.0))
+            if (bx + int(y0)) % 2 == 0:                                # playground
+                cprop("swing", cxm + 14, cym + 16, 0.05, 0.0, 120.0)
+                cprop("slide", cxm + 22, cym + 16, 0.05, 90.0, 120.0)
+                cprop("sandbox", cxm + 18, cym + 24, 0.05, 0.0, 120.0)
+                box(col, f"osrp_dvor_igraliste_{tag}", (cxm + 18, cym + 19, 0.0), (18, 14, 0.06), M_PLAYSAND)
 
 # Pedestrian bridge over the Drava (Pješački most) - deck level with the banks, you can walk on it
 BR_X = -80
@@ -1485,6 +1536,10 @@ for (x0, y_lo, y_hi, z_lo, z_hi, w) in ((TW_X0 + 0.8, PIER_Y1 + 3.0, PIER_Y1 + 1
             yy = ys[0] + (ys[1] - ys[0]) * t
             zz = z_lo + (z_hi - z_lo) * t
             tower.append((x, yy, zz, 0.05, 0.05, 1.0))          # handrail posts
+# v1.0.27: landing at the bottom of the tower stairs, joined to the pier deck (the first step was hanging in the air)
+tower.append((TW_X0 + 0.8, PIER_Y1 + 10.75, PIER_Z - 0.3, 1.7, 1.5, 0.3))
+for (px, py) in ((TW_X0 + 0.05, PIER_Y1 + 11.4), (TW_X0 + 1.55, PIER_Y1 + 11.4), (TW_X0 + 1.55, PIER_Y1 + 9.2)):
+    tower.append((px, py, BED_Z, 0.2, 0.2, PIER_Z - 0.3 - BED_Z))
 boxes_mesh("osrp_plaza_toranj", tower, M_WHITE_STONE)
 # railings (open on the jump sides: 3 m to the south, 5 m to the east)
 trail += [(TW_X0 + 0.02, PIER_Y1 + 0.5, T3, 0.05, 3.0, 1.0)]
@@ -1559,6 +1614,9 @@ for name, by in (("jug", BIKE_S), ("sjever", BIKE_N)):
     boxes_mesh(f"osrp_biciklisticka_crte_{name}", lines, M_LINE)
     BIKEROUTES.append((-MAP_W / 2 + 6, by, MAP_W / 2 - 6, by))
 
+# v1.0.27: granite edging along the promenade + walkway + bike path (no thin floating edge over the grass)
+for k, (y, L) in enumerate(((PROM_Y - 8.1, MAP_W), (NP_Y - 3.1, MAP_W - 2), (NP_Y + 3.1, MAP_W - 2), (BIKE_N - 1.4, MAP_W - 4), (BIKE_N + 1.4, MAP_W - 4))):
+    box(col, f"osrp_rub_staze_{k}", (0, y, 0.0), (L, 0.2, 0.16), M_CURB)
 # north bank: Šetalište (6 m walkway) + trees, lamps, benches looking at the river, path from the footbridge
 box(col, "osrp_setaliste_sjever", (0, NP_Y, 0.0), (MAP_W - 2, 6.0, 0.12), M_WALK)
 box(col, "osrp_most_staza_sjever", (BR_X, (RIVER_Y + RIVER_W / 2 + 4 + NP_Y - 3) / 2, 0.0), (4.0, NP_Y - 3 - (RIVER_Y + RIVER_W / 2 + 4), 0.12), M_WALK)
@@ -1716,7 +1774,7 @@ for x in CROSS_X:
     SIGNS.append(("pjesacki", x + SIDE_ROAD_W / 2 + 0.9, -(ROAD_W / 2 + 12), 0.0))
 
 # v1.0.18 bushes + grass clumps on the green areas (GTA plants)
-GREEN = []
+GREEN = list(HEDGES)
 for bx in range(len(CROSS_X) - 1):
     for (y0, y1) in [(-342.2, -187.8), (-172.2, -16), (16, 117.2)]:
         x0, x1 = CROSS_X[bx] + 12, CROSS_X[bx + 1] - 12
@@ -1812,6 +1870,74 @@ for x in CROSS_X:
         WALKS.append((x + sgn * (SIDE_ROAD_W / 2 + 1.55), 22, x + sgn * (SIDE_ROAD_W / 2 + 1.55), 115))
 
 # traffic loops (right-hand traffic, lane centres)
+# ---------- v1.0.27 road works (cross street x = 300, east lane) + closed road (cross street x = -150) ----------
+WORKS = {"workers": [], "cones": []}
+RW_X, RW_Y0, RW_Y1 = 300, 40, 78
+for y in range(RW_Y0, RW_Y1 + 1, 4):                       # cones along the closed lane
+    SIGNS.append(("cunj", RW_X + 0.3, y, 0.0))
+for y in (RW_Y0 - 2, RW_Y1 + 2):
+    SIGNS.append(("barijera_rad", RW_X + 2.5, y, 90.0))
+cprop("sign_works", RW_X + 6.2, RW_Y0 - 25, 0.15, 180.0, 150.0)          # warning sign before the works
+cprop("sign_works", RW_X - 6.2, RW_Y1 + 25, 0.15, 0.0, 150.0)
+cprop("board_detour", RW_X + 3.0, RW_Y0 - 6, 0.1, 180.0, 150.0)
+box(col, "osrp_radovi_rupa", (RW_X + 2.5, (RW_Y0 + RW_Y1) / 2, 0.08), (3.2, 14, 0.06), material("osrp_soil_works", (0.25, 0.18, 0.12)))
+box(col, "osrp_radovi_hrpa", (RW_X + 2.6, RW_Y0 + 8, 0.1), (2.2, 3.0, 0.7), material("osrp_soil_heap", (0.30, 0.22, 0.14)))
+SIGNS += [("mjesalica", RW_X + 2.4, RW_Y0 + 16, 0.0), ("generator", RW_X + 2.6, RW_Y1 - 6, 90.0), ("radno_svjetlo", RW_X + 4.3, RW_Y0 + 3, 200.0),
+          ("radno_svjetlo", RW_X + 4.3, RW_Y1 - 3, 340.0)]
+SPECIAL.append((RW_X + 2.5, RW_Y1 - 13, None, 0.0, "bulldozer", 0))
+STAFF += [("s_m_y_construct_01", RW_X + 2.2, RW_Y0 + 11, 90.0, "WORLD_HUMAN_CONST_DRILL"),
+          ("s_m_y_construct_02", RW_X + 3.0, RW_Y0 + 21, 270.0, "WORLD_HUMAN_HAMMERING"),
+          ("s_m_y_construct_01", RW_X + 4.4, RW_Y1 - 2, 180.0, "WORLD_HUMAN_CLIPBOARD"),
+          ("s_m_y_construct_02", RW_X + 2.0, RW_Y0 + 1, 180.0, "WORLD_HUMAN_CAR_PARK_ATTENDANT")]
+CL_X, CL_Y0, CL_Y1 = -150, -150, -30                     # closed between the south street and the avenue
+for y in (CL_Y0, CL_Y1):
+    for dx in (-3.6, -1.2, 1.2, 3.6):
+        SIGNS.append(("barijera", CL_X + dx, y, 0.0))
+    cprop("board_closed", CL_X + 0.0, y + (2.0 if y == CL_Y0 else -2.0), 0.1, 0.0 if y == CL_Y0 else 180.0, 150.0)
+    cprop("sign_noentry", CL_X + SIDE_ROAD_W / 2 + 0.8, y + (-4.0 if y == CL_Y0 else 4.0), 0.15, 180.0 if y == CL_Y0 else 0.0, 150.0)
+SPECIAL.append((CL_X, CL_Y0 + 7, None, 90.0, "police", 0))
+STAFF.append(("s_m_y_cop_01", CL_X + 3.2, CL_Y0 + 4, 180.0, "WORLD_HUMAN_CAR_PARK_ATTENDANT"))
+PARKING[:] = [pk for pk in PARKING if not (abs(pk[0] - CL_X) < 10 and CL_Y0 - 5 < pk[1] < CL_Y1 + 5) and not (abs(pk[0] - RW_X) < 10 and RW_Y0 - 5 < pk[1] < RW_Y1 + 5)]
+WALKS_BLOCKED = (CL_X, CL_Y0, CL_Y1)
+
+# ---------- v1.0.27 Oružarnica - gun shop (east of the police station) ----------
+GSX, GSY = 30.0, -396.0
+GW, GD, GH = 22.0, 16.0, 5.0
+GFRONT = GSY + GD / 2
+M_GUNWALL = material("osrp_plaster_gunshop", (0.30, 0.31, 0.33))
+box(col, "osrp_oruzarnica_krov", (GSX, GSY, GH), (GW + 0.4, GD + 0.4, 0.35), M_STONE)
+box(col, "osrp_oruzarnica_pod", (GSX, GSY, 0.0), (GW, GD, FLOOR_Z), M_FLOOR)
+box(col, "osrp_oruzarnica_strop", (GSX, GSY, GH - 0.05), (GW - 0.4, GD - 0.4, 0.05), M_CEIL)
+box(col, "osrp_oruzarnica_zid_j", (GSX, GSY - GD / 2 + 0.15, 0), (GW, 0.3, GH), M_GUNWALL)
+for sx in (-1, 1):
+    box(col, f"osrp_oruzarnica_zid_{sx}", (GSX + sx * (GW / 2 - 0.15), GSY, 0), (0.3, GD, GH), M_GUNWALL)
+    box(col, f"osrp_oruzarnica_front_{sx}", (GSX + sx * 6.5, GFRONT - 0.15, 0), (8.4, 0.3, 1.0), M_GUNWALL)
+    box(col, f"osrp_oruzarnica_izlog_{sx}", (GSX + sx * 6.5, GFRONT - 0.15, 1.0), (8.4, 0.2, 2.4), M_CLEAR)
+box(col, "osrp_oruzarnica_front_gore", (GSX, GFRONT - 0.15, 3.4), (GW, 0.3, GH - 3.4), M_GUNWALL)
+SLIDEDOORS.append((GSX, GFRONT - 0.5, FLOOR_Z, 0.0, 1.3, "osrpprop_slidedoor"))
+box(col, "osrp_oruzarnica_staklo_nad", (GSX, GFRONT - 0.15, FLOOR_Z + 2.6), (2.6, 0.2, 3.4 - FLOOR_Z - 2.6), M_CLEAR)
+cprop("gunshop_sign", GSX, GFRONT, 3.45, 0.0, 150.0)
+box(col, "osrp_oruzarnica_pult", (GSX, GSY - 1.5, FLOOR_Z), (8.0, 0.8, 1.05), M_WOOD)
+cprop("guncase", GSX - 5.5, GSY + 2.0, FLOOR_Z, 0.0)
+cprop("guncase", GSX + 5.5, GSY + 2.0, FLOOR_Z, 0.0)
+for k in range(3):
+    cprop("gunwall", GSX - 7 + k * 7, GSY - GD / 2 + 0.3, FLOOR_Z, 0.0)
+plane(col, "osrp_oruzarnica_parking", (GSX, (GFRONT - 358.0) / 2, 0.1), (GW + 8, -358.0 - GFRONT), M_ROAD)
+INTERIOR_LIGHTS += [(GSX + dx, GSY + dy, GH - 0.3, 7.0, 30.0) for dx in (-6, 6) for dy in (-3, 3)]
+STAFF.append(("s_m_y_ammucity_01", GSX, GSY - 2.6, 0.0, "WORLD_HUMAN_STAND_IMPATIENT"))
+GUNSHOP = {"counter": [(GSX, GSY - 0.6)], "z": [FLOOR_Z]}
+PLACES["gunshop"] = (GSX, GFRONT + 3)
+MAPRECTS.append(("bld", GSX, GSY, GW, GD))
+LANDMARKS.append(("Oružarnica", GSX, GSY))
+
+# ---------- v1.0.27 Croatian signs: priority road on the avenue, 50 km/h at the city entrances, street name plates ----------
+for x in CROSS_X:
+    for sx in (-1, 1):
+        cprop("sign_priority", x + sx * (SIDE_ROAD_W / 2 + 6.5), sx * (ROAD_W / 2 + 1.3), 0.15, 180.0 if sx > 0 else 0.0, 150.0)
+    cprop("sign_street", x + SIDE_ROAD_W / 2 + 1.4, -(ROAD_W / 2 + 3.6), 0.15, 90.0, 120.0)
+for x, y, hd in ((-520, -(ROAD_W / 2 + 1.3), 0.0), (520, ROAD_W / 2 + 1.3, 180.0)):
+    cprop("sign_speed50", x, y, 0.15, hd, 150.0)
+
 ROUTES = [
     [(-452.5, 127.5), (-452.5, -4.0), (452.5, -4.0), (452.5, 127.5)],     # avenue east -> river street west
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
@@ -1823,4 +1949,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.26: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.27: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

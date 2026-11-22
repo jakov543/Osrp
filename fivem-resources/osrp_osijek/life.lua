@@ -153,6 +153,12 @@ CreateThread(function()
                             settleVehicle(v)
                         end
                         if sv[6] and sv[6] > 0 then SetVehicleLivery(v, sv[6]) end
+                        local L = Config.PoliceLivery            -- v1.0.27: white Croatian police cars
+                        if L and L.Enabled then
+                            for _, m in ipairs(L.Models) do
+                                if sv[5] == m then SetVehicleColours(v, L.Colour, L.Colour) SetVehicleNumberPlateText(v, 'POLICIJA') end
+                            end
+                        end
                         SetVehicleDoorsLocked(v, 2)
                         SetEntityAsMissionEntity(v, true, true)
                         SetVehicleNumberPlateText(v, sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK')
@@ -227,8 +233,9 @@ local function newWalker(i)
     local hash = jogger and firstModel({ RUNNERS[math.random(#RUNNERS)], RUNNERS[1] }) or pedModel(i)
     if not load(hash) then return end
     local p = CreatePed(4, hash, wp.x, wp.y, wp.z, 0.0, false, true)
-    SetBlockingOfNonTemporaryEvents(p, false)
+    SetBlockingOfNonTemporaryEvents(p, true)        -- v1.0.27: stay on the sidewalk, do not wander over the grass
     SetPedKeepTask(p, true)
+    SetPedPathCanUseClimbovers(p, false)
     SetModelAsNoLongerNeeded(hash)
     local goEnd = math.random() < 0.5
     local speed = jogger and 2.0 or 1.0
@@ -289,17 +296,58 @@ CreateThread(function()
                     elseif i % 3 == 0 then newStander(i)
                     else newWalker(i) end
                 elseif not e.sitting then
-                    -- turn around at the end of the sidewalk
+                    -- v1.0.27: walkers follow the sidewalk network: at the end of a sidewalk they cross to the next one
+                    -- (or turn around), and if anything knocks them off their path they go back to the sidewalk
                     local w = e.walk
                     local tx, ty = e.toEnd and w[3] or w[1], e.toEnd and w[4] or w[2]
                     local tw = W(tx, ty, 0.3)
-                    if #(GetEntityCoords(e.ped) - tw) < 2.5 then
-                        e.toEnd = not e.toEnd
-                        local nx, ny = e.toEnd and w[3] or w[1], e.toEnd and w[4] or w[2]
-                        local nw = W(nx, ny, 0.3)
-                        TaskGoStraightToCoord(e.ped, nw.x, nw.y, nw.z, e.speed or 1.0, -1, 0.0, 0.5)
-                    elseif #(GetEntityCoords(e.ped) - pos) > 260.0 then
+                    local pc = GetEntityCoords(e.ped)
+                    if e.via then
+                        local vw = W(e.via[1], e.via[2], 0.3)
+                        if #(pc.xy - vw.xy) < 2.0 then
+                            e.via = nil
+                            TaskGoStraightToCoord(e.ped, tw.x, tw.y, tw.z, e.speed or 1.0, -1, 0.0, 0.5)
+                        elseif GetScriptTaskStatus(e.ped, 0x7d8f4411) == 7 then
+                            TaskGoStraightToCoord(e.ped, vw.x, vw.y, vw.z, e.speed or 1.0, -1, 0.0, 0.5)
+                        end
+                    elseif #(pc.xy - tw.xy) < 2.5 then
+                        local nextW, nextEnd, best = nil, nil, {}
+                        for _, o in ipairs(Life.WALKS) do
+                            if o ~= w then
+                                for k = 0, 1 do
+                                    local ox, oy = o[1 + k * 2], o[2 + k * 2]
+                                    local d = math.sqrt((ox - tx) ^ 2 + (oy - ty) ^ 2)
+                                    if d < 22.0 then best[#best + 1] = { o, k == 0, ox, oy } end
+                                end
+                            end
+                        end
+                        if #best > 0 and math.random() < 0.8 then
+                            local b = best[math.random(#best)]
+                            e.walk, e.toEnd, e.via = b[1], b[2], { b[3], b[4] }
+                            local vw = W(b[3], b[4], 0.3)
+                            TaskGoStraightToCoord(e.ped, vw.x, vw.y, vw.z, e.speed or 1.0, -1, 0.0, 0.5)
+                        else
+                            e.toEnd = not e.toEnd
+                            local nx, ny = e.toEnd and w[3] or w[1], e.toEnd and w[4] or w[2]
+                            local nw = W(nx, ny, 0.3)
+                            TaskGoStraightToCoord(e.ped, nw.x, nw.y, nw.z, e.speed or 1.0, -1, 0.0, 0.5)
+                        end
+                    elseif #(pc - pos) > 260.0 then
                         DeletePed(e.ped); peds[i] = nil     -- respawned closer next round
+                    else
+                        -- off the sidewalk line or standing still -> back onto the sidewalk, then on
+                        local lx, ly = pc.x - Config.Origin.x, pc.y - Config.Origin.y
+                        local dx, dy = w[3] - w[1], w[4] - w[2]
+                        local len2 = math.max(0.01, dx * dx + dy * dy)
+                        local t = math.max(0, math.min(1, ((lx - w[1]) * dx + (ly - w[2]) * dy) / len2))
+                        local px, py = w[1] + dx * t, w[2] + dy * t
+                        if (px - lx) ^ 2 + (py - ly) ^ 2 > 16.0 then
+                            e.via = { px, py }
+                            local vw = W(px, py, 0.3)
+                            TaskGoStraightToCoord(e.ped, vw.x, vw.y, vw.z, e.speed or 1.0, -1, 0.0, 0.5)
+                        elseif GetScriptTaskStatus(e.ped, 0x7d8f4411) == 7 and not (OsijekDialogOpen and OsijekDialogOpen()) then
+                            TaskGoStraightToCoord(e.ped, tw.x, tw.y, tw.z, e.speed or 1.0, -1, 0.0, 0.5)
+                        end
                     end
                 end
             end

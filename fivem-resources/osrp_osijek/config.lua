@@ -79,9 +79,9 @@ Config.ParkedCars = true
 Config.ParkedModels = { 'asea', 'premier', 'emperor', 'ingot', 'primo', 'stanier', 'blista', 'dilettante', 'panto', 'issi2', 'rhapsody', 'fugitive' }
 
 Config.SignModels = {
-    stop     = { 'prop_sign_road_01a', 'prop_sign_road_01b' },
+    stop     = { 'osrpprop_sign_stop', 'prop_sign_road_01a', 'prop_sign_road_01b' },        -- v1.0.27: Croatian signs (own models)
     semafor  = { 'prop_traffic_01a', 'prop_traffic_01b', 'prop_traffic_03a' },
-    pjesacki = { 'prop_sign_road_05a', 'prop_sign_road_03a', 'prop_sign_road_01a' },
+    pjesacki = { 'osrpprop_sign_crossing', 'prop_sign_road_05a', 'prop_sign_road_03a' },
     -- v1.0.15 airport props (first model that exists in your GTA is used)
     air_stair     = { 'prop_air_stair_01', 'prop_air_stair_02', 'prop_air_stair_03' },
     air_bagloader = { 'prop_air_bagloader2', 'prop_air_bagloader' },
@@ -103,9 +103,16 @@ Config.SignModels = {
     -- v1.0.23 real GTA V street light poles (they turn on at night by themselves)
     ulicna_lampa = { 'prop_streetlight_01', 'prop_streetlight_01b' },
     park_lampa   = { 'prop_streetlight_03', 'prop_streetlight_01' },
+    -- v1.0.27 road works + closed road
+    cunj          = { 'prop_roadcone02a', 'prop_roadcone01a' },
+    barijera_rad  = { 'prop_barrier_work05', 'prop_barrier_work06a' },
+    barijera      = { 'prop_mp_barrier_02b', 'prop_barrier_work05' },
+    mjesalica     = { 'prop_cementmixer_01a' },
+    generator     = { 'prop_generator_03b' },
+    radno_svjetlo = { 'prop_worklight_03b' },
 }
 -- extra turn per prop kind, if a GTA model looks the wrong way (e.g. set ulicna_lampa = 180.0 if the lamp arm points away from the road)
-Config.SignTurn = { ulicna_lampa = 0.0, park_lampa = 0.0 }
+Config.SignTurn = { ulicna_lampa = 0.0, park_lampa = 0.0, stop = 180.0, pjesacki = 180.0 }   -- our own sign models face the other way than GTA props
 
 Config.Pedestrians = true
 Config.PedCount = 64                -- NPCs walking, jogging, sitting, standing around you (phone, coffee, smoking ...)
@@ -171,3 +178,14 @@ Config.FountainParticle = 'ent_amb_fountain_pour'                              -
 Config.Cyclists = 8                 -- NPCs riding bikes on the Drava bike paths
 Config.CyclistSpeed = 6.0           -- m/s (about 22 km/h)
 Config.JoggerShare = 0.35           -- part of the people on the promenades who jog
+
+-- v1.0.27 Croatian police livery (white car, blue RAL 5013 band, POLICIJA). TEST: it replaces GTA's police3 livery
+-- texture at runtime. GTA maps that texture in its own way, so if it looks wrong set Enabled = false and send us the
+-- original pol3_sign_1 texture from OpenIV (police3.ytd) - then the livery is painted exactly on its layout.
+Config.PoliceLivery = {
+    Enabled = true,
+    Replace = { { txd = 'police3', tex = 'pol3_sign_1' }, { txd = 'police3+hi', tex = 'pol3_sign_1' } },
+    Image = 'html/livery/policija_hr.png',
+    Models = { 'police3', 'police', 'policet' },
+    Colour = 111,                -- white body (GTA paint index) on the station's police cars
+}

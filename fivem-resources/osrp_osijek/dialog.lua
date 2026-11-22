@@ -73,7 +73,7 @@ local function close()
             TaskStartScenarioInPlace(d.ped, info.scenario, 0, true)
         elseif not (info and info.frozen) then
             ClearPedTasks(d.ped)
-            if d.wasScenario then TaskStartScenarioInPlace(d.ped, d.wasScenario, 0, true) else TaskWanderStandard(d.ped, 10.0, 10) end
+            if d.wasScenario then TaskStartScenarioInPlace(d.ped, d.wasScenario, 0, true) end   -- walkers: the sidewalk loop gives them a new target
         end
     end
 end
@@ -117,6 +117,8 @@ RegisterNUICallback('dialogPick', function(d, cb)
         end
     elseif o.act == 'heal' then
         TriggerServerEvent('osrp:npcHeal')
+    elseif o.act == 'gun' then
+        TriggerServerEvent('osrp:buyWeapon', o.arg)
     elseif o.act == 'buy' then
         TriggerServerEvent('osrp:npcBuy', o.arg)
     elseif o.act == 'id' then
