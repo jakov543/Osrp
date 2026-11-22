@@ -1938,6 +1938,11 @@ for x in CROSS_X:
 for x, y, hd in ((-520, -(ROAD_W / 2 + 1.3), 0.0), (520, ROAD_W / 2 + 1.3, 180.0)):
     cprop("sign_speed50", x, y, 0.15, hd, 150.0)
 
+# v1.0.28: places with a roof you can walk under - no rain inside (x, y, width, depth, roof height)
+INDOORS = [(HX, HY, 111, 45, LOB_H), (TX, TY, 200, 26, 12), (PSX, PSY, PW, PD, PG), (GSX, GSY, GW, GD, GH),
+           (GX, GY, 28, 32, 7), (PSX, PFRONT + 3.0, 12, 6, 3.6), (HX, HY + 26, 18, 8, 3.8)]
+INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]
+
 ROUTES = [
     [(-452.5, 127.5), (-452.5, -4.0), (452.5, -4.0), (452.5, 127.5)],     # avenue east -> river street west
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east

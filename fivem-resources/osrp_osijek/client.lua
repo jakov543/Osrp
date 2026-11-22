@@ -437,3 +437,35 @@ CreateThread(function()
     if not ok then return print('[osrp_osijek] livery image missing: ' .. L.Image) end
     for _, r in ipairs(L.Replace) do AddReplaceTexture(r.txd, r.tex, 'osrp_livery', 'policija_hr') end
 end)
+
+-- ===================================================================== v1.0.28 no rain inside buildings
+-- Our map is made of objects, and GTA rain only stops under the real GTA map. So when you are under one of
+-- our roofs (Life.INDOORS) the rain is switched off for you only, and back on when you walk out.
+CreateThread(function()
+    local inside = false
+    while true do
+        local sleep = 500
+        local ped = PlayerPedId()
+        local p = GetEntityCoords(ped)
+        local lx, ly, lz = p.x - Config.Origin.x, p.y - Config.Origin.y, p.z - Config.Origin.z
+        local now = false
+        do
+            for _, r in ipairs(Life.INDOORS or {}) do
+                if math.abs(lx - r[1]) < r[3] / 2 and math.abs(ly - r[2]) < r[4] / 2 and lz < r[5] - 0.3 and lz > -2.0 then
+                    now = true
+                    break
+                end
+            end
+        end
+        if now then
+            sleep = 0
+            SetRainLevel(0.0)                -- every frame while inside (the weather sets it back otherwise)
+            SetSnowLevel(0.0)
+        elseif inside then
+            SetRainLevel(-1.0)               -- -1 = back to the normal weather
+            SetSnowLevel(-1.0)
+        end
+        inside = now
+        Wait(sleep)
+    end
+end)

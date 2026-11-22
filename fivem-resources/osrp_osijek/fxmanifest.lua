@@ -5,7 +5,7 @@ lua54 'yes'
 name 'osrp_osijek'
 author 'Bandera'
 description 'OSRP - custom Osijek city (Blender -> Sollumz), placed in the sea east of Los Santos'
-version '1.0.27'
+version '1.0.28'
 
 this_is_a_map 'yes'
 
