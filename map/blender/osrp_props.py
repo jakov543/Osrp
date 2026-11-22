@@ -626,4 +626,52 @@ def build_props(h):
     C(p, "stup", (0.9, -0.2, 0), 0.04, 2.4, "steel", 8)
     face("prop_" + p, "natpis", [(0.45, 2.0), (1.35, 2.0), (1.35, 2.6), (0.45, 2.6)], -0.17, signtex("gate"))
 
+    # ---------------- v1.0.32 police station details
+    M.update({"panel_light": material("osrp_lamp_light_panel", (1.0, 0.98, 0.92), emit=6.0)})
+    p = "ceilight"; names.append(p)              # ceiling LED panel 1.2 x 0.6 (origin = ceiling, hangs down)
+    B(p, "okvir", (0, 0, -0.05), (1.25, 0.65, 0.05), "white")
+    B(p, "svjetlo", (0, 0, -0.06), (1.15, 0.55, 0.012), "panel_light")
+    p = "logo_wall"; names.append(p)             # 2.4 m emblem on the wall (origin = wall)
+    face("prop_" + p, "lice", [(-1.2, 0.0), (1.2, 0.0), (1.2, 2.4), (-1.2, 2.4)], 0.05, signtex("police_logo"))
+    B(p, "ploca", (0, 0.02, -0.05), (2.5, 0.04, 2.5), "black")
+    p = "pu_plate"; names.append(p)              # plate beside the door (origin = wall)
+    face("prop_" + p, "lice", [(-0.45, 0.0), (0.45, 0.0), (0.45, 0.9), (-0.45, 0.9)], 0.03, signtex("pu_plate"))
+    B(p, "ploca", (0, 0.01, -0.02), (0.94, 0.02, 0.94), "steel")
+    p = "noticeboard"; names.append(p)           # wanted posters / notices (origin = wall)
+    face("prop_" + p, "lice", [(-1.0, 0.0), (1.0, 0.0), (1.0, 1.3), (-1.0, 1.3)], 0.04, signtex("notice"))
+    B(p, "okvir", (0, 0.015, -0.05), (2.1, 0.03, 1.4), "wood")
+    p = "citymap"; names.append(p)               # big city map for the briefing room (origin = wall)
+    face("prop_" + p, "lice", [(-1.5, 0.0), (1.5, 0.0), (1.5, 1.6), (-1.5, 1.6)], 0.04, signtex("osijek_map"))
+    B(p, "okvir", (0, 0.015, -0.05), (3.1, 0.03, 1.7), "steel")
+    p = "interro"; names.append(p)               # interrogation table with two chairs and a lamp
+    B(p, "ploca", (0, 0, 0.74), (1.6, 0.9, 0.05), "steel")
+    for sx in (-0.7, 0.7):
+        for sy in (-0.35, 0.35):
+            B(p, f"noga_{sx}_{sy}", (sx, sy, 0), (0.05, 0.05, 0.74), "steel")
+    for sy in (-0.85, 0.85):
+        B(p, f"stolac_{sy}", (0, sy, 0.43), (0.45, 0.45, 0.05), "black")
+        B(p, f"stolac_n_{sy}", (0, sy + (0.2 if sy > 0 else -0.2), 0.48), (0.45, 0.05, 0.5), "black")
+        for sx in (-0.18, 0.18):
+            B(p, f"stolac_noga_{sy}_{sx}", (sx, sy, 0), (0.04, 0.04, 0.43), "steel")
+    B(p, "lampa", (0.5, 0, 0.79), (0.15, 0.15, 0.3), "black")
+    p = "cctv"; names.append(p)                  # wall camera (origin = wall)
+    B(p, "nosac", (0, 0.1, -0.05), (0.06, 0.2, 0.06), "white")
+    B(p, "kamera", (0, 0.3, -0.12), (0.12, 0.32, 0.12), "white")
+    B(p, "lec", (0, 0.465, -0.12), (0.08, 0.01, 0.08), "black")
+    p = "acunit"; names.append(p)                # rooftop air conditioner
+    B(p, "tijelo", (0, 0, 0), (1.8, 1.0, 1.1), "cabinet")
+    C(p, "ventilator", (0, 0, 1.1), 0.4, 0.05, "black", 12)
+    p = "bollard"; names.append(p)
+    C(p, "stup", (0, 0, 0), 0.11, 0.95, "steel", 10)
+    C(p, "traka", (0, 0, 0.75), 0.115, 0.08, "sign_y", 10)
+    p = "briefchairs"; names.append(p)          # row of 4 briefing chairs with writing pads (people look to +Y)
+    B(p, "greda", (0, 0, 0.3), (2.6, 0.08, 0.06), "steel")
+    for k in range(4):
+        x = -0.96 + k * 0.64
+        B(p, f"sjedalo_{k}", (x, 0.04, 0.43), (0.5, 0.48, 0.06), "belt")
+        B(p, f"nasl_{k}", (x, -0.2, 0.49), (0.5, 0.06, 0.5), "belt")
+        B(p, f"pult_{k}", (x + 0.22, 0.25, 0.68), (0.25, 0.35, 0.03), "white")
+    for x in (-1.2, 1.2):
+        B(p, f"noga_{x}", (x, 0, 0), (0.06, 0.45, 0.32), "steel")
+
     return pcol, names

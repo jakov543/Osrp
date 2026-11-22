@@ -108,6 +108,45 @@ def draw(key):
         d.rectangle((0, 0, S, S), fill=(18, 24, 34))
         _center_text(d, "IZLAZ  GATE", S * 0.3, 70, (250, 200, 40), cond=True)
         _center_text(d, "A1 - A6", S * 0.65, 110, WHITE)
+    elif key == "police_logo":              # PU Osijek wall emblem: blue shield, chequer, POLICIJA
+        d.rectangle((0, 0, S, S), fill=(18, 40, 96))
+        d.polygon([(S / 2, 40), (S - 80, 90), (S - 95, 300), (S / 2, 440), (95, 300), (80, 90)], fill=(240, 240, 240))
+        d.polygon([(S / 2, 60), (S - 100, 105), (S - 112, 292), (S / 2, 415), (112, 292), (100, 105)], fill=(18, 40, 96))
+        x0, y0, c = S / 2 - 70, 120, 28
+        for r in range(5):
+            for k in range(5):
+                d.rectangle((x0 + k * c, y0 + r * c, x0 + (k + 1) * c, y0 + (r + 1) * c), fill=(220, 0, 0) if (r + k) % 2 == 0 else WHITE)
+        _center_text(d, "POLICIJA", 330, 54, WHITE, cond=True)
+        _center_text(d, "PU OSJEČKO-BARANJSKA", 478, 30, WHITE, cond=True)
+    elif key == "pu_plate":                 # plate next to the door
+        d.rectangle((0, 0, S, S), fill=(18, 40, 96))
+        d.rectangle((10, 10, S - 10, S - 10), outline=(230, 230, 230), width=6)
+        _center_text(d, "REPUBLIKA HRVATSKA", 90, 34, WHITE, cond=True)
+        _center_text(d, "MUP", 175, 80, WHITE)
+        _center_text(d, "POLICIJSKA UPRAVA", 290, 40, WHITE, cond=True)
+        _center_text(d, "OSJEČKO-BARANJSKA", 350, 40, WHITE, cond=True)
+        _center_text(d, "I. POLICIJSKA POSTAJA", 430, 36, (250, 200, 40), cond=True)
+    elif key == "notice":                   # notice board / wanted posters
+        d.rectangle((0, 0, S, S), fill=(150, 110, 70))
+        for k, (x, y, w, h) in enumerate(((30, 40, 140, 190), (190, 40, 140, 190), (350, 40, 130, 190), (40, 270, 200, 200), (270, 270, 210, 200))):
+            d.rectangle((x, y, x + w, y + h), fill=(240, 236, 225))
+            if k < 3:
+                _center_text(d, "TRAŽI SE", y + 22, 22, (180, 0, 0), cond=True, cx=x + w / 2)
+                d.rectangle((x + 30, y + 45, x + w - 30, y + 140), fill=(120, 120, 120))
+                d.ellipse((x + w / 2 - 22, y + 55, x + w / 2 + 22, y + 99), fill=(80, 80, 80))
+            else:
+                for l in range(7):
+                    d.rectangle((x + 15, y + 25 + l * 24, x + w - 15 - (l % 3) * 20, y + 33 + l * 24), fill=(60, 60, 70))
+    elif key == "osijek_map":               # city map on the wall
+        d.rectangle((0, 0, S, S), fill=(214, 220, 206))
+        d.rectangle((0, 300, S, 360), fill=(90, 150, 200))
+        for x in range(40, S, 95):
+            d.rectangle((x, 0, x + 12, 300), fill=(250, 250, 250))
+        for y in (60, 150, 240):
+            d.rectangle((0, y, S, y + 10), fill=(250, 250, 250))
+        d.rectangle((0, 190, S, 210), fill=(250, 220, 120))
+        d.ellipse((150, 380, 190, 420), fill=(200, 0, 0))
+        _center_text(d, "OSIJEK", 470, 48, (30, 30, 40))
     elif key == "gunshop":                  # shop sign
         d.rectangle((0, 0, S, S), fill=(24, 24, 28))
         d.rectangle((10, 10, S - 10, S - 10), outline=(230, 170, 40), width=10)
@@ -116,4 +155,4 @@ def draw(key):
     return img
 
 
-KEYS = ["flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]
+KEYS = ["police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]

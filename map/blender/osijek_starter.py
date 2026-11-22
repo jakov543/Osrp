@@ -1722,8 +1722,8 @@ for sx in (-1, 1):
 box(col, "osrp_policija_staklo_nad", (PSX, PFRONT - 0.15, FLOOR_Z + 3.0), (5, 0.2, PG - FLOOR_Z - 3.0), M_CLEAR)
 SLIDEDOORS.append((PSX, PFRONT - 0.55, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
 box(col, "osrp_policija_pojas", (PSX, PFRONT + 0.02, PG), (PW, 0.1, 1.3), M_POLBLUE)
-block_text("osrp_policija_natpis", "POLICIJA", (PSX - text_width("POLICIJA", 0.16) / 2, PFRONT + 0.1, PG + 0.15), 0.16, (1, 0, 0), (0, 0, 1), M_SIGN)
-block_text("osrp_policija_natpis2", "PU OSIJEK", (PSX - text_width("PU OSIJEK", 0.1) / 2 + PW / 2 - 14, PFRONT + 0.1, PG + 0.35), 0.1, (1, 0, 0), (0, 0, 1), M_SIGN)
+block_text("osrp_policija_natpis", "POLICIJA", (PSX + text_width("POLICIJA", 0.16) / 2, PFRONT + 0.1, PG + 0.15), 0.16, (-1, 0, 0), (0, 0, 1), M_SIGN)   # v1.0.32: readable (was mirrored)
+block_text("osrp_policija_natpis2", "PU OSIJEK", (PSX + text_width("PU OSIJEK", 0.1) / 2 - PW / 2 + 14, PFRONT + 0.1, PG + 0.35), 0.1, (-1, 0, 0), (0, 0, 1), M_SIGN)
 box(col, "osrp_policija_nadstresnica", (PSX, PFRONT + 3.0, 3.6), (12, 6, 0.35), M_POLBLUE)
 for sx in (-1, 1):
     cylinder(col, f"osrp_policija_stup_{sx}", (PSX + sx * 5.5, PFRONT + 5.5, 0.1), 0.2, 3.5, M_STEEL, verts=8)
@@ -1749,7 +1749,7 @@ for x in (-9.0, 8.0):                      # room walls offices | lockers | cell
     box(col, f"osrp_policija_zid_soba_nad_{x}", (PSX + x, IN_Y - 2.3, FLOOR_Z + 2.4), (0.2, 1.8, PG - FLOOR_Z - 2.4), M_INTWALL)
 box(col, "osrp_policija_pult", (PSX, PSY + 7.5, FLOOR_Z), (9.0, 0.9, 1.1), M_POLBLUE)
 box(col, "osrp_policija_pult_ploca", (PSX, PSY + 7.5, FLOOR_Z + 1.1), (9.3, 1.1, 0.06), M_WHITE_STONE)
-block_text("osrp_policija_natpis_unutra", "POLICIJA", (PSX - text_width("POLICIJA", 0.09) / 2, IN_Y + 0.11, 2.6), 0.09, (1, 0, 0), (0, 0, 1), M_SIGN_BLUE)
+block_text("osrp_policija_natpis_unutra", "POLICIJA", (PSX + text_width("POLICIJA", 0.09) / 2, IN_Y + 0.11, 2.6), 0.09, (-1, 0, 0), (0, 0, 1), M_SIGN_BLUE)
 for k in range(3):
     cprop("wchairs", PSX - 18 + k * 3.2, PFRONT - 1.2, FLOOR_Z, 180.0)
     cprop("wchairs", PSX + 12 + k * 3.2, PFRONT - 1.2, FLOOR_Z, 180.0)
@@ -1792,6 +1792,54 @@ POLICE = {"locker": [(PSX - 4.0, PSY - 9.5)], "door": [(PSX, PFRONT + 2)], "z": 
 PLACES["police"] = (PSX, PFRONT + 3)
 PLACES["police_locker"] = (PSX - 4.0, PSY - 9.5)
 MAPRECTS.append(("bld", PSX, PSY, PW, PD))
+# ---------- v1.0.32 police station: nicer outside + inside ----------
+pol, polb = [], []
+for sx in (-1, 1):                         # stone cladding on the ground floor (sides + back), blue entrance portal
+    pol.append((PSX + sx * (PW / 2 + 0.08), PSY, 0.0, 0.16, PD + 0.3, PG))
+    polb.append((PSX + sx * 3.0, PFRONT + 0.3, 0.0, 1.0, 0.6, PG))
+pol.append((PSX, PSY - PD / 2 - 0.08, 0.0, PW + 0.3, 0.16, PG))
+for sx in (-1, 1):
+    pol.append((PSX + sx * (PW / 2 + 0.15), PSY, PH + 0.4, 0.3, PD + 0.6, 0.6))
+for sy in (-1, 1):
+    pol.append((PSX, PSY + sy * (PD / 2 + 0.15), PH + 0.4, PW + 0.6, 0.3, 0.6))
+boxes_mesh("osrp_policija_obloga", pol, M_RIVER_PLINTH)
+boxes_mesh("osrp_policija_portal", polb, M_POLBLUE)
+cprop("pu_plate", PSX + 3.0, PFRONT + 0.6, 1.3, 0.0, 120.0)
+for sx in (-1, 1):
+    cprop("cctv", PSX + sx * (PW / 2 - 0.6), PFRONT, 3.7, 0.0, 120.0)
+    cprop("cctv", PSX + sx * (PW / 2 - 0.6), PSY - PD / 2, 3.7, 180.0, 120.0)
+for k in range(8):
+    cprop("bollard", PSX + (-1 if k < 4 else 1) * (8 + (k % 4) * 2.5), PFRONT + 2.6, 0.1, 0.0, 120.0)
+POLICE_EXTRA_SIGNS = [("bicikl", PSX - 9.5, PFRONT + 4.2, 0.0)]
+for k, (x, y) in enumerate(((PSX - 15, PSY - 6), (PSX - 10, PSY - 6), (PSX + 14, PSY + 4))):
+    cprop("acunit", x, y, PH + 0.4, 0.0, 200.0)
+cylinder(col, "osrp_policija_antena", (PSX + 18, PSY - 8, PH + 0.4), 0.08, 9.0, M_STEEL, verts=6)
+# inside: ceiling LED panels, emblem wall, notice board, glass screen on the desk, blue floor stripe
+for x in range(-21, 22, 6):
+    for y in (PSY + 5.0, PSY + 10.5):
+        cprop("ceilight", PSX + x, y, PG - 0.06, 0.0)
+for x in (-21, -16, -11, -5, 0, 5, 11, 16, 21):
+    for y in (PSY - 5.5, PSY - 10.5):
+        cprop("ceilight", PSX + x, y, PG - 0.06, 0.0)
+cprop("logo_wall", PSX - 7.5, IN_Y + 0.1, 0.8, 0.0, 0.0)
+cprop("noticeboard", PSX + 7.5, IN_Y + 0.1, 1.0, 0.0, 0.0)
+box(col, "osrp_policija_pult_staklo", (PSX, PSY + 7.5, FLOOR_Z + 1.16), (9.0, 0.05, 1.1), M_CLEAR)
+box(col, "osrp_policija_pod_traka", (PSX, (IN_Y + PFRONT) / 2, FLOOR_Z), (1.2, PFRONT - IN_Y - 0.4, 0.008), M_POLBLUE)
+cprop("citymap", PSX - 17, PSY - PD / 2 + 0.3, FLOOR_Z + 1.5, 0.0, 0.0)
+cprop("planter", PSX - 9.5, IN_Y + 0.9, FLOOR_Z, 0.0)
+cprop("planter", PSX + 9.5, IN_Y + 0.9, FLOOR_Z, 0.0)
+# interrogation room in the back of the middle room (one-way mirror to the corridor), armoury rack
+box(col, "osrp_policija_ispitna_zid", (PSX + 3.0, PSY - 7.0, FLOOR_Z), (5.5, 0.15, PG - FLOOR_Z), M_INTWALL)
+box(col, "osrp_policija_ispitna_zid_d", (PSX + 7.45, PSY - 7.0, FLOOR_Z), (0.9, 0.15, PG - FLOOR_Z), M_INTWALL)
+box(col, "osrp_policija_ispitna_nad", (PSX + 6.4, PSY - 7.0, FLOOR_Z + 2.3), (1.2, 0.15, PG - FLOOR_Z - 2.3), M_INTWALL)
+box(col, "osrp_policija_ispitna_zid2_a", (PSX + 0.25, PSY - 9.0, FLOOR_Z), (0.15, 4.0, PG - FLOOR_Z), M_INTWALL)
+box(col, "osrp_policija_ispitna_ogledalo", (PSX + 0.25, PSY - 12.4, FLOOR_Z + 0.9), (0.08, 2.6, 1.2), M_GLASS)
+box(col, "osrp_policija_ispitna_zid2_b", (PSX + 0.25, PSY - 12.4, FLOOR_Z), (0.15, 2.8, 0.9), M_INTWALL)
+box(col, "osrp_policija_ispitna_zid2_c", (PSX + 0.25, PSY - 12.4, FLOOR_Z + 2.1), (0.15, 2.8, PG - FLOOR_Z - 2.1), M_INTWALL)
+cprop("interro", PSX + 4.5, PSY - 10.5, FLOOR_Z, 0.0)
+cprop("gunwall", PSX - 8.85, PSY - 5.0, FLOOR_Z, 270.0)
+for c in range(3):                         # a toilet in every cell
+    FURNITURE.append(("wc", round(PSX + 8.3 + c * 5.5 + 4.9, 2), round(PSY - PD / 2 + 1.0, 2), FLOOR_Z, 0.0, 0.0))
 
 LANDMARKS = [("Tvrđa - Konkatedrala", TV_X, TV_Y - 20), ("Trg Svetog Trojstva", PIL_X, PIL_Y),
              ("Gradski park", PCX, PCY), ("Pješački most", BR_X, RIVER_Y), ("Promenada uz Dravu", 0, PROM_Y),
@@ -1833,7 +1881,7 @@ for k in range(12):                                   # v1.0.26: on the grass, n
 for k in range(10):
     if not (HX - 57 < HX - 50 + k * 11 < HX - 23):      # v1.0.23: not inside the back wing
         GREEN.append(("grm", HX - 50 + k * 11, HY - 26, random.uniform(0, 360)))
-SIGNS += SIGNS_EXTRA + AIRPROPS + STREETPROPS + GREEN
+SIGNS += SIGNS_EXTRA + AIRPROPS + STREETPROPS + GREEN + POLICE_EXTRA_SIGNS
 
 
 # v1.0.23: clean-up pass - nothing stands inside something else (trees in benches, bushes in bins, things in walls)
@@ -2028,4 +2076,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.30: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.32: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
