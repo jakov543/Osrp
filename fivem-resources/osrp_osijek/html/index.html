@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- minimap (replaces the GTA radar inside Osijek) -->
+  <div id="radar" class="radar hidden">
+    <div class="clip">
+      <div id="layer" class="layer">
+        <img id="mapImg" src="map.png" alt="" />
+        <svg id="route" class="route"></svg>
+        <div id="marks"></div>
+      </div>
+      <div class="me" id="me"><svg viewBox="0 0 20 24"><path d="M10 1 L19 22 L10 17 L1 22 Z" /></svg></div>
+      <div class="north" id="north">N</div>
+    </div>
+    <div class="bars"><div class="hp"><span id="hp"></span></div><div class="ar"><span id="ar"></span></div></div>
+  </div>
+
+  <!-- big map (F7 / /karta) -->
+  <div id="big" class="big hidden">
+    <div class="big-top">
+      <div class="title"><b>OSIJEK</b><span>Klik = postavi točku (GPS) &nbsp;·&nbsp; desni klik = makni &nbsp;·&nbsp; kotačić = zoom &nbsp;·&nbsp; ESC / F7 = zatvori</span></div>
+      <button id="close">✕</button>
+    </div>
+    <div class="big-view" id="view">
+      <div class="big-layer" id="bigLayer">
+        <img id="bigImg" src="map_big.png" alt="" />
+        <svg id="bigRoute" class="route"></svg>
+        <div id="bigMarks"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="lg bld"></i>Zgrade</span><span><i class="lg road"></i>Ceste</span><span><i class="lg park"></i>Park</span>
+      <span><i class="lg water"></i>Drava</span><span class="ic">🏥 Bolnica</span><span class="ic">✈️ Zračna luka</span><span class="ic">⛪ Konkatedrala</span>
+    </div>
+  </div>
+  <script src="map.js"></script>
+</body>
+</html>

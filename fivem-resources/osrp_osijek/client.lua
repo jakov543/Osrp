@@ -70,22 +70,81 @@ end
 
 local function world(p) return vector3(Config.Origin.x + p.x, Config.Origin.y + p.y, Config.Origin.z + p.z) end
 
+-- v1.0.15: doors are opened by the script (swing into the room when you walk up, close behind you).
+-- GTA's door system often refuses to move doors that a script created, so we turn them ourselves.
+local doorState = {}        -- i -> { closed, open, cur, away }
+
+local function rightVec(h) local r = math.rad(h) return math.cos(r), math.sin(r) end
+
 local function spawnDoor(i, d)
     local model = firstModel('door', Config.DoorModels)
     if not model then return end
     local hash = joaat(model)
     if not loadModel(hash) then return end
     local p = world(d)
-    local obj = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, true)
-    SetEntityHeading(obj, d.h)
+    local obj = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
+    local mn, mx = GetModelDimensions(hash)
+    local closed = d.h
+    if math.abs(mn.x) > math.abs(mx.x) then closed = (closed + 180.0) % 360.0 end   -- model drawn along -X
+    SetEntityHeading(obj, closed)
+    FreezeEntityPosition(obj, true)
     SetModelAsNoLongerNeeded(hash)
-    local doorHash = joaat('osrp_osijek_door_' .. i)
-    if not IsDoorRegisteredWithSystem(doorHash) then
-        AddDoorToSystem(doorHash, hash, p.x, p.y, p.z, false, false, false)
-    end
-    DoorSystemSetDoorState(doorHash, Config.DoorsLocked and 1 or 0, false, true)
+    -- open = turned 90 degrees into the room (away from the street)
+    local sr = math.rad(d.h)
+    local outX, outY = -math.sin(sr), math.cos(sr)            -- towards the street
+    local open = closed + 90.0
+    local ex, ey = rightVec(open)
+    if ex * outX + ey * outY > 0 then open = closed - 90.0 end
+    doorState[i] = { closed = closed, open = open, cur = closed, away = 0 }
     doorObjs[i] = obj
 end
+
+-- swing nearby doors
+CreateThread(function()
+    while true do
+        local sleep = 400
+        local ped = PlayerPedId()
+        local pos = GetEntityCoords(ped)
+        for i, st in pairs(doorState) do
+            local obj = doorObjs[i]
+            if obj and DoesEntityExist(obj) then
+                local op = GetEntityCoords(obj)
+                local cx, cy = rightVec(st.closed)
+                local mid = vector3(op.x + cx * 0.7, op.y + cy * 0.7, op.z + 1.0)
+                local dist = #(pos - mid)
+                if dist < 12.0 then sleep = 0 end
+                local want
+                if Config.DoorsLocked then want = st.closed
+                elseif dist < 2.2 then st.away = 0 want = st.open
+                else
+                    st.away = st.away + (sleep == 0 and GetFrameTime() or 0.4)
+                    want = (st.away > 2.0 and dist > 3.0) and st.closed or nil
+                end
+                if want and math.abs(st.cur - want) > 0.5 then
+                    local step = 160.0 * GetFrameTime()
+                    if sleep ~= 0 then step = 90.0 end
+                    if st.cur < want then st.cur = math.min(want, st.cur + step) else st.cur = math.max(want, st.cur - step) end
+                    SetEntityHeading(obj, st.cur % 360.0)
+                end
+            else
+                doorState[i] = nil
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+-- calm sea around Osijek (big ocean waves washed over the quays)
+CreateThread(function()
+    local calm = false
+    while true do
+        local p = GetEntityCoords(PlayerPedId())
+        local near = #(vec2(p.x, p.y) - vec2(Config.Origin.x, Config.Origin.y)) < 1800.0
+        if near then SetDeepOceanScaler(0.0) calm = true
+        elseif calm then ResetDeepOceanScaler() calm = false end
+        Wait(1000)
+    end
+end)
 
 local function spawnFurniture(i, f)
     local model = firstModel('f_' .. f.kind, Config.FurnitureModels[f.kind])
@@ -109,9 +168,7 @@ CreateThread(function()
             if dist < R then
                 if not doorObjs[i] or not DoesEntityExist(doorObjs[i]) then spawnDoor(i, d) end
             elseif doorObjs[i] and dist > R + 30.0 then
-                local doorHash = joaat('osrp_osijek_door_' .. i)
-                if IsDoorRegisteredWithSystem(doorHash) then RemoveDoorFromSystem(doorHash) end
-                DeleteObject(doorObjs[i]); doorObjs[i] = nil
+                DeleteObject(doorObjs[i]); doorObjs[i] = nil; doorState[i] = nil
             end
         end
         for i, f in ipairs(Furniture) do

@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.14)
+OSRP - Osijek starter map for Blender (V1.0.15)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -363,7 +363,7 @@ for side in (-1, 1):
     y_edge = side * (ROAD_W / 2)
     for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)):
         box(col, f"osrp_rubnik_{side}_{k}", ((a + b) / 2, y_edge + side * 0.15, 0.1), (b - a, 0.3, 0.18), M_CURB)
-        box(col, f"osrp_plocnik_av_{side}_{k}", ((a + b) / 2, y_edge + side * 3.3, 0.1), (b - a, 6, 0.16), M_WALK)
+        box(col, f"osrp_plocnik_av_{side}_{k}", ((a + b) / 2, y_edge + side * 4.15, 0.1), (b - a, 7.7, 0.16), M_WALK)   # up to the houses
 
 # Side streets
 plane(col, "osrp_ulica_jug", (0, -180, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
@@ -517,7 +517,8 @@ M_RIVER_PLINTH = material("osrp_plinth_stone", (0.48, 0.46, 0.43))
 M_DOORFRAME = material("osrp_door_frame", (0.20, 0.14, 0.09))
 M_CANOPY = material("osrp_canopy", (0.25, 0.27, 0.30), rough=0.5, metal=0.5)
 
-DOOR_W, DOOR_H, WALL_T, FLOOR_H = 1.4, 2.5, 0.3, 3.3
+DOOR_W, DOOR_H, WALL_T, FLOOR_H = 1.5, 2.9, 0.3, 3.6
+FLOOR_Z = 0.26                         # v1.0.15: room floor = sidewalk height (no step / dip at the door)
 
 
 def door_heading(facing):
@@ -543,33 +544,32 @@ def house_enterable(name, cx, cy, w, d, h, mat, facing):
     # upper floors (solid) - its underside is the ceiling of the room
     box(col, f"{name}_katovi", (cx, cy, FLOOR_H), (w, d, h - FLOOR_H), mat)
     # wooden floor + entrance step + door frame
-    box(col, f"{name}_pod", (cx, cy, 0), (w - 2 * WALL_T, d - 2 * WALL_T, 0.05), M_FLOOR)
-    box(col, f"{name}_stepenica", (cx, y_front + facing * 0.45, 0.1), (DOOR_W + 0.6, 0.9, 0.12), M_WHITE_STONE)
+    box(col, f"{name}_pod", (cx, cy, 0), (w - 2 * WALL_T, d - 2 * WALL_T, FLOOR_Z), M_FLOOR)
+    box(col, f"{name}_prag", (cx, fy, 0), (DOOR_W, WALL_T + 0.02, FLOOR_Z), M_WHITE_STONE)        # threshold in the doorway
     for k, sx in enumerate((-1, 1)):
         box(col, f"{name}_okvir{k}", (cx + sx * (DOOR_W / 2 + 0.06), y_front + facing * 0.04, 0), (0.12, 0.1, DOOR_H + 0.1), M_DOORFRAME)
     box(col, f"{name}_okvir_gore", (cx, y_front + facing * 0.04, DOOR_H), (DOOR_W + 0.24, 0.1, 0.12), M_DOORFRAME)
     box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
     # GTA door: hinge on the left edge of the doorway (seen from the street)
     heading = door_heading(facing)
-    DOORS.append((round(cx - facing * DOOR_W / 2, 2), round(fy, 2), 0.05, heading))
+    DOORS.append((round(cx - facing * DOOR_W / 2, 2), round(fy, 2), FLOOR_Z, heading))
     # GTA furniture inside (room interior)
     iy0, iy1 = sorted((fy - facing * WALL_T / 2, by + facing * WALL_T / 2))
     ix0, ix1 = cx - w / 2 + WALL_T, cx + w / 2 - WALL_T
     look_in = (heading + 180.0) % 360.0           # facing into the room
     back_inner = by + facing * (WALL_T / 2 + 0.6)
-    FURNITURE.append(("sofa", round(cx, 2), round(back_inner, 2), 0.05, heading))   # back to the wall, facing the door
-    FURNITURE.append(("stol", round(cx, 2), round((iy0 + iy1) / 2, 2), 0.05, 0.0))
-    FURNITURE.append(("stolica", round(cx - 1.2, 2), round((iy0 + iy1) / 2, 2), 0.05, 90.0))
-    FURNITURE.append(("stolica", round(cx + 1.2, 2), round((iy0 + iy1) / 2, 2), 0.05, 270.0))
-    FURNITURE.append(("tv", round(ix0 + 0.4, 2), round((iy0 + iy1) / 2, 2), 0.05, 270.0))
-    FURNITURE.append(("biljka", round(ix1 - 0.6, 2), round(back_inner, 2), 0.05, 0.0))
-    FURNITURE.append(("biljka", round(ix0 + 0.6, 2), round(fy - facing * (WALL_T / 2 + 0.6), 2), 0.05, 0.0))
+    FURNITURE.append(("sofa", round(cx, 2), round(back_inner, 2), FLOOR_Z, heading))   # back to the wall, facing the door
+    FURNITURE.append(("stol", round(cx, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 0.0))
+    FURNITURE.append(("stolica", round(cx - 1.2, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 90.0))
+    FURNITURE.append(("stolica", round(cx + 1.2, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 270.0))
+    FURNITURE.append(("tv", round(ix0 + 0.4, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 270.0))
+    FURNITURE.append(("biljka", round(ix1 - 0.6, 2), round(back_inner, 2), FLOOR_Z, 0.0))
+    FURNITURE.append(("biljka", round(ix0 + 0.6, 2), round(fy - facing * (WALL_T / 2 + 0.6), 2), FLOOR_Z, 0.0))
 
 
 def fake_entrance(name, cx, y_front, facing):
     """closed front door look for buildings you can't enter"""
-    box(col, f"{name}_vrata", (cx, y_front + facing * 0.03, 0.1), (DOOR_W, 0.08, DOOR_H), M_DOORFRAME)
-    box(col, f"{name}_stepenica", (cx, y_front + facing * 0.45, 0.1), (DOOR_W + 0.6, 0.9, 0.12), M_WHITE_STONE)
+    box(col, f"{name}_vrata", (cx, y_front + facing * 0.03, 0.1), (DOOR_W, 0.08, DOOR_H - 0.3), M_DOORFRAME)
     box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
 
 
@@ -715,6 +715,69 @@ def line(name, x, y, sx, sy, mat=None, z=0.1):
     box(col, name, (x, y, z), (sx, sy, 0.02), mat or M_LINE)
 
 
+
+
+# ---------- v1.0.15: block letters (signs, runway numbers) ----------
+FONT = {
+    'O': [" ### ", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "],
+    'S': [" ####", "#    ", "#    ", " ### ", "    #", "    #", "#### "],
+    'I': ["#####", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "#####"],
+    'J': ["  ###", "   # ", "   # ", "   # ", "#  # ", "#  # ", " ##  "],
+    'E': ["#####", "#    ", "#    ", "#### ", "#    ", "#    ", "#####"],
+    'K': ["#   #", "#  # ", "# #  ", "##   ", "# #  ", "#  # ", "#   #"],
+    'H': ["#   #", "#   #", "#   #", "#####", "#   #", "#   #", "#   #"],
+    'T': ["#####", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "  #  "],
+    'N': ["#   #", "##  #", "# # #", "#  ##", "#   #", "#   #", "#   #"],
+    'A': [" ### ", "#   #", "#   #", "#####", "#   #", "#   #", "#   #"],
+    'B': ["#### ", "#   #", "#   #", "#### ", "#   #", "#   #", "#### "],
+    'C': [" ####", "#    ", "#    ", "#    ", "#    ", "#    ", " ####"],
+    '0': [" ### ", "#   #", "#  ##", "# # #", "##  #", "#   #", " ### "],
+    '2': [" ### ", "#   #", "    #", "   # ", "  #  ", " #   ", "#####"],
+    '7': ["#####", "    #", "   # ", "  #  ", " #   ", " #   ", " #   "],
+    '9': [" ### ", "#   #", "#   #", " ####", "    #", "#   #", " ### "],
+}
+
+
+def block_text(name, text, origin, ps, right, up, mat, depth=0.08):
+    """text out of boxes. origin = bottom-left as the reader sees it; right/up = axis unit vectors (x, y, z).
+    up = (0, 0, 1) for a sign on a wall, up = (+-1, 0, 0) or (0, +-1, 0) for markings on the ground."""
+    ox, oy, oz = origin
+    k = 0
+    for ci, ch in enumerate(text):
+        g = FONT.get(ch)
+        for r, row in enumerate(g or []):
+            c = 0
+            while c < 5:
+                if row[c] != "#":
+                    c += 1
+                    continue
+                c2 = c
+                while c2 < 5 and row[c2] == "#":
+                    c2 += 1
+                n = c2 - c
+                along = (ci * 6 + c + n / 2) * ps
+                v = (6 - r) * ps
+                if up[2] == 1:     # wall sign: box bottom at v
+                    x = ox + right[0] * along
+                    y = oy + right[1] * along
+                    size = (n * ps if right[0] else depth, n * ps if right[1] else depth, ps)
+                    box(col, f"{name}_{k}", (x, y, oz + v), size, mat)
+                else:              # ground marking
+                    x = ox + right[0] * along + up[0] * (v + ps / 2)
+                    y = oy + right[1] * along + up[1] * (v + ps / 2)
+                    size = (n * ps if right[0] else ps, n * ps if right[1] else ps, 0.02)
+                    box(col, f"{name}_{k}", (x, y, oz), size, mat)
+                k += 1
+                c = c2
+
+
+def text_width(text, ps):
+    return (len(text) * 6 - 1) * ps
+
+M_SIGN = material("osrp_lamp_light_sign", (0.85, 0.92, 1.0), emit=8.0)
+M_SIGN_RED = material("osrp_lamp_light_red", (1.0, 0.08, 0.06), emit=10.0)
+M_SIGN_BLUE = material("osrp_lamp_light_blue", (0.15, 0.35, 1.0), emit=10.0)
+
 # ---------- KBC Osijek (hospital) on Vukovarska, west part ----------
 HX, HY = -330, -402
 plane(col, "osrp_kbc_parkiraliste", (HX, -369, 0.1), (130, 22), M_ROAD)
@@ -746,6 +809,24 @@ for k, (dx, sx, sy) in enumerate(((-2.4, 1.0, 7.0), (2.4, 1.0, 7.0), (0, 4.0, 1.
     box(col, f"osrp_kbc_H_{k}", (HELI[0] + dx, HELI[1], HELI[2] + 0.3), (sx, sy, 0.03), M_LINE)
 SPECIAL += [(HX - 45 + k * 4.5 + 2.25, -373.5, None, 0.0, "ambulance", 0) for k in range(3)]
 SPECIAL.append((HELI[0], HELI[1], HELI[2] + 0.35, 90.0, "polmav", 1))   # air ambulance
+# v1.0.15: name on the facade, emergency entrance (HITNA) with an ambulance canopy, ambulance garage
+block_text("osrp_kbc_natpis", "KBC OSIJEK", (HX - 6, HY + 22.12, 21.2), 0.32, (-1, 0, 0), (0, 0, 1), M_SIGN)
+ERX = HX + 42
+box(col, "osrp_hitna_nadstresnica", (ERX, HY + 27, 4.4), (18, 10, 0.45), M_CANOPY)
+for dx in (-8.5, 8.5):
+    cylinder(col, f"osrp_hitna_stup_{dx}", (ERX + dx, HY + 31.5, 0.1), 0.25, 4.3, M_STEEL, verts=8)
+box(col, "osrp_hitna_ulaz", (ERX, HY + 22.05, 0.1), (6, 0.25, 3.0), M_GLASS)
+block_text("osrp_hitna_natpis", "HITNA", (ERX + text_width("HITNA", 0.36) / 2, HY + 22.12, 5.2), 0.36, (-1, 0, 0), (0, 0, 1), M_SIGN_RED)
+GX, GY = -250, -398
+box(col, "osrp_hitna_garaza", (GX, GY, 0), (26, 30, 7), M_HOSP)
+box(col, "osrp_hitna_garaza_krov", (GX, GY, 7), (27, 31, 0.4), M_STONE)
+for k in range(3):
+    box(col, f"osrp_hitna_garaza_vrata_{k}", (GX - 8.5 + k * 8.5, GY + 15.05, 0.1), (6.5, 0.2, 5.2), M_CANOPY)
+    line(f"osrp_hitna_garaza_crta_{k}", GX - 8.5 + k * 8.5, GY + 20, 0.15, 8, M_RED)
+plane(col, "osrp_hitna_garaza_prilaz", (GX, (GY + 15 - 358) / 2, 0.1), (26, -358 - GY - 15), M_ROAD)
+SPECIAL += [(GX - 8.5, GY + 21, None, 180.0, "ambulance", 0), (GX + 8.5, GY + 21, None, 180.0, "ambulance", 0)]
+for k, (bx_, by_) in enumerate(((HX - 20, HY + 30), (HX + 20, HY + 30))):
+    box(col, f"osrp_kbc_klupa_{k}", (bx_, by_, 0.1), (2.2, 0.6, 0.45), M_WOOD)
 PLACES["hospital_door"] = (HX, HY + 23.5)
 PLACES["hospital_spawn"] = (HX, HY + 28.5)
 PLACES["ems_garage"] = (HX + 50, -369.0)
@@ -809,6 +890,61 @@ cylinder(col, "osrp_vjetrokaz_stup", (480, -625, 0), 0.1, 6, M_POLE, verts=6)
 box(col, "osrp_vjetrokaz", (481.4, -625, 5.2), (2.6, 0.7, 0.7), M_RED)
 PLACES["airport"] = (TX, TY - 30)
 
+# ---------- v1.0.15 airport details ----------
+# runway numbers (09 at the west end, 27 at the east end) read by landing pilots
+NPS = 1.5
+block_text("osrp_pista_br_09", "09", (-452, RW_Y + text_width("09", NPS) / 2, 0.1), NPS, (0, -1, 0), (1, 0, 0), M_LINE)
+block_text("osrp_pista_br_27", "27", (452, RW_Y - text_width("27", NPS) / 2, 0.1), NPS, (0, 1, 0), (-1, 0, 0), M_LINE)
+# approach lights beyond both runway ends + threshold lights
+for end in (-1, 1):
+    for k in range(7):
+        x = end * (506 + k * 6)
+        cylinder(col, f"osrp_prilaz_stup_{end}_{k}", (x, RW_Y, -6), 0.08, 6.4, M_POLE, verts=6)
+        box(col, f"osrp_prilaz_svjetlo_{end}_{k}", (x, RW_Y, 0.4), (0.5, 0.5, 0.3), M_RWLIGHT)
+    for k in range(-7, 8):
+        box(col, f"osrp_prilaz_bar_{end}_{k}", (end * 524, RW_Y + k * 2.2, 0.4), (0.4, 0.4, 0.3), M_RWLIGHT)
+        box(col, f"osrp_prag_svjetlo_{end}_{k}", (end * 499, RW_Y + k * 2.9, 0.1), (0.4, 0.4, 0.25), M_SIGN_RED if end == 1 else M_SIGN)
+# blue taxiway edge lights
+for x in range(-415, 416, 30):
+    for side in (-1, 1):
+        if side == 1 and 30 < x < 370:
+            continue          # apron side
+        box(col, f"osrp_rulnica_svjetlo_{x}_{side}", (x, TW_Y + side * 10, 0.1), (0.35, 0.35, 0.3), M_SIGN_BLUE)
+# jet bridges from the terminal to the three stands
+for k, x in enumerate((110, 200, 290)):
+    box(col, f"osrp_most_avion_{k}", (x + 7, -474, 4.2), (3.2, 28, 3.0), M_TERM)
+    box(col, f"osrp_most_avion_staklo_{k}", (x + 5.35, -474, 5.0), (0.1, 26, 1.2), M_GLASS)
+    cylinder(col, f"osrp_most_avion_noga_{k}", (x + 7, -485, 0.1), 0.35, 4.1, M_STEEL, verts=8)
+# apron floodlight masts
+for k, (x, y) in enumerate(((45, -480), (355, -480), (45, -590), (355, -590), (200, -592))):
+    cylinder(col, f"osrp_reflektor_stup_{k}", (x, y, 0.1), 0.35, 22, M_POLE, verts=8)
+    box(col, f"osrp_reflektor_{k}", (x, y, 22), (3.2, 1.2, 1.0), M_LAMP)
+# terminal: entrance canopy, OSIJEK signs on both sides
+box(col, "osrp_terminal_ulaz", (TX, TY + 17, 4.6), (44, 8, 0.4), M_STEEL)
+for dx in (-20, -7, 7, 20):
+    cylinder(col, f"osrp_terminal_ulaz_stup_{dx}", (TX + dx, TY + 20.5, 0.1), 0.3, 4.5, M_STEEL, verts=8)
+SPS = 0.5
+block_text("osrp_terminal_natpis_s", "OSIJEK", (TX + text_width("OSIJEK", SPS) / 2, TY + 13.35, 7.6), SPS, (-1, 0, 0), (0, 0, 1), M_SIGN)
+block_text("osrp_terminal_natpis_j", "OSIJEK", (TX - text_width("OSIJEK", SPS) / 2, TY - 13.45, 8.0), SPS, (1, 0, 0), (0, 0, 1), M_SIGN)
+# cargo terminal + fuel tanks
+box(col, "osrp_cargo", (-30, -540, 0), (60, 40, 10), M_HANGAR)
+gable_roof(col, "osrp_cargo_krov", -30, -540, 10, 60, 40, 3, M_HANGAR)
+for k, x in enumerate((-90, -75)):
+    cylinder(col, f"osrp_gorivo_{k}", (x, -530, 0), 6, 8, M_HOSP, verts=16)
+    cylinder(col, f"osrp_gorivo_krov_{k}", (x, -530, 8), 6.2, 0.4, M_STEEL, verts=16)
+# airside fence (posts + rails)
+for (xa, xb, fy) in ((-550, 30, -506), (370, 550, -463)):
+    for x in range(int(xa), int(xb) + 1, 4):
+        box(col, f"osrp_ograda_stup_{x}_{fy}", (x, fy, 0), (0.12, 0.12, 2.4), M_POLE)
+    for z in (0.9, 2.2):
+        box(col, f"osrp_ograda_zica_{fy}_{z}", ((xa + xb) / 2, fy, z), (xb - xa, 0.05, 0.08), M_POLE)
+# GTA airport props (placed in-game, see Config.SignModels)
+AIRPROPS = []
+for x in (110, 200, 290):
+    AIRPROPS += [("air_stair", x - 7, -500, 90.0), ("air_bagloader", x + 9, -512, 0.0), ("air_cart", x + 14, -470, 90.0)]
+AIRPROPS += [("air_cargo", -30 + dx, -566, 0.0) for dx in (-15, -5, 5, 15)]
+AIRPROPS += [("air_radar", 470, -560, 0.0), ("air_cone", 45, -600, 0.0), ("air_cone", 355, -600, 0.0)]
+
 # ---------- Copacabana beach on the north bank ----------
 BEACH_Y = RIVER_Y + RIVER_W / 2 + 15
 plane(col, "osrp_plaza_pijesak", (-300, BEACH_Y, 0.12), (220, 26), M_SAND)
@@ -838,7 +974,8 @@ MAPRECTS += [
     ("bld", TX, TY, 200, 26), ("road", TX, -413, 180, 36), ("road", 150, -376, 10, 38),
     ("bld", -300, -540, 100, 56), ("bld", -170, -540, 100, 56), ("bld", 390, -470, 8, 8),
     ("road", HX, -369, 130, 22), ("bld", HX, HY, 110, 44), ("bld", HX - 40, HY - 40, 30, 36),
-    ("walk", -300, BEACH_Y, 220, 26),
+    ("walk", -300, BEACH_Y, 220, 26), ("bld", GX, GY, 26, 30), ("road", GX, (GY + 15 - 358) / 2, 26, -358 - GY - 15),
+    ("bld", -30, -540, 60, 40), ("bld", -82, -530, 26, 12),
 ] + [("road", x, (TW_Y - 9 + RW_Y + RW_W / 2) / 2, 18, TW_Y - 9 - RW_Y - RW_W / 2) for x in (-410, 0, 410)]
 
 LANDMARKS = [("Tvrđa - Konkatedrala", TV_X, TV_Y - 20), ("Trg Svetog Trojstva", PIL_X, PIL_Y),
@@ -866,7 +1003,7 @@ for x in CROSS_X:
     SIGNS.append(("stop", x - SIDE_ROAD_W / 2 - 0.9, -180 + SIDE_ROAD_W / 2 + 1.5, 180.0))
     SIGNS.append(("pjesacki", x + SIDE_ROAD_W / 2 + 0.9, -(ROAD_W / 2 + 12), 0.0))
 
-SIGNS += SIGNS_EXTRA
+SIGNS += SIGNS_EXTRA + AIRPROPS
 WALKS = []          # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
 for a, b in open_segments(-HALF, HALF, SIDE_ROAD_W / 2 + 1):
     for y in (ROAD_W / 2 + 3.3, -(ROAD_W / 2 + 3.3)):
@@ -883,4 +1020,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.14: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.15: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

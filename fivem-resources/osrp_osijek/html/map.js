@@ -1,0 +1,199 @@
+// OSRP Osijek - minimap + big map (F7). Positions come in city coordinates (metres from Config.Origin).
+const $ = (id) => document.getElementById(id);
+const RES = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'osrp_osijek';
+const post = (name, data) => fetch(`https://${RES}/${name}`, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(data || {}) }).catch(() => {});
+
+let META = { x0: -590, y1: 380, ppm: 2, w: 2360, h: 2360, landmarks: [] };
+const ICONS = [['Bolnica', '🏥'], ['Zračna', '✈️'], ['Konkatedrala', '⛪'], ['park', '🌳'], ['Copacabana', '🏖️'], ['most', '🌉'], ['Trojstva', '⛲']];
+const st = { x: 0, y: 0, cam: 0, ped: 0, speed: 0, scale: 0.7, wp: null, route: [], players: [] };
+
+const toPx = (x, y) => [(x - META.x0) * META.ppm, (META.y1 - y) * META.ppm];
+const fromPx = (px, py) => [px / META.ppm + META.x0, META.y1 - py / META.ppm];
+
+fetch('map.json').then((r) => r.json()).then((m) => { META = m; buildLandmarks(); }).catch(() => {});
+
+// ---------------------------------------------------------------- markers
+function iconFor(name) {
+  for (const [k, ic] of ICONS) if (name.toLowerCase().includes(k.toLowerCase())) return ic;
+  return null;
+}
+const landmarkEls = { small: [], big: [] };
+function makeMark(parent, cls, html, x, y) {
+  const el = document.createElement('div');
+  el.className = 'mk ' + cls;
+  el.innerHTML = `<span>${html}</span>`;
+  el.dataset.x = x; el.dataset.y = y;
+  parent.appendChild(el);
+  return el;
+}
+function buildLandmarks() {
+  $('marks').innerHTML = ''; $('bigMarks').innerHTML = '';
+  landmarkEls.small = []; landmarkEls.big = [];
+  for (const l of META.landmarks || []) {
+    const ic = iconFor(l[0]);
+    if (!ic) continue;
+    landmarkEls.small.push(makeMark($('marks'), 'lm', ic, l[1], l[2]));
+    landmarkEls.big.push(makeMark($('bigMarks'), 'lm', ic, l[1], l[2]));
+  }
+}
+function placeMark(el, rot, scale) {
+  const [px, py] = toPx(+el.dataset.x, +el.dataset.y);
+  el.style.transform = `translate(${px}px, ${py}px) rotate(${-rot}deg) scale(${1 / scale})`;
+}
+function setRoute(svg, pts, width) {
+  if (!pts || pts.length < 2) { svg.innerHTML = ''; return; }
+  const p = pts.map(([x, y]) => toPx(x, y).join(',')).join(' ');
+  svg.setAttribute('width', META.w); svg.setAttribute('height', META.h);
+  svg.innerHTML = `<polyline points="${p}" stroke-width="${width}" />`;
+}
+
+// ---------------------------------------------------------------- minimap
+let wpSmall = null, wpBig = null;
+const playerEls = [];
+function renderRadar() {
+  const clip = $('radar').querySelector('.clip');
+  const cw = clip.clientWidth, ch = clip.clientHeight;
+  if (!cw) return;
+  const view = 150 + Math.min(1, st.speed / 30) * 230;                  // metres across, zooms out when driving
+  const target = cw / (view * META.ppm);
+  st.scale += (target - st.scale) * 0.08;
+  const [px, py] = toPx(st.x, st.y);
+  $('layer').style.transform = `rotate(${st.cam}deg) scale(${st.scale}) translate(${-px}px, ${-py}px)`;
+  $('me').style.transform = `rotate(${st.cam - st.ped}deg)`;
+  for (const el of landmarkEls.small) placeMark(el, st.cam, st.scale);
+  if (wpSmall) placeMark(wpSmall, st.cam, st.scale);
+  for (const el of playerEls) placeMark(el, st.cam, st.scale);
+  const rx = cw / 2 - 11, ry = ch / 2 - 11, a = st.cam * Math.PI / 180;
+  const n = $('north');
+  n.style.left = (cw / 2 + Math.sin(a) * rx) + 'px';
+  n.style.top = (ch / 2 - Math.cos(a) * ry) + 'px';
+  const rs = $('route').querySelector('polyline');
+  if (rs) rs.setAttribute('stroke-width', 7 / st.scale);
+}
+
+function setPlayers(list) {
+  while (playerEls.length > list.length) playerEls.pop().remove();
+  while (playerEls.length < list.length) playerEls.push(makeMark($('marks'), 'pl', '', 0, 0));
+  list.forEach((p, i) => { playerEls[i].dataset.x = p[0]; playerEls[i].dataset.y = p[1]; });
+}
+
+function setWaypoint(wp) {
+  st.wp = wp;
+  if (wpSmall) { wpSmall.remove(); wpSmall = null; }
+  if (wpBig) { wpBig.remove(); wpBig = null; }
+  if (wp) {
+    wpSmall = makeMark($('marks'), 'wp', '', wp[0], wp[1]);
+    wpBig = makeMark($('bigMarks'), 'wp', '', wp[0], wp[1]);
+  }
+  renderBig();
+}
+
+// ---------------------------------------------------------------- big map
+const big = { open: false, s: 0.5, tx: 0, ty: 0, drag: null, moved: 0 };
+let meBig = null;
+function renderBig() {
+  if (!big.open) return;
+  $('bigLayer').style.transform = `translate(${big.tx}px, ${big.ty}px) scale(${big.s})`;
+  for (const el of landmarkEls.big) placeMark(el, 0, big.s);
+  if (wpBig) placeMark(wpBig, 0, big.s);
+  if (meBig) {
+    meBig.dataset.x = st.x; meBig.dataset.y = st.y;
+    placeMark(meBig, 0, big.s);
+    meBig.querySelector('svg').style.transform = `translate(-50%, -50%) rotate(${-st.ped}deg)`;
+  }
+  const rb = $('bigRoute').querySelector('polyline');
+  if (rb) rb.setAttribute('stroke-width', 6 / big.s);
+}
+function openBig() {
+  big.open = true;
+  $('big').classList.remove('hidden');
+  const v = $('view');
+  big.s = Math.min(1.2, Math.max(0.25, v.clientHeight / 1400));
+  const [px, py] = toPx(st.x, st.y);
+  big.tx = v.clientWidth / 2 - px * big.s;
+  big.ty = v.clientHeight / 2 - py * big.s;
+  if (!meBig) {
+    meBig = makeMark($('bigMarks'), 'me2', '', st.x, st.y);
+    meBig.querySelector('span').innerHTML = '<svg viewBox="0 0 20 24"><path d="M10 1 L19 22 L10 17 L1 22 Z"/></svg>';
+  }
+  renderBig();
+}
+function closeBig(notify) {
+  big.open = false;
+  $('big').classList.add('hidden');
+  if (notify) post('closeBig');
+}
+const view = $('view');
+view.addEventListener('wheel', (e) => {
+  const r = view.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const ns = Math.min(3, Math.max(0.2, big.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+  big.tx = mx - (mx - big.tx) * (ns / big.s);
+  big.ty = my - (my - big.ty) * (ns / big.s);
+  big.s = ns;
+  renderBig();
+});
+view.addEventListener('mousedown', (e) => {
+  if (e.button === 2) {
+    post('clearWaypoint');
+    return;
+  }
+  big.drag = { x: e.clientX, y: e.clientY, tx: big.tx, ty: big.ty };
+  big.moved = 0;
+  view.classList.add('drag');
+});
+window.addEventListener('mousemove', (e) => {
+  if (!big.drag) return;
+  const dx = e.clientX - big.drag.x, dy = e.clientY - big.drag.y;
+  big.moved = Math.max(big.moved, Math.abs(dx) + Math.abs(dy));
+  big.tx = big.drag.tx + dx; big.ty = big.drag.ty + dy;
+  renderBig();
+});
+window.addEventListener('mouseup', (e) => {
+  if (!big.drag) return;
+  view.classList.remove('drag');
+  if (big.moved < 5 && e.button === 0) {
+    const r = view.getBoundingClientRect();
+    const px = (e.clientX - r.left - big.tx) / big.s, py = (e.clientY - r.top - big.ty) / big.s;
+    const [x, y] = fromPx(px, py);
+    post('setWaypoint', { x, y });
+  }
+  big.drag = null;
+});
+view.addEventListener('contextmenu', (e) => e.preventDefault());
+$('close').addEventListener('click', () => closeBig(true));
+window.addEventListener('keydown', (e) => {
+  if (big.open && (e.key === 'Escape' || e.key === 'F7' || e.key === 'Backspace')) closeBig(true);
+});
+
+// ---------------------------------------------------------------- messages from Lua
+window.addEventListener('message', (e) => {
+  const d = e.data || {};
+  switch (d.t) {
+    case 'radar': {
+      const r = $('radar');
+      r.classList.toggle('hidden', !d.show);
+      if (d.left !== undefined) {
+        r.style.left = (d.left * 100) + 'vw'; r.style.top = (d.top * 100) + 'vh';
+        r.style.width = (d.w * 100) + 'vw'; r.style.height = `calc(${d.h * 100}vh + 9px)`;
+      }
+      break;
+    }
+    case 'pos':
+      st.x = d.x; st.y = d.y; st.cam = d.cam; st.ped = d.ped; st.speed = d.speed || 0;
+      if (d.players) setPlayers(d.players);
+      $('hp').style.width = Math.max(0, Math.min(100, d.hp)) + '%';
+      $('hp').classList.toggle('low', d.hp < 30);
+      $('ar').style.width = Math.max(0, Math.min(100, d.ar)) + '%';
+      renderRadar();
+      renderBig();
+      break;
+    case 'wp': setWaypoint(d.wp); break;
+    case 'route':
+      setRoute($('route'), d.pts, 7 / st.scale);
+      setRoute($('bigRoute'), d.pts, 6 / big.s);
+      renderBig();
+      break;
+    case 'big': if (d.open) openBig(); else closeBig(false); break;
+  }
+});

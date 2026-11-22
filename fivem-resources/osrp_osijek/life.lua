@@ -55,7 +55,8 @@ local MAP_COLOURS = {        -- blip colour, alpha
 
 CreateThread(function()
     if not Config.DrawMap then return end
-    for _, r in ipairs(Life.MAPRECTS) do
+    -- v1.0.15: with MapMode 'nui' the city is drawn as a real map (minimap.lua), no blip rectangles
+    for _, r in ipairs((Config.MapMode or 'nui') == 'blips' and Life.MAPRECTS or {}) do
         local kind, cx, cy, w, h = r[1], r[2], r[3], r[4], r[5]
         local c = MAP_COLOURS[kind] or { 4, 120 }
         local b = AddBlipForArea(Config.Origin.x + cx, Config.Origin.y + cy, Config.Origin.z, w, h)

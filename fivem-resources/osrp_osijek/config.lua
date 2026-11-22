@@ -1,11 +1,11 @@
 Config = {}
 
 -- Where Osijek sits in the GTA world: open sea east of Los Santos, 30 m above the water
-Config.Origin = vector3(5500.0, -1500.0, 3.0)   -- v1.0.12: 3 m above sea level, the Drava is real GTA water
+Config.Origin = vector3(5500.0, -1500.0, 8.0)   -- v1.0.15: 8 m above the sea (quays, no waves on the streets), the Drava is real GTA water
 
 -- Spawn point in Osijek (Europska avenija, next to Tvrđa). Put this in
 -- osrp_framework/config.lua -> Config.Spawn once the map works:
---   Config.Spawn = vector4(5675.0, -1511.0, 4.0, 90.0)
+--   Config.Spawn = vector4(5675.0, -1511.0, 9.0, 90.0)
 Config.SpawnOffset = vector4(175.0, -11.0, 1.0, 90.0)
 
 Config.StreamDistance = 900.0   -- chunks appear within this distance
@@ -36,7 +36,8 @@ Config.InteriorLight = true           -- warm ceiling light in each house (alway
 
 -- ===================== city life (v1.0.11) =====================
 Config.CityRadius = 1000.0          -- size of Osijek incl. hospital + airport (metres from the centre)
-Config.DrawMap = true               -- draw Osijek (roads, buildings, Drava, park) on the minimap + pause map
+Config.DrawMap = true               -- landmark blips (hospital, airport ...) on the pause map
+Config.MapMode = 'nui'              -- 'nui' = real drawn minimap + big map (F7) | 'blips' = old blip rectangles
 
 Config.ParkedCars = true
 Config.ParkedModels = { 'asea', 'premier', 'emperor', 'ingot', 'primo', 'stanier', 'blista', 'dilettante', 'panto', 'issi2', 'rhapsody', 'fugitive' }
@@ -45,6 +46,13 @@ Config.SignModels = {
     stop     = { 'prop_sign_road_01a', 'prop_sign_road_01b' },
     semafor  = { 'prop_traffic_01a', 'prop_traffic_01b', 'prop_traffic_03a' },
     pjesacki = { 'prop_sign_road_05a', 'prop_sign_road_03a', 'prop_sign_road_01a' },
+    -- v1.0.15 airport props (first model that exists in your GTA is used)
+    air_stair     = { 'prop_air_stair_01', 'prop_air_stair_02', 'prop_air_stair_03' },
+    air_bagloader = { 'prop_air_bagloader2', 'prop_air_bagloader' },
+    air_cart      = { 'prop_air_trailer_4a', 'prop_air_trailer_1a', 'prop_air_cargo_01a' },
+    air_cargo     = { 'prop_air_cargo_01a', 'prop_air_cargo_02a', 'prop_air_cargo_04a' },
+    air_radar     = { 'prop_air_bigradar' },
+    air_cone      = { 'prop_air_conelight', 'prop_roadcone01a' },
 }
 
 Config.Pedestrians = true

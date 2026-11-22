@@ -7,6 +7,11 @@
   "news": [
     {
       "tag": "NOVO",
+      "title": "Nova karta Osijeka (F7)",
+      "text": "v1.0.15: prava nacrtana minimapa i velika karta (F7) s GPS-om, ulaz u sve kuće popravljen, more više ne prelazi preko grada, veća zračna luka (svjetla, rukavci, natpisi), ulaz hitne i garaža u KBC Osijek."
+    },
+    {
+      "tag": "NOVO",
       "title": "KBC Osijek, zračna luka i događaji",
       "text": "v1.0.14: bolnica KBC Osijek s hitnom (G / 112), helikopter na krovu, Zračna luka Osijek s pistom i avionima, plaža Copacabana i nasumični događaji: nesreće, požari, lopovi, policijske potjere."
     },

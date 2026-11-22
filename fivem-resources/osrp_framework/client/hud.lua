@@ -55,7 +55,7 @@ CreateThread(function()
             local c = GetEntityCoords(ped)
             local street, zone = location(c)
             local mx, my, mr, mb = minimapAnchor()
-            local radar = not IsRadarHidden() and not IsPauseMenuActive()
+            local radar = not IsPauseMenuActive()      -- osrp_osijek replaces the radar with its own drawn map in the city
             local data = {
                 street = street, zone = zone or '',
                 dir = direction(GetGameplayCamRot(0).z % 360),

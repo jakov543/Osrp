@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.14 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.15 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.14
-git push origin v1.0.14
+git tag v1.0.15
+git push origin v1.0.15
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -201,6 +201,13 @@ v1.0.14 – **hospital, ambulance, airport, random events**:
 - **ambulance**: when you are down press **G** (or `/hitna`, `/112`). EMS players (job `ems`) get a 112 call with GPS and revive you with E (CPR, +$150). If nobody is on duty or nobody comes in 90 s, an **AI ambulance** drives from KBC Osijek along the streets with sirens, two paramedics do CPR and you are back up (bill $250). `/hitna` also works when you are only hurt. Treatment at the KBC reception (E, $100). EMS players take an ambulance at the hospital garage.
 - **random events** around you (`osrp_osijek/events.lua`, `Config.Events`): a car hits you, traffic accident (AI ambulance + police come), broken-down car (help the driver, +$75), thief (catch him to get the wallet back + $50), dumpster fire (fire truck comes), police chase. Admins: `/dogadaj [name]`.
 - street router for the AI vehicles (`OsijekRoute`), new HUD zones (KBC Osijek, Zračna luka, Copacabana)
+
+v1.0.15 – **map, doors, sea, airport**:
+- **real drawn map** instead of blip rectangles (`Config.MapMode = 'nui'`): inside Osijek the GTA radar is replaced by a drawn minimap of the city (rotates with the camera, GPS route along the streets, waypoint, landmarks, other players, health/armour bars). **F7 / `/karta`** opens the big map with street names: drag, zoom, click to set a waypoint, right click to remove it. Pictures are made by `tools/make_minimap.py`.
+- **house entrances fixed**: room floor level with the sidewalk (no dip), taller and wider doorway (1.5 x 2.9 m), avenue sidewalks reach the houses, and the doors swing open by script when you walk up and close behind you (GTA's door system often refused to move script doors)
+- **sea no longer washes over the city**: the city sits 8 m above the sea (`Config.Origin` z = 8) and the ocean around Osijek is calmed (`SetDeepOceanScaler`)
+- **airport**: runway numbers 09/27, approach and threshold lights, blue taxiway lights, 3 jet bridges, 5 floodlight masts, OSIJEK signs (lit), terminal entrance canopy, cargo terminal, fuel tanks, airside fence, GTA airport props (stairs, baggage loaders, carts, cargo, radar)
+- **KBC Osijek**: lit KBC OSIJEK name, emergency entrance HITNA with an ambulance canopy, ambulance garage with 3 doors and 2 more ambulances
 
 ![map](map/blender/preview_minimap.png)
 
