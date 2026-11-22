@@ -290,7 +290,10 @@ CreateThread(function()
                         if HasModelLoaded(hash) then
                             local o = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
                             SetEntityHeading(o, (i * 47) % 360 + 0.0)
-                            PlaceObjectOnGroundProperly(o)     -- v1.0.16: sit on the real ground (sidewalk / grass)
+                            -- v1.0.18: put the trunk exactly on the ground below (ray from just above, never onto a roof)
+                            local ok, gz = GetGroundZFor_3dCoord(p.x, p.y, p.z + 1.5, false)
+                            if ok and math.abs(gz - p.z) < 1.5 then SetEntityCoordsNoOffset(o, p.x, p.y, gz - 0.05, false, false, false) end
+                            FreezeEntityPosition(o, true)
                             FreezeEntityPosition(o, true)
                             SetModelAsNoLongerNeeded(hash)
                             treeObjs[i] = o

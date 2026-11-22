@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.17 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.18 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.17
-git push origin v1.0.17
+git tag v1.0.18
+git push origin v1.0.18
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -221,6 +221,7 @@ v1.0.16 – **characters, arrival, interiors, HUD**:
 - **NPCs**: 44 around you, 25 models, many stand and do things (phone, coffee, smoking, map); they greet you in English when you walk up and you can talk to them with E (`Config.NpcGreetings`, `Config.NpcChat`)
 - **street props**: benches, bins, hydrants, news stands, bike racks, phone booths, planters along the streets; trees sit on the real ground
 - v1.0.17 fix: the loading screen no longer hangs at "Učitavanje Osijeka" (FiveM exports cannot wait across resources: osrp_framework now polls `exports.osrp_osijek:AreaProgress` and starts the plane cutscene with the `osrp_osijek:playArrival` event). Character menu position fixed (`Config.MenuPreview`: Tvrđa square, on the ground, cathedral behind you), Tvrđa spawn moved off the cathedral.
+- v1.0.18: tiered stone **fountain** on the Tvrđa square with water jets (`Config.FountainParticle`); **6 stone staircases** from the quays down to the Drava and a **marina** (pontoon + finger piers) with 6 boats + 2 jet skis at the beach (F = take one); swimming in the Drava / sea: E brings you back onto the bank; **106 real GTA benches** (promenade, park, bus stops, streets, hospital) - E to sit, NPCs sit on them properly; **trees** placed exactly on the ground; darker, natural **grass** + bushes and grass clumps on the green areas
 - **HUD**: custom notifications (colour codes work, success/error/warning), weapon HUD (name, clip / ammo), status row in the money card (health, armour, stamina, voice), server ID, players online and clock
 
 ![map](map/blender/preview_minimap.png)

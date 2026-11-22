@@ -89,6 +89,11 @@ end)
 -- ===================================================================== parked cars + road signs (streamed)
 local parked, signs = {}, {}
 
+-- ambulances, planes, heli + v1.0.18 boats in the Drava marina (boats float on the water, anchored)
+local SPECIALS = {}
+for _, sv in ipairs(Life.SPECIAL or {}) do SPECIALS[#SPECIALS + 1] = sv end
+for _, b in ipairs(Life.BOATS or {}) do SPECIALS[#SPECIALS + 1] = { b[1], b[2], false, b[3], b[4], 0, water = true } end
+
 CreateThread(function()
     while true do
         local pos = GetEntityCoords(PlayerPedId())
@@ -118,8 +123,8 @@ CreateThread(function()
             end
         end
         -- v1.0.14: ambulances at KBC Osijek, air ambulance on the hospital roof, planes at the airport (locked, decoration)
-        if Config.SpecialVehicles and Life.SPECIAL then
-            for i, sv in ipairs(Life.SPECIAL) do
+        if Config.SpecialVehicles then
+            for i, sv in ipairs(SPECIALS) do
                 local key = 'sp' .. i
                 if OsijekTaken and OsijekTaken[key] and GetGameTimer() - OsijekTaken[key] < (Config.TakenRespawnMinutes or 15) * 60000 then
                     goto continue
@@ -129,7 +134,9 @@ CreateThread(function()
                 local d = #(pos - wp)
                 if d < 250.0 and not (parked[key] and DoesEntityExist(parked[key])) then
                     local ground
-                    if roofZ then
+                    if sv.water then
+                        ground = vector3(wp.x, wp.y, 0.35)                 -- GTA sea level
+                    elseif roofZ then
                         RequestCollisionAtCoord(wp.x, wp.y, wp.z)
                         local ok, gz = GetGroundZFor_3dCoord(wp.x, wp.y, wp.z + 5.0, false)
                         if ok and math.abs(gz - wp.z) < 2.0 then ground = vector3(wp.x, wp.y, gz + 0.3) end
@@ -139,7 +146,12 @@ CreateThread(function()
                     local hash = ground and firstModel({ sv[5] })
                     if hash and load(hash) then
                         local v = CreateVehicle(hash, ground.x, ground.y, ground.z, sv[4], false, false)
-                        settleVehicle(v)
+                        if sv.water then
+                            SetBoatAnchor(v, true)
+                            SetBoatFrozenWhenAnchored(v, true)
+                        else
+                            settleVehicle(v)
+                        end
                         if sv[6] and sv[6] > 0 then SetVehicleLivery(v, sv[6]) end
                         SetVehicleDoorsLocked(v, 2)
                         SetEntityAsMissionEntity(v, true, true)
@@ -178,6 +190,7 @@ end)
 
 -- ===================================================================== pedestrians
 local peds = {}
+OsijekBenches, OsijekBenchUsed = {}, {}
 
 local function pedModel(i)
     local list = Config.PedModels
@@ -221,15 +234,24 @@ local function newStander(i)
 end
 
 local function newSitter(i)
-    local b = Life.BENCHES[math.random(#Life.BENCHES)]
-    local wp = groundAt(b[1], b[2], 0.05)
-    if not wp then return end
+    -- a free real bench near you (the bench props are placed by the bench thread below)
+    local me = GetEntityCoords(PlayerPedId())
+    local free = {}
+    for bi, obj in pairs(OsijekBenches) do
+        if DoesEntityExist(obj) and not OsijekBenchUsed[bi] and #(GetEntityCoords(obj) - me) < 160.0 then free[#free + 1] = bi end
+    end
+    if #free == 0 then return newWalker(i) end
+    local bi = free[math.random(#free)]
+    local obj = OsijekBenches[bi]
     local hash = pedModel(i + 3)
     if not load(hash) then return end
-    local p = CreatePed(4, hash, wp.x, wp.y, wp.z, b[3], false, true)
+    local c, h = GetEntityCoords(obj), GetEntityHeading(obj) + 180.0
+    local r = math.rad(h)
+    local p = CreatePed(4, hash, c.x - math.sin(r) * 0.8, c.y + math.cos(r) * 0.8, c.z + 0.1, h, false, true)
     SetModelAsNoLongerNeeded(hash)
-    TaskStartScenarioAtPosition(p, 'PROP_HUMAN_SEAT_BENCH', wp.x, wp.y, wp.z + 0.5, b[3], 0, true, true)
-    peds[i] = { ped = p, sitting = true }
+    TaskStartScenarioAtPosition(p, 'PROP_HUMAN_SEAT_BENCH', c.x, c.y, c.z + 0.5, h, 0, true, true)
+    OsijekBenchUsed[bi] = p
+    peds[i] = { ped = p, sitting = true, bench = bi }
 end
 
 CreateThread(function()
@@ -240,6 +262,7 @@ CreateThread(function()
                 local e = peds[i]
                 if not e or not DoesEntityExist(e.ped) or IsEntityDead(e.ped) then
                     if e and e.ped and DoesEntityExist(e.ped) then SetPedAsNoLongerNeeded(e.ped) end
+                    if e and e.bench then OsijekBenchUsed[e.bench] = nil end
                     if i % 5 == 0 and #Life.BENCHES > 0 then newSitter(i)
                     elseif i % 3 == 0 then newStander(i)
                     else newWalker(i) end
@@ -376,11 +399,11 @@ OsijekTaken = {}
 CreateThread(function()
     while true do
         local sleep = 500
-        if Config.TakeVehicles and Life.SPECIAL then
+        if Config.TakeVehicles then
             local ped = PlayerPedId()
             if not IsPedInAnyVehicle(ped, false) then
                 local pos = GetEntityCoords(ped)
-                for i, sv in ipairs(Life.SPECIAL) do
+                for i, sv in ipairs(SPECIALS) do
                     local key = 'sp' .. i
                     local v = parked[key]
                     if v and DoesEntityExist(v) and #(GetEntityCoords(v) - pos) < 6.0 then
@@ -398,7 +421,7 @@ CreateThread(function()
                             local nv = CreateVehicle(model, c.x, c.y, c.z + 0.2, h, true, false)
                             if sv[6] and sv[6] > 0 then SetVehicleLivery(nv, sv[6]) end
                             SetVehicleNumberPlateText(nv, sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK')
-                            SetVehicleOnGroundProperly(nv)
+                            if sv.water then SetBoatAnchor(nv, false) else SetVehicleOnGroundProperly(nv) end
                             SetPedIntoVehicle(ped, nv, -1)
                             SetEntityAsNoLongerNeeded(nv)
                             SetModelAsNoLongerNeeded(model)
@@ -519,6 +542,132 @@ CreateThread(function()
                         break
                     end
                 end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+
+-- ===================================================================== v1.0.18: real GTA benches you can sit on (E)
+-- Life.BENCHES heading = the way you look when sitting. GTA bench props face backwards, so the prop gets +180.
+CreateThread(function()
+    while true do
+        local pos = GetEntityCoords(PlayerPedId())
+        for i, b in ipairs(Life.BENCHES or {}) do
+            local wp = W(b[1], b[2], 0.3)
+            local d = #(pos - wp)
+            local obj = OsijekBenches[i]
+            if d < 180.0 and not (obj and DoesEntityExist(obj)) then
+                local g = groundAt(b[1], b[2], 0.0)
+                local hash = g and firstModel(Config.BenchModels)
+                if hash and load(hash) then
+                    local o = CreateObjectNoOffset(hash, g.x, g.y, g.z, false, false, false)
+                    SetEntityHeading(o, (b[3] + 180.0) % 360.0)
+                    FreezeEntityPosition(o, true)
+                    SetModelAsNoLongerNeeded(hash)
+                    OsijekBenches[i] = o
+                end
+            elseif d > 210.0 and obj then
+                if DoesEntityExist(obj) then DeleteObject(obj) end
+                OsijekBenches[i] = nil
+                OsijekBenchUsed[i] = nil
+            end
+        end
+        Wait(1500)
+    end
+end)
+
+local sitting = nil
+CreateThread(function()
+    while true do
+        local sleep = 400
+        local ped = PlayerPedId()
+        if sitting then
+            sleep = 0
+            BeginTextCommandDisplayHelp('STRING')
+            AddTextComponentSubstringPlayerName('~INPUT_CONTEXT~ Ustani')
+            EndTextCommandDisplayHelp(0, false, false, -1)
+            if IsControlJustReleased(0, 38) or IsEntityDead(ped) then
+                ClearPedTasks(ped)
+                OsijekBenchUsed[sitting] = nil
+                sitting = nil
+                Wait(600)
+            end
+        elseif not IsPedInAnyVehicle(ped, false) then
+            local pos = GetEntityCoords(ped)
+            for i, obj in pairs(OsijekBenches) do
+                if DoesEntityExist(obj) and #(GetEntityCoords(obj) - pos) < 1.8 and not OsijekBenchUsed[i] then
+                    sleep = 0
+                    BeginTextCommandDisplayHelp('STRING')
+                    AddTextComponentSubstringPlayerName('~INPUT_CONTEXT~ Sjedni')
+                    EndTextCommandDisplayHelp(0, false, false, -1)
+                    if IsControlJustReleased(0, 38) then
+                        local c = GetEntityCoords(obj)
+                        TaskStartScenarioAtPosition(ped, 'PROP_HUMAN_SEAT_BENCH', c.x, c.y, c.z + 0.5, GetEntityHeading(obj) + 180.0, 0, true, true)
+                        OsijekBenchUsed[i] = ped
+                        sitting = i
+                        Wait(800)
+                    end
+                    break
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+-- ===================================================================== v1.0.18: fountain water jets
+CreateThread(function()
+    local fx = {}
+    while true do
+        local pos = GetEntityCoords(PlayerPedId())
+        for i, f in ipairs(Life.FOUNTAINS or {}) do
+            local p = W(f[1], f[2], f[3])
+            local d = #(pos - p)
+            if d < 120.0 and not fx[i] then
+                RequestNamedPtfxAsset('core')
+                local t = GetGameTimer()
+                while not HasNamedPtfxAssetLoaded('core') and GetGameTimer() - t < 3000 do Wait(0) end
+                UseParticleFxAssetNextCall('core')
+                local h = StartParticleFxLoopedAtCoord(Config.FountainParticle or 'ent_amb_fountain_pour', p.x, p.y, p.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+                fx[i] = (h and h ~= 0) and h or -1
+            elseif d > 150.0 and fx[i] then
+                if fx[i] ~= -1 then StopParticleFxLooped(fx[i], false) end
+                fx[i] = nil
+            end
+        end
+        Wait(2000)
+    end
+end)
+
+-- ===================================================================== v1.0.18: get out of the water (Drava / sea around the city)
+CreateThread(function()
+    while true do
+        local sleep = 1000
+        local ped = PlayerPedId()
+        if IsEntityInWater(ped) and not IsPedInAnyVehicle(ped, false) and IsPedSwimming(ped) and inCity(GetEntityCoords(ped), 100.0) then
+            sleep = 0
+            BeginTextCommandDisplayHelp('STRING')
+            AddTextComponentSubstringPlayerName('~INPUT_CONTEXT~ Izađi na obalu (ili plivaj do stepenica)')
+            EndTextCommandDisplayHelp(0, false, false, -1)
+            if IsControlJustReleased(0, 38) then
+                local c = GetEntityCoords(ped)
+                local lx, ly = c.x - Config.Origin.x, c.y - Config.Origin.y
+                local tx, ty
+                if ly > 175.0 and ly < 265.0 and math.abs(lx) < 560.0 then          -- in the Drava
+                    tx, ty = lx, (ly < 220.0) and 168.0 or 272.0
+                else                                                                -- sea around the city
+                    tx = math.max(-545.0, math.min(545.0, lx))
+                    ty = math.max(-775.0, math.min(340.0, ly))
+                    if ty > 170.0 and ty < 270.0 then ty = 168.0 end
+                end
+                DoScreenFadeOut(400)
+                while not IsScreenFadedOut() do Wait(0) end
+                local g = groundAt(tx, ty, 1.0) or W(tx, ty, 1.0)
+                SetEntityCoords(ped, g.x, g.y, g.z, false, false, false, false)
+                Wait(300)
+                DoScreenFadeIn(500)
             end
         end
         Wait(sleep)

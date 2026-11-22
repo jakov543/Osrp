@@ -336,6 +336,12 @@ def corrugated(rng, n, base):
     return colorize(base, shade), 0.5 + 0.5 * wave
 
 
+def water(rng, n, base):
+    ripple = noise(rng, n, 2.0, sx=1.0, sy=3.0)
+    glint = np.clip((noise(rng, n, 1.2) - 0.6) * 4, 0, 1)
+    return colorize(base, 1 + 0.18 * ripple + 0.5 * glint), None
+
+
 def flat(rng, n, base):
     return colorize(base, 1 + 0.05 * noise(rng, n, 1.0)), None
 
@@ -366,6 +372,7 @@ TABLE = [
     ("door_frame",   lambda r, n, b: wood(r, n, b, 6),         256, 1.0, 1.0),
     ("manhole",      lambda r, n, b: manhole(r, n, b),         256, 0.8, 3.0),
     ("flowers",      lambda r, n, b: flowers(r, n, b),         256, 1.0, 1.5),
+    ("fountain_water", lambda r, n, b: water(r, n, b),        256, 2.0, 0.0),
     ("window_glass", lambda r, n, b: glass(r, n, b),           256, 3.0, 0.0),
     ("busstop_glass", lambda r, n, b: glass(r, n, b),          256, 2.0, 0.0),
     ("bridge_steel", lambda r, n, b: metal(r, n, b),           256, 2.0, 0.0),

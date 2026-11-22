@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.16)
+OSRP - Osijek starter map for Blender (V1.0.18)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -207,8 +207,8 @@ def windows(col, name, cx, face_y, z0, width, floors, floor_h, mat, facing):
 
 
 # ---------------------------------------------------------------- materials
-M_GRASS = material("osrp_grass", (0.16, 0.30, 0.10))
-M_PARK = material("osrp_park_grass", (0.20, 0.38, 0.12))
+M_GRASS = material("osrp_grass", (0.075, 0.13, 0.04))
+M_PARK = material("osrp_park_grass", (0.085, 0.155, 0.05))
 M_ROAD = material("osrp_asphalt", (0.06, 0.06, 0.07), rough=0.95)
 M_LINE = material("osrp_road_line", (0.92, 0.92, 0.88))
 M_WALK = material("osrp_pavement", (0.50, 0.49, 0.46))
@@ -274,11 +274,8 @@ BENCHES = []   # (x, y, heading) - NPCs sit here
 
 def bench(col, i, x, y, back=1):
     """bench along x; back=+1 backrest on the +y side (you sit facing -y), back=-1 the other way"""
+    # v1.0.18: a real GTA bench is placed here in-game (heading = the way you look when you sit)
     BENCHES.append((round(x, 2), round(y, 2), 180.0 if back == 1 else 0.0))
-    box(col, f"osrp_klupa_sjed_{i}", (x, y, 0.42), (1.8, 0.45, 0.06), M_WOOD)
-    box(col, f"osrp_klupa_nasl_{i}", (x, y + 0.22 * back, 0.6), (1.8, 0.06, 0.45), M_WOOD)
-    for k, dx in enumerate((-0.8, 0.8)):
-        box(col, f"osrp_klupa_noga_{i}_{k}", (x + dx, y, 0), (0.08, 0.45, 0.42), M_POLE)
 
 
 # ---------------------------------------------------------------- build
@@ -309,6 +306,46 @@ box(col, "osrp_rub_sjever", (0, N1 + 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
 for sx in (-1, 1):
     box(col, f"osrp_rub_istok_jug_{sx}", (sx * (MAP_W / 2 + 1.5), (S0 + S1) / 2, -12), (3, S1 - S0, 12.05), M_STONE)
     box(col, f"osrp_rub_istok_sjever_{sx}", (sx * (MAP_W / 2 + 1.5), (N0 + N1) / 2, -12), (3, N1 - N0, 12.05), M_STONE)
+
+# v1.0.18: stone stairs from the quays down to the Drava (get out of the water), marina with boats
+WATER_Z = -8.0                         # GTA sea level in city coordinates (city is 8 m above the sea)
+STEP_H, STEP_RUN, STAIR_W = 0.25, 0.36, 2.6
+DOCKS = []
+
+
+def river_stairs(name, x0, bank):
+    """bank = -1 south wall (inner face y = RIVER_Y - RIVER_W/2), +1 north wall. Steps go down along +x."""
+    face = RIVER_Y + bank * RIVER_W / 2
+    yc = face - bank * STAIR_W / 2
+    n = int(round((0 - (WATER_Z + 0.35)) / STEP_H))
+    for k in range(n):
+        top = -(k + 1) * STEP_H
+        box(col, f"{name}_stuba_{k}", (x0 + k * STEP_RUN + STEP_RUN / 2, yc, WATER_Z - 3), (STEP_RUN, STAIR_W, top - (WATER_Z - 3)), M_STONE)
+    end_x = x0 + n * STEP_RUN
+    box(col, f"{name}_odmor", (end_x + 2.5, yc, WATER_Z - 3), (5, STAIR_W, 3 + 0.35), M_STONE)          # landing just above the water
+    ry = face - bank * (STAIR_W - 0.05)
+    for k in range(0, n, 4):          # handrail: posts + stepped rail on the water side
+        top = -(k + 1) * STEP_H
+        box(col, f"{name}_stup_{k}", (x0 + k * STEP_RUN + 0.1, ry, top), (0.06, 0.06, 1.0), M_POLE)
+        box(col, f"{name}_rukohvat_{k}", (x0 + (k + 2) * STEP_RUN, ry, top + 0.95), (4 * STEP_RUN, 0.06, 0.06), M_POLE)
+    return end_x + 2.5, yc
+
+
+for k, (x0, bank) in enumerate(((-200, -1), (100, -1), (400, -1), (-330, 1), (0, 1), (300, 1))):
+    river_stairs(f"osrp_drava_stube_{k}", x0, bank)
+
+# marina: floating pontoon along the south quay with finger piers, boats tied up
+MX0, MX1 = 125, 205
+PY = RIVER_Y - RIVER_W / 2 + STAIR_W + 1.5
+box(col, "osrp_marina_ponton", ((MX0 + MX1) / 2, PY, WATER_Z - 0.3), (MX1 - MX0, 3.0, 0.65), M_WOOD)
+box(col, "osrp_marina_veza", (MX0 - 5.5, RIVER_Y - RIVER_W / 2 + STAIR_W / 2 + 0.75, WATER_Z - 0.3), (11, STAIR_W + 1.5, 0.65), M_WOOD)   # joins the stairs landing
+BOATS = []
+for k, x in enumerate(range(MX0 + 8, MX1 - 4, 14)):
+    box(col, f"osrp_marina_prst_{k}", (x, PY + 6, WATER_Z - 0.3), (1.6, 9, 0.6), M_WOOD)
+    for dy in (2.0, 9.5):
+        cylinder(col, f"osrp_marina_stup_{k}_{dy}", (x + 0.9, PY + dy, WATER_Z - 4), 0.18, 5.0, M_WOOD, verts=8)
+    BOATS.append((x + 4.2, PY + 6.5, 90.0 if k % 2 else 270.0, ("dinghy", "jetmax", "suntrap", "tropic", "squalo", "speeder")[k % 6]))
+BOATS += [(-300, RIVER_Y + RIVER_W / 2 - STAIR_W - 5, 90.0, "seashark"), (-286, RIVER_Y + RIVER_W / 2 - STAIR_W - 5, 90.0, "seashark")]
 
 # Promenade (south bank)
 PROM_Y = RIVER_Y - RIVER_W / 2 - 11
@@ -706,10 +743,23 @@ for k, (dx, dy) in enumerate(((-5, 0), (5, 0), (0, -5), (0, 5))):
 
 # Fountain on the square
 FX, FY = TV_X - 32, 48
-cylinder(col, "osrp_fontana_bazen", (FX, FY, 0.14), 4.2, 0.6, M_WHITE_STONE, verts=24)
-cylinder(col, "osrp_fontana_voda", (FX, FY, 0.2), 3.8, 0.5, M_WATER, verts=24)
-cylinder(col, "osrp_fontana_stup", (FX, FY, 0.7), 0.35, 1.8, M_WHITE_STONE, verts=12)
-cylinder(col, "osrp_fontana_zdjela", (FX, FY, 2.5), 1.2, 0.3, M_WHITE_STONE, verts=16)
+# v1.0.18: tiered stone fountain - octagonal basin with a wide rim you can sit on, two bowls, water jets in-game
+M_FWATER = material("osrp_fountain_water", (0.10, 0.32, 0.38), rough=0.05)
+cylinder(col, "osrp_fontana_dno", (FX, FY, 0.14), 5.6, 0.08, M_COBBLE, verts=32)
+for k in range(8):                      # octagonal rim
+    a = k * math.pi / 4
+    rx, ry = FX + math.cos(a) * 5.0, FY + math.sin(a) * 5.0
+    box(col, f"osrp_fontana_rub_{k}", (rx, ry, 0.14), (0.7, 4.2, 0.55), M_WHITE_STONE, rot_z=a)
+    box(col, f"osrp_fontana_rub_vrh_{k}", (rx, ry, 0.69), (0.9, 4.3, 0.1), M_RIVER_PLINTH, rot_z=a)
+cylinder(col, "osrp_fontana_voda", (FX, FY, 0.14), 4.7, 0.38, M_FWATER, verts=32)
+cylinder(col, "osrp_fontana_stup", (FX, FY, 0.52), 0.55, 1.4, M_WHITE_STONE, verts=12)
+cylinder(col, "osrp_fontana_zdjela1", (FX, FY, 1.9), 2.2, 0.35, M_WHITE_STONE, verts=24)
+cylinder(col, "osrp_fontana_voda1", (FX, FY, 2.2), 1.95, 0.1, M_FWATER, verts=24)
+cylinder(col, "osrp_fontana_stup2", (FX, FY, 2.3), 0.3, 1.2, M_WHITE_STONE, verts=12)
+cylinder(col, "osrp_fontana_zdjela2", (FX, FY, 3.45), 1.1, 0.28, M_WHITE_STONE, verts=20)
+cylinder(col, "osrp_fontana_voda2", (FX, FY, 3.68), 0.9, 0.08, M_FWATER, verts=20)
+pyramid(col, "osrp_fontana_vrh", (FX, FY, 3.75), 0.25, 0.7, M_GOLD)
+FOUNTAINS = [(FX, FY, 4.3), (FX, FY, 2.4)]
 
 # Bus stops on Europska avenija
 for i, x in enumerate((-375, -225, -75, 75, 375)):
@@ -873,7 +923,7 @@ for k in range(3):
 plane(col, "osrp_hitna_garaza_prilaz", (GX, (GY + 15 - 358) / 2, 0.1), (26, -358 - GY - 15), M_ROAD)
 SPECIAL += [(GX - 8.5, GY + 21, None, 180.0, "ambulance", 0), (GX + 8.5, GY + 21, None, 180.0, "ambulance", 0)]
 for k, (bx_, by_) in enumerate(((HX - 20, HY + 30), (HX + 20, HY + 30))):
-    box(col, f"osrp_kbc_klupa_{k}", (bx_, by_, 0.1), (2.2, 0.6, 0.45), M_WOOD)
+    BENCHES.append((bx_, by_, 0.0))
 PLACES["hospital_door"] = (HX, HY + 10.4)          # reception desk inside the lobby
 PLACES["hospital_spawn"] = (HX, HY + 28.5)
 PLACES["ems_garage"] = (HX + 50, -369.0)
@@ -1023,14 +1073,21 @@ for side in (-1, 1):
         if not clear_of_cross(x, 10):
             continue
         kind = ("kanta", "klupa", "kiosk", "bicikl", "kanta", "telefon", "posuda")[k % 7]
-        STREETPROPS.append((kind, x + 4, side * 14.9, h))
+        if kind == "klupa":
+            BENCHES.append((x + 4, side * 14.9, h))        # real bench you can sit on, looking at the street
+        else:
+            STREETPROPS.append((kind, x + 4, side * 14.9, h))
         if k % 4 == 0:
             STREETPROPS.append(("hidrant", x + 9, side * 8.9, h))
 for yc in (-350, -180, 125):
     for side in (-1, 1):
         for k, x in enumerate(range(-520, 521, 40)):
             if clear_of_cross(x, 9) and not (yc == -350 and side == -1 and any(abs(x - d) < 9 for d in DRIVEWAYS)):
-                STREETPROPS.append((("kanta", "hidrant", "klupa")[k % 3], x, yc + side * 6.9, 0.0 if side == 1 else 180.0))
+                kind = ("kanta", "hidrant", "klupa")[k % 3]
+                if kind == "klupa":
+                    BENCHES.append((x, yc + side * 6.9, 180.0 if side == 1 else 0.0))
+                else:
+                    STREETPROPS.append((kind, x, yc + side * 6.9, 0.0 if side == 1 else 180.0))
 AIRPROPS = []
 for x in (110, 200, 290):
     AIRPROPS += [("air_stair", x - 7, -500, 90.0), ("air_bagloader", x + 9, -512, 0.0), ("air_cart", x + 14, -470, 90.0)]
@@ -1095,7 +1152,21 @@ for x in CROSS_X:
     SIGNS.append(("stop", x - SIDE_ROAD_W / 2 - 0.9, -180 + SIDE_ROAD_W / 2 + 1.5, 180.0))
     SIGNS.append(("pjesacki", x + SIDE_ROAD_W / 2 + 0.9, -(ROAD_W / 2 + 12), 0.0))
 
-SIGNS += SIGNS_EXTRA + AIRPROPS + STREETPROPS
+# v1.0.18 bushes + grass clumps on the green areas (GTA plants)
+GREEN = []
+for bx in range(len(CROSS_X) - 1):
+    for (y0, y1) in [(-342.2, -187.8), (-172.2, -16), (16, 117.2)]:
+        x0, x1 = CROSS_X[bx] + 12, CROSS_X[bx + 1] - 12
+        for k in range(5):
+            GREEN.append(("grm" if k % 2 == 0 else "trava", random.uniform(x0, x1), random.uniform(y0 + 24, y1 - 24), random.uniform(0, 360)))
+for k in range(int((PARK_X1 - PARK_X0) / 9)):
+    for y in (PARK_Y0 + 1.5, PARK_Y1 - 1.5):
+        GREEN.append(("grm", PARK_X0 + 4 + k * 9, y, random.uniform(0, 360)))
+for k in range(12):
+    GREEN.append(("grm", -405 + k * 20, BEACH_Y + 24, random.uniform(0, 360)))
+for k in range(10):
+    GREEN.append(("grm", HX - 50 + k * 11, HY - 26, random.uniform(0, 360)))
+SIGNS += SIGNS_EXTRA + AIRPROPS + STREETPROPS + GREEN
 WALKS = []          # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
 for a, b in open_segments(-HALF, HALF, SIDE_ROAD_W / 2 + 1):
     for y in (ROAD_W / 2 + 3.3, -(ROAD_W / 2 + 3.3)):
@@ -1112,4 +1183,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.16: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.18: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

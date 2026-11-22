@@ -64,6 +64,9 @@ Config.SignModels = {
     bicikl  = { 'prop_bikerack_1a', 'prop_bikerack_2' },
     telefon = { 'prop_phonebox_04', 'prop_phonebox_01a' },
     posuda  = { 'prop_pot_plant_03a', 'prop_plant_int_03a', 'prop_pot_plant_05a' },
+    -- v1.0.18 plants on the grass
+    grm     = { 'prop_bush_med_03', 'prop_bush_lrg_04b', 'prop_bush_med_06', 'prop_bush_lrg_01e' },
+    trava   = { 'prop_grass_dry_02', 'prop_grass_dry_03', 'prop_bush_dead_02' },
 }
 
 Config.Pedestrians = true
@@ -125,3 +128,7 @@ Config.NpcChat = {
     'The old town, Tvrđa, has the best cafés in Osijek.',
     'Be careful, there are pickpockets around here.',
 }
+
+-- ===================================================================== v1.0.18
+Config.BenchModels = { 'prop_bench_01a', 'prop_bench_05', 'prop_bench_09' }   -- E = sit (NPCs sit too)
+Config.FountainParticle = 'ent_amb_fountain_pour'                              -- water jets of the Tvrđa fountain
