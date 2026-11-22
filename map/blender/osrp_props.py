@@ -596,6 +596,30 @@ def build_props(h):
         B(p, f"luk_{k}", (x, 0, 0.72), (0.05, 0.75, 0.05), "steel")
     B(p, "temelj", (0, 0, 0), (3.0, 0.9, 0.04), "steel")
 
+    # ---------------- v1.0.39 DRAVA CENTAR mall: big logo, shop name signs, food court table set, escalator look
+    p = "mall_logo"; names.append(p)                 # 10 x 4 m sign on the facade (origin = wall)
+    face("prop_" + p, "lice", [(-5.0, 0), (5.0, 0), (5.0, 4.0), (-5.0, 4.0)], 0.12, signtex("mall_logo"))
+    B(p, "ploca", (0, 0.05, -0.1), (10.3, 0.1, 4.2), "black")
+    for key in ("stil", "volt", "kava", "sport", "knjige", "igracke", "market", "ljekarna"):
+        p = "mall_sign_" + key; names.append(p)        # 4.5 x 1.5 m shop sign over the shop front, faces -Y
+        face("prop_" + p, "lice", [(-2.25, 0), (2.25, 0), (2.25, 1.5), (-2.25, 1.5)], -0.08, signtex("shop_" + key))
+        B(p, "ploca", (0, 0, -0.05), (4.6, 0.12, 1.6), "black")
+    p = "mall_table"; names.append(p)               # round table with 4 chairs
+    C(p, "noga", (0, 0, 0), 0.06, 0.74, "steel")
+    C(p, "ploca", (0, 0, 0.72), 0.45, 0.04, "white", verts=16)
+    for k in range(4):
+        a = k * math.pi / 2
+        x, y = math.cos(a) * 0.75, math.sin(a) * 0.75
+        B(p, f"sjedalo_{k}", (x, y, 0.44), (0.42, 0.42, 0.05), "blue")
+        B(p, f"stolica_noga_{k}", (x, y, 0), (0.05, 0.05, 0.44), "steel")
+        B(p, f"naslon_{k}", (x * 1.27, y * 1.27, 0.49), (0.42 if abs(y) > 0.1 else 0.05, 0.05 if abs(y) > 0.1 else 0.42, 0.42), "blue")
+    p = "escalator"; names.append(p)                # decorative escalator up to the (closed) upper level, 10 m long, rises along +Y
+    for sx in (-0.65, 0.65):
+        _mesh_obj(pcol, f"osrpprop_{p}__bok_{sx}", [(sx, -5, 0), (sx, 5, 5.0), (sx, 5, 6.1), (sx, -5, 1.1)], [(0, 1, 2, 3), (3, 2, 1, 0)], M["glass"])
+        _mesh_obj(pcol, f"osrpprop_{p}__rukohvat_{sx}", [(sx - 0.05, -5, 1.05), (sx + 0.05, -5, 1.05), (sx + 0.05, 5, 6.05), (sx - 0.05, 5, 6.05)], [(0, 1, 2, 3), (3, 2, 1, 0)], M["black"])
+    for k in range(20):
+        B(p, f"stepenica_{k}", (0, -4.75 + k * 0.5, k * 0.25), (1.2, 0.5, 0.25), "steel")
+
     p = "swing"; names.append(p)                   # playground swing (2 seats)
     for sx in (-1.6, 1.6):
         for sy in (-0.7, 0.7):

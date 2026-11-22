@@ -11,7 +11,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 PPM = 3.0                                # pixels per metre (v1.0.35: sharper)
-X0, X1, Y0, Y1 = -590.0, 590.0, -800.0, 380.0
+X0, X1, Y0, Y1 = -590.0, 590.0, -800.0, 445.0
 
 COLORS = {                               # v1.0.35: modern dark map style
     "sea": (22, 52, 78), "land": (40, 45, 52), "water": (30, 78, 112), "park": (44, 78, 52),
@@ -24,7 +24,7 @@ ROWS = [(0, "Europska avenija"), (-180, "Kapucinska ulica"), (-350, "Vukovarska 
 COLS = [(-450, "Ulica svetog Roka"), (-300, "Šamačka ulica"), (-150, "Radićeva ulica"), (0, "Županijska ulica"),
         (150, "Ulica Hrvatske Republike"), (300, "Ulica Franje Kuhača"), (450, "Divaltova ulica")]
 AREAS = [(-330, -440, "KBC OSIJEK"), (200, -520, "ZRAČNA LUKA OSIJEK"), (225, 75, "TVRĐA"), (-222, 36, "GRADSKI PARK"),
-         (0, 220, "DRAVA"), (-300, 300, "COPACABANA"), (-430, -90, "GORNJI GRAD"), (420, -90, "DONJI GRAD")]
+         (0, 220, "DRAVA"), (-300, 300, "COPACABANA"), (360, 410, "VILA NA DRAVI"), (-472, -458, "DRAVA CENTAR"), (-430, -90, "GORNJI GRAD"), (420, -90, "DONJI GRAD")]
 
 
 def px(x, y):

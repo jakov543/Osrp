@@ -167,6 +167,31 @@ def pyramid(col, name, loc, base, height, mat):
     return _mesh_obj(col, name, verts, faces, mat)
 
 
+def sweep_tube(name, pts, r, mat, n=10):
+    """v1.0.39: round tube following a list of points (cables, rails)"""
+    vs, fs = [], []
+    for i, p0 in enumerate(pts):
+        a = pts[max(0, i - 1)]; b = pts[min(len(pts) - 1, i + 1)]
+        d = [b[k] - a[k] for k in range(3)]
+        L = math.sqrt(sum(c * c for c in d)) or 1e-6
+        d = [c / L for c in d]
+        ref = (0, 0, 1) if abs(d[2]) < 0.9 else (1, 0, 0)
+        u = [d[1] * ref[2] - d[2] * ref[1], d[2] * ref[0] - d[0] * ref[2], d[0] * ref[1] - d[1] * ref[0]]
+        ul = math.sqrt(sum(c * c for c in u)); u = [c / ul for c in u]
+        v = [d[1] * u[2] - d[2] * u[1], d[2] * u[0] - d[0] * u[2], d[0] * u[1] - d[1] * u[0]]
+        for j in range(n):
+            t = j * 2 * math.pi / n
+            vs.append(tuple(p0[k] + r * (math.cos(t) * u[k] + math.sin(t) * v[k]) for k in range(3)))
+    for i in range(len(pts) - 1):
+        for j in range(n):
+            j2 = (j + 1) % n
+            fs.append((i * n + j, i * n + j2, (i + 1) * n + j2, (i + 1) * n + j))
+    fs.append(tuple(range(n - 1, -1, -1)))
+    last = (len(pts) - 1) * n
+    fs.append(tuple(range(last, last + n)))
+    return _mesh_obj(col, name, vs, fs, mat)
+
+
 def gable_roof(col, name, cx, cy, z, w, d, h, mat, rot_z=0.0):
     """pitched (gable) roof: ridge runs along local x, overhang 0.4 m"""
     w2, d2 = w / 2 + 0.4, d / 2 + 0.4
@@ -976,15 +1001,19 @@ for k, yy in enumerate((RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5)):
 for side in (-1, 1):
     box(col, f"osrp_most_ograda_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP), (0.1, RIVER_W + 8, 1.1), M_BRIDGE)
     box(col, f"osrp_most_rukohvat_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP + 1.05), (0.18, RIVER_W + 8, 0.08), M_BRIDGE)
-    for k in range(13):   # suspension hangers
-        t = k / 12
-        yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
-        top = 22.5 - 18 * math.sin(t * math.pi)
-        box(col, f"osrp_most_sajla_{side}_{k}", (BR_X + side * 2.6, yy, DECK_TOP + 1.1), (0.06, 0.06, max(0.4, top - DECK_TOP - 1.1)), M_BRIDGE)
-    for k in range(48):   # main cable (stepped segments following the sag curve)
-        t = (k + 0.5) / 48
-        yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
-        box(col, f"osrp_most_kabel_{side}_{k}", (BR_X + side * 2.6, yy, 22.5 - 18 * math.sin(t * math.pi) - 0.15), (0.25, (RIVER_W - 10) / 48 * 1.9, 0.3), M_BRIDGE)
+    # v1.0.39: smooth main cable (one swept tube), backstays down to anchor blocks on both banks, hangers that reach the cable
+    y_a, y_b = RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5
+    cx_ = BR_X + side * 3.2
+    pts = [(cx_, y_a + k / 40 * (y_b - y_a), 22.5 - 18 * math.sin(k / 40 * math.pi) + 0.6) for k in range(41)]
+    sweep_tube(f"osrp_most_kabel_{side}", pts, 0.22, M_BRIDGE)
+    for e, (yy, ya) in enumerate(((y_a, y_a - 22), (y_b, y_b + 22))):
+        sweep_tube(f"osrp_most_zatega_{side}_{e}", [(cx_, yy, 23.1), (cx_, ya, 0.9)], 0.2, M_BRIDGE)
+        box(col, f"osrp_most_sidro_{side}_{e}", (cx_, ya, 0.0), (1.6, 2.4, 1.0), M_WHITE_STONE)
+    for k in range(1, 20):
+        t = k / 20
+        yy = y_a + t * (y_b - y_a)
+        top = 22.5 - 18 * math.sin(t * math.pi) + 0.6
+        sweep_tube(f"osrp_most_sajla_{side}_{k}", [(cx_, yy, top), (BR_X + side * 2.45, yy, DECK_TOP + 1.05)], 0.035, M_BRIDGE, n=6)
 
 # v1.0.38: LED light strips (purple handrails, red pylons) - in-game coloured lights at night come from client.lua (Life.BRIDGE)
 M_LED_PURPLE = material("osrp_lamp_light_led_purple", (0.65, 0.2, 1.0), emit=6.0)
@@ -2152,6 +2181,157 @@ for k in range(2):
 for k in range(3):
     cprop("tech_shelf", 55.0 + k * 3.0, GSY - 6.6, FLOOR_Z, 0.0)
 
+# ---------- v1.0.39 VILA NA DRAVI: big mansion on the north bank (enterable, 2 floors, pool, garage, walled garden) ----------
+MX, MY = 360.0, 392.0
+plane(col, "osrp_vila_teren", (MX, 392.0, 0.0), (130, 94), M_GRASS)                 # new land north of the promenade
+M_VILA = material("osrp_plaster_vila_white", (0.92, 0.91, 0.88))
+M_VILA_DARK = material("osrp_vila_frame_dark", (0.10, 0.10, 0.12), rough=0.3, metal=0.5)
+M_POOL = material("osrp_drava_water_pool", (0.10, 0.45, 0.60), rough=0.02)
+M_POOLTILE = material("osrp_tiles_pool", (0.85, 0.88, 0.9))
+M_GRAVEL_V = material("osrp_gravel_vila", (0.62, 0.58, 0.5))
+for sx in (-1, 1):                                    # garden wall with a gate towards the promenade
+    box(col, f"osrp_vila_zid_j_{sx}", (MX + sx * 27.5, 349.0, 0.0), (45, 0.4, 1.6), M_WHITE_STONE)
+    box(col, f"osrp_vila_stup_{sx}", (MX + sx * 4.6, 349.0, 0.0), (1.0, 1.0, 2.4), M_WHITE_STONE)
+    box(col, f"osrp_vila_zid_bok_{sx}", (MX + sx * 49.8, 391.0, 0.0), (0.4, 84, 1.6), M_WHITE_STONE)
+box(col, "osrp_vila_zid_s", (MX, 433.0, 0.0), (100, 0.4, 1.6), M_WHITE_STONE)
+plane(col, "osrp_vila_prilaz", (MX, 362.0, 0.11), (6, 26), M_GRAVEL_V)
+plane(col, "osrp_vila_okretiste", (MX - 16, 377.0, 0.11), (26, 8), M_GRAVEL_V)
+HX0, HY0, HW_, HD_ = MX, 392.0, 32.0, 18.0            # house 32 x 18: ground floor 3.6 m (enterable) + upper floor, flat roof
+HF = HY0 - HD_ / 2
+box(col, "osrp_vila_pod", (HX0, HY0, 0.0), (HW_, HD_, FLOOR_Z), M_FLOOR)
+box(col, "osrp_vila_zid_straga", (HX0, HY0 + HD_ / 2 - 0.15, 0.0), (HW_, 0.3, 7.3), M_VILA)
+for sx in (-1, 1):
+    box(col, f"osrp_vila_zid_strana_{sx}", (HX0 + sx * (HW_ / 2 - 0.15), HY0, 0.0), (0.3, HD_, 7.3), M_VILA)
+    box(col, f"osrp_vila_staklo_{sx}", (HX0 + sx * 8.75, HF + 0.15, FLOOR_Z), (13.5, 0.15, 3.3), M_CLEAR)
+    for x in range(2, 16, 3):
+        box(col, f"osrp_vila_okvir_{sx}_{x}", (HX0 + sx * x, HF + 0.15, FLOOR_Z), (0.12, 0.25, 3.3), M_VILA_DARK)
+box(col, "osrp_vila_staklo_nad", (HX0, HF + 0.15, FLOOR_Z + 2.7), (3.0, 0.15, 0.6), M_CLEAR)
+SLIDEDOORS.append((HX0, HF + 0.55, FLOOR_Z, 0.0, 1.3, "osrpprop_slidedoor"))
+box(col, "osrp_vila_strop_1", (HX0, (HF + 4.9 + HY0 + HD_ / 2) / 2, 3.6), (HW_, HD_ - 4.9, 0.3), M_VILA)          # first floor slab (stair hole at the front right)
+box(col, "osrp_vila_strop_1b", (HX0 - 4, HF + 2.45, 3.6), (HW_ - 8, 4.9, 0.3), M_VILA)
+box(col, "osrp_vila_kat_front", (HX0, HF + 0.15, 3.9), (HW_, 0.3, 0.6), M_VILA)
+box(col, "osrp_vila_kat_staklo", (HX0, HF + 0.15, 4.5), (HW_ - 2, 0.15, 2.4), M_CLEAR)
+box(col, "osrp_vila_kat_vrh", (HX0, HF + 0.15, 6.9), (HW_, 0.3, 0.4), M_VILA)
+box(col, "osrp_vila_balkon", (HX0, HF - 1.4, 3.6), (HW_ - 6, 2.8, 0.3), M_VILA)
+box(col, "osrp_vila_balkon_ograda", (HX0, HF - 2.75, 3.9), (HW_ - 6, 0.06, 1.0), M_CLEAR)
+box(col, "osrp_vila_krov", (HX0, HY0, 7.3), (HW_ + 1.0, HD_ + 1.0, 0.35), M_VILA_DARK)
+for sy in (-1, 1):
+    box(col, f"osrp_vila_atika_{sy}", (HX0, HY0 + sy * (HD_ / 2 + 0.35), 7.65), (HW_ + 1.0, 0.3, 0.6), M_VILA)
+box(col, "osrp_vila_strop_2", (HX0, HY0, 7.0), (HW_ - 0.6, HD_ - 0.6, 0.05), M_CEIL)
+for st in range(13):                                  # stairs up to the first floor
+    box(col, f"osrp_vila_stube_{st}", (HX0 + 12.5, HF + 1.0 + st * 0.3, FLOOR_Z + st * 0.257), (2.4, 0.3, 0.257), M_WOOD)
+FURNITURE.extend([("tepih", HX0 - 8, HY0, FLOOR_Z, 0.0), ("sofa", HX0 - 8, HY0 + 3.2, FLOOR_Z, 180.0), ("fotelja", HX0 - 12, HY0, FLOOR_Z, 90.0),
+                  ("stolic", HX0 - 8, HY0, FLOOR_Z, 0.0), ("tvstol", HX0 - 8, HY0 - 3.4, FLOOR_Z, 0.0), ("tv", HX0 - 8, HY0 - 3.4, FLOOR_Z + 0.55, 0.0),
+                  ("lampa", HX0 - 13.5, HY0 + 4.5, FLOOR_Z, 0.0), ("biljka", HX0 - 2.5, HY0 - 5.5, FLOOR_Z, 0.0), ("polica", HX0 - 3, HY0 + 7.9, FLOOR_Z, 180.0),
+                  ("stol", HX0 + 5, HY0 + 1, FLOOR_Z, 0.0), ("stolica", HX0 + 4.2, HY0 + 1, FLOOR_Z, 270.0), ("stolica", HX0 + 5.8, HY0 + 1, FLOOR_Z, 90.0),
+                  ("hladnjak", HX0 + 3, HY0 + 7.9, FLOOR_Z, 180.0), ("stednjak", HX0 + 5, HY0 + 7.9, FLOOR_Z, 180.0), ("sudoper", HX0 + 7, HY0 + 7.9, FLOOR_Z, 180.0),
+                  ("ormaric", HX0 + 9, HY0 + 7.9, FLOOR_Z, 180.0), ("slika", HX0 - 8, HY0 + 8.7, FLOOR_Z + 1.5, 180.0),
+                  ("sofa", HX0 - 6, HY0 + 4, 3.9, 180.0), ("tepih", HX0 - 6, HY0 + 1, 3.9, 0.0), ("stolic", HX0 - 6, HY0 + 1, 3.9, 0.0),
+                  ("biljka", HX0 + 6, HY0 - 4, 3.9, 0.0), ("lampa", HX0 - 12, HY0 + 6, 3.9, 0.0)])
+GX0 = HX0 - HW_ / 2 - 5.0                             # garage on the west side
+box(col, "osrp_vila_garaza_zid_s", (GX0, HY0 + 4, 0.0), (10, 0.3, 3.2), M_VILA)
+box(col, "osrp_vila_garaza_zid_z", (GX0 - 4.85, HY0 - 1, 0.0), (0.3, 10, 3.2), M_VILA)
+box(col, "osrp_vila_garaza_krov", (GX0, HY0 - 1, 3.2), (10.4, 10.4, 0.3), M_VILA_DARK)
+box(col, "osrp_vila_garaza_pod", (GX0, HY0 - 1, 0.0), (10, 10, 0.12), M_APRON)
+box(col, "osrp_vila_garaza_vrata_nad", (GX0, HY0 - 6.05, 2.6), (10, 0.3, 0.6), M_VILA)
+SPECIAL += [(GX0, HY0 - 1.0, None, 180.0, "cognoscenti", 0)]
+PX0, PY0 = MX + 25, 372.0                             # pool + wooden deck, loungers, umbrellas
+box(col, "osrp_vila_bazen_rub", (PX0, PY0, 0.0), (16, 8, 0.2), M_POOLTILE)
+box(col, "osrp_vila_bazen_voda", (PX0, PY0, 0.12), (14, 6, 0.1), M_POOL)
+plane(col, "osrp_vila_terasa", (PX0, PY0 + 7.0, 0.11), (18, 6), M_WOOD)
+for k in range(3):
+    cprop("lounger", PX0 - 5 + k * 5, PY0 + 7.5, 0.12, 0.0, 120.0)
+cprop("umbrella", PX0 - 7.5, PY0 + 7.5, 0.12, 0.0, 120.0)
+cprop("umbrella", PX0 + 7.5, PY0 + 7.5, 0.12, 0.0, 120.0)
+for k, (tx, ty) in enumerate(((MX - 40, 360), (MX - 40, 420), (MX + 40, 420), (MX + 42, 388), (MX - 25, 425), (MX + 20, 425))):
+    tree(col, f"vila_{k}", tx, ty, 1.0)
+INTERIOR_LIGHTS.extend([(HX0 + dx, HY0 + dy, 3.3, 9.0, 40.0) for dx in (-9, 0, 9) for dy in (-3, 4)])
+INTERIOR_LIGHTS.extend([(HX0 + dx, HY0 + 2, 6.7, 9.0, 40.0) for dx in (-9, 0, 9)])
+STAFF.append(("s_m_m_highsec_01", MX + 6.5, 347.5, 180.0, "WORLD_HUMAN_GUARD_STAND"))
+STAFF.append(("s_f_m_maid_01", HX0 + 6, HY0 + 5, 180.0, "WORLD_HUMAN_MAID_CLEAN"))
+MAPRECTS.extend([("park", MX, 392.0, 100, 84), ("bld", HX0, HY0, HW_, HD_), ("bld", GX0, HY0 - 1, 10, 10), ("water", PX0, PY0, 14, 6)])
+LANDMARKS.append(("Vila na Dravi", MX, MY))
+PLACES["vila"] = (MX, 345.0)
+
+# ---------- v1.0.39 DRAVA CENTAR: shopping mall west of the hospital (car park, 8 shops, food court, atrium) ----------
+CX0, CY0, CW, CD, CH = -472.0, -458.0, 130.0, 70.0, 10.0
+CFRONT = CY0 + CD / 2
+M_MALL = material("osrp_facade_panels_mall", (0.80, 0.82, 0.86))
+M_MALLFLOOR = material("osrp_terrazzo_mall_floor", (0.86, 0.85, 0.82), rough=0.2)
+box(col, "osrp_mall_pod", (CX0, CY0, 0.0), (CW, CD, FLOOR_Z), M_MALLFLOOR)
+box(col, "osrp_mall_zid_j", (CX0, CY0 - CD / 2 + 0.2, 0.0), (CW, 0.4, CH), M_MALL)
+for sx in (-1, 1):
+    box(col, f"osrp_mall_zid_{sx}", (CX0 + sx * (CW / 2 - 0.2), CY0, 0.0), (0.4, CD, CH), M_MALL)
+    box(col, f"osrp_mall_front_{sx}", (CX0 + sx * 37.25, CFRONT - 0.2, 0.0), (55.5, 0.4, CH), M_MALL)
+    box(col, f"osrp_mall_izlog_{sx}", (CX0 + sx * 6.0, CFRONT - 0.2, FLOOR_Z), (7.0, 0.2, 4.5), M_CLEAR)
+box(col, "osrp_mall_front_nad", (CX0, CFRONT - 0.2, 4.76), (19.0, 0.4, CH - 4.76), M_MALL)
+box(col, "osrp_mall_staklo_nad", (CX0, CFRONT - 0.2, FLOOR_Z + 2.9), (5.0, 0.2, 4.76 - FLOOR_Z - 2.9), M_CLEAR)
+SLIDEDOORS.append((CX0, CFRONT - 0.6, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
+box(col, "osrp_mall_nadstresnica", (CX0, CFRONT + 3.0, 4.6), (22, 6, 0.35), M_STEEL)
+for sx in (-1, 1):
+    cylinder(col, f"osrp_mall_nadstr_stup_{sx}", (CX0 + sx * 10, CFRONT + 5.5, 0.0), 0.3, 4.6, M_STEEL, verts=10)
+cprop("mall_logo", CX0, CFRONT, 5.6, 0.0, 300.0)
+box(col, "osrp_mall_krov", (CX0, CY0, CH), (CW + 0.6, CD + 0.6, 0.4), M_STONE)
+box(col, "osrp_mall_strop", (CX0, CY0, CH - 0.05), (CW - 0.8, CD - 0.8, 0.05), M_CEIL)
+box(col, "osrp_mall_svjetlarnik", (CX0, CY0 + 2, CH + 0.4), (40, 16, 0.1), M_CLEAR)
+SHOPS_MALL = [("stil", -45, "s"), ("volt", -15, "s"), ("sport", 15, "s"), ("market", 45, "s"),
+              ("knjige", -10, "w"), ("igracke", 10, "w"), ("ljekarna", -10, "e"), ("kava", 10, "e")]
+for k, (key, off, wall) in enumerate(SHOPS_MALL):     # 8 shops: glass fronts + name signs
+    if wall == "s":
+        sx_, sy_ = CX0 + off, CY0 - CD / 2 + 12.0
+        for e in (-1, 1):
+            box(col, f"osrp_mall_pregrada_{k}_{e}", (sx_ + e * 14.85, CY0 - CD / 2 + 6.2, FLOOR_Z), (0.3, 12, CH - 1 - FLOOR_Z), M_MALL)
+        box(col, f"osrp_mall_izlog_trgovina_{k}_a", (sx_ - 8.5, sy_, FLOOR_Z), (11, 0.15, 3.6), M_CLEAR)
+        box(col, f"osrp_mall_izlog_trgovina_{k}_b", (sx_ + 8.5, sy_, FLOOR_Z), (11, 0.15, 3.6), M_CLEAR)
+        box(col, f"osrp_mall_trgovina_nad_{k}", (sx_, sy_, 3.86), (30, 0.3, CH - 1 - 3.86), M_MALL)
+        cprop("mall_sign_" + key, sx_, sy_ + 0.2, 4.3, 180.0, 120.0)      # faces the atrium (+Y)
+        box(col, f"osrp_mall_pult_{k}", (sx_ + 8, CY0 - CD / 2 + 4.0, FLOOR_Z), (5, 0.8, 1.05), M_WOOD)
+        for j in range(3):
+            box(col, f"osrp_mall_police_{k}_{j}", (sx_ - 10 + j * 6, CY0 - CD / 2 + 1.0, FLOOR_Z), (4.5, 0.8, 2.4), M_STEEL)
+    else:
+        ex = -1 if wall == "w" else 1
+        fx = CX0 + ex * (CW / 2 - 12.0)
+        sy_ = CY0 + off
+        for e in (-1, 1):
+            box(col, f"osrp_mall_pregrada_{k}_{e}", (CX0 + ex * (CW / 2 - 6.2), sy_ + e * 9.85, FLOOR_Z), (12, 0.3, CH - 1 - FLOOR_Z), M_MALL)
+        box(col, f"osrp_mall_izlog_trgovina_{k}_a", (fx, sy_ - 6, FLOOR_Z), (0.15, 7, 3.6), M_CLEAR)
+        box(col, f"osrp_mall_izlog_trgovina_{k}_b", (fx, sy_ + 6, FLOOR_Z), (0.15, 7, 3.6), M_CLEAR)
+        box(col, f"osrp_mall_trgovina_nad_{k}", (fx, sy_, 3.86), (0.3, 20, CH - 1 - 3.86), M_MALL)
+        cprop("mall_sign_" + key, fx - ex * 0.2, sy_, 4.3, -90.0 * ex, 120.0)
+        box(col, f"osrp_mall_pult_{k}", (CX0 + ex * (CW / 2 - 4), sy_ + 6, FLOOR_Z), (0.8, 5, 1.05), M_WOOD)
+        for j in range(2):
+            box(col, f"osrp_mall_police_{k}_{j}", (CX0 + ex * (CW / 2 - 1.0), sy_ - 6 + j * 6, FLOOR_Z), (0.8, 4.5, 2.4), M_STEEL)
+box(col, "osrp_mall_zardinjera", (CX0, CY0 + 4, FLOOR_Z), (12, 6, 0.6), M_WHITE_STONE)     # atrium planter with trees
+plane(col, "osrp_mall_zardinjera_zemlja", (CX0, CY0 + 4, FLOOR_Z + 0.61), (11.4, 5.4), M_GRASS)
+for k, tx in enumerate((-4, 0, 4)):
+    tree(col, f"mall_{k}", CX0 + tx, CY0 + 4, 0.6)
+for k in range(10):                                   # food court
+    cprop("mall_table", CX0 - 28 + (k % 5) * 6.5, CY0 + 12 + (k // 5) * 6.0, FLOOR_Z, 0.0, 80.0)
+cprop("escalator", CX0 + 30, CY0 + 10, FLOOR_Z, 0.0, 120.0)
+box(col, "osrp_mall_galerija", (CX0 + 30, CY0 + 20, 5.2), (16, 10, 0.3), M_MALL)
+box(col, "osrp_mall_galerija_ograda", (CX0 + 30, CY0 + 15.05, 5.5), (16, 0.08, 1.0), M_CLEAR)
+FURNITURE.extend([("atm", CX0 - 8.5, CFRONT - 1.0, FLOOR_Z, 180.0), ("atm", CX0 + 8.5, CFRONT - 1.0, FLOOR_Z, 180.0),
+                  ("vend_coffee", CX0 - 20, CY0 + 30, FLOOR_Z, 180.0), ("bin_in", CX0 - 6.5, CY0 + 4, FLOOR_Z, 0.0), ("bin_in", CX0 + 6.5, CY0 + 4, FLOOR_Z, 0.0)])
+INTERIOR_LIGHTS.extend([(CX0 + dx, CY0 + dy, CH - 0.5, 14.0, 50.0) for dx in (-48, -24, 0, 24, 48) for dy in (-12, 10)])
+STAFF += [("s_m_m_security_01", CX0 + 4, CFRONT - 3, 180.0, "WORLD_HUMAN_GUARD_STAND"), ("s_f_y_shop_mid", CX0 + 23, CY0 - CD / 2 + 3.0, 0.0, "WORLD_HUMAN_STAND_IMPATIENT"),
+          ("s_f_m_shop_high", CX0 - 37, CY0 - CD / 2 + 3.0, 0.0, "WORLD_HUMAN_STAND_IMPATIENT"), ("s_m_m_lifeinvad_01", CX0 - 7, CY0 - CD / 2 + 3.0, 0.0, "WORLD_HUMAN_STAND_IMPATIENT")]
+for k in range(6):                                    # shoppers
+    STAFF.append(("a_f_y_hipster_01" if k % 2 else "a_m_y_hipster_01", CX0 - 30 + k * 12, CY0 + 24, (k * 60) % 360, "WORLD_HUMAN_WINDOW_SHOP_BROWSE"))
+plane(col, "osrp_mall_parking", (CX0, (CFRONT + 6.5 + (-358.0)) / 2, 0.1), (CW, -358.0 - CFRONT - 6.5), M_ROAD)     # car park to Vukovarska
+plane(col, "osrp_mall_ulaz_plocnik", (CX0, CFRONT + 3.3, 0.12), (CW, 6.5), M_WALK)
+plane(col, "osrp_prilaz_mall", (CX0, -356.6, 0.1), (11, 3.2), M_ROAD)
+for row, py in enumerate((CFRONT + 14, CFRONT + 30)):
+    for k in range(22):
+        x = CX0 - 60 + k * 5.6
+        if abs(x - CX0) < 7:
+            continue
+        box(col, f"osrp_mall_crta_{row}_{k}", (x, py, 0.1), (0.12, 5.0, 0.012), M_LINE)
+        if k % 3 == 0:
+            PARKING.append((x + 2.8, py, 90.0 if row else 270.0))
+MAPRECTS.extend([("bld", CX0, CY0, CW, CD), ("square", CX0, (CFRONT + 6.5 - 358.0) / 2, CW, -358.0 - CFRONT - 6.5)])
+LANDMARKS.append(("DRAVA CENTAR", CX0, CY0))
+PLACES["mall"] = (CX0, CFRONT + 4)
+
 # ---------- v1.0.38 billboards (both sides) ----------
 for model, x, y, hd in (("billboard_osijek", -540.0, 26.0, 0.0), ("billboard_kava", 540.0, -26.0, 0.0), ("billboard_bulet", -200.0, -372.0, 0.0),
                         ("billboard_volt", 172.0, -374.0, 90.0), ("billboard_stil", -540.0, -26.0, 0.0)):
@@ -2224,4 +2404,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.38: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.39: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

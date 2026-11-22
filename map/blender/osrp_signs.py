@@ -185,6 +185,29 @@ def draw(key):
         d.ellipse((156, 180, 356, 380), fill=(240, 190, 0))
         _center_text(d, "T", 282, 150, (0, 60, 130))
         _center_text(d, "TRAMVAJ 2", 440, 62, (0, 60, 130), cond=True)
+    elif key == "mall_logo":                # v1.0.39 DRAVA CENTAR shopping mall (wide 2.5 : 1)
+        wide = Image.new("RGB", (1280, 512), (18, 30, 52))
+        dw = ImageDraw.Draw(wide)
+        dw.ellipse((60, 106, 360, 406), fill=(30, 170, 220))
+        dw.polygon([(110, 300), (210, 200), (310, 300)], fill=WHITE)
+        for txt, y, size, fill in (("DRAVA", 190, 190, WHITE), ("CENTAR", 380, 120, (30, 170, 220))):
+            f = _font(size)
+            dw.text((420, y - size * 0.6), txt, font=f, fill=fill)
+        return wide.resize((S, S))
+    elif key.startswith("shop_"):           # v1.0.39 shop names inside the mall (wide 3 : 1)
+        name, bg, fg = {"stil": ("STIL", (250, 246, 240), (190, 40, 90)), "volt": ("VOLT", (14, 20, 34), (60, 200, 255)),
+                        "kava": ("KAVA DRAVA", (60, 34, 20), (245, 220, 180)), "sport": ("SPORT CENTAR", (220, 60, 20), WHITE),
+                        "knjige": ("KNJIŽARA", (30, 70, 50), (240, 230, 200)), "igracke": ("IGRAČKE", (250, 200, 30), (200, 30, 60)),
+                        "market": ("MARKET", (200, 20, 30), WHITE), "ljekarna": ("LJEKARNA", (20, 150, 70), WHITE)}[key[5:]]
+        wide = Image.new("RGB", (1536, 512), bg)
+        dw = ImageDraw.Draw(wide)
+        size = 260 if len(name) < 8 else 190
+        f = _font(size)
+        b = dw.textbbox((0, 0), name, font=f)
+        dw.text((768 - (b[2] - b[0]) / 2 - b[0], 256 - (b[3] - b[1]) / 2 - b[1]), name, font=f, fill=fg)
+        if key == "shop_ljekarna":
+            dw.rectangle((90, 196, 210, 316), fill=WHITE); dw.rectangle((130, 156, 170, 356), fill=WHITE); dw.rectangle((50, 236, 250, 276), fill=WHITE)
+        return wide.resize((S, S))
     elif key.startswith("ad_"):             # v1.0.36 billboards (2 : 1, drawn wide, squeezed into the square texture)
         return _billboard(key[3:])
     return img
@@ -238,4 +261,4 @@ def _billboard(k):
     return im.resize((S, S))
 
 
-KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava", "tram_stop"]
+KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava", "tram_stop", "mall_logo", "shop_stil", "shop_volt", "shop_kava", "shop_sport", "shop_knjige", "shop_igracke", "shop_market", "shop_ljekarna"]
