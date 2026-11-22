@@ -674,4 +674,37 @@ def build_props(h):
     for x in (-1.2, 1.2):
         B(p, f"noga_{x}", (x, 0, 0), (0.06, 0.45, 0.32), "steel")
 
+    # ---------------- v1.0.33 BULET e-scooter (rental) - front = +Y, wheels on the ground at z 0
+    M.update({"bulet_green": material("osrp_paint_bulet_green", (0.07, 0.55, 0.28)), "deck": material("osrp_screen_deck", (0.05, 0.05, 0.05))})
+    p = "escooter"; names.append(p)
+    for y in (-0.48, 0.48):                      # wheels (as 12-sided discs standing up)
+        vs, fs = [], []
+        for side in (-0.03, 0.03):
+            for i in range(12):
+                a = i * math.pi / 6
+                vs.append((side, y + math.cos(a) * 0.11, 0.11 + math.sin(a) * 0.11))
+        fs = [tuple(range(12)), tuple(range(23, 11, -1))] + [(i, (i + 1) % 12, 12 + (i + 1) % 12, 12 + i) for i in range(12)]
+        _mesh_obj(pcol, f"osrpprop_{p}__kotac_{y}", vs, fs, M["rubber"])
+    B(p, "deck", (0, -0.02, 0.1), (0.16, 0.78, 0.06), "deck")
+    B(p, "deck_bok", (0, -0.02, 0.08), (0.17, 0.8, 0.03), "bulet_green")
+    B(p, "baterija", (0, -0.02, 0.06), (0.12, 0.6, 0.04), "black")
+    B(p, "blatobran", (0, -0.5, 0.2), (0.08, 0.24, 0.03), "bulet_green")
+    vs = []                                     # stem leaning back a little
+    for (x, y, z) in ((-0.03, 0.42, 0.16), (0.03, 0.42, 0.16), (0.03, 0.48, 0.16), (-0.03, 0.48, 0.16),
+                      (-0.03, 0.36, 1.08), (0.03, 0.36, 1.08), (0.03, 0.42, 1.08), (-0.03, 0.42, 1.08)):
+        vs.append((x, y, z))
+    _mesh_obj(pcol, f"osrpprop_{p}__stup", vs, [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)], M["bulet_green"])
+    B(p, "volan", (0, 0.39, 1.06), (0.5, 0.04, 0.04), "black")
+    for sx in (-0.22, 0.22):
+        B(p, f"rucka_{sx}", (sx, 0.39, 1.055), (0.1, 0.05, 0.05), "rubber")
+    B(p, "ekran", (0, 0.36, 1.1), (0.08, 0.06, 0.03), "screen_on")
+    B(p, "svjetlo", (0, 0.47, 0.95), (0.07, 0.03, 0.05), "panel_light")
+    _mesh_obj(pcol, f"osrpprop_{p}__logo", [(0.032, 0.475, 0.3), (0.032, 0.425, 0.3), (0.032, 0.365, 0.8), (0.032, 0.415, 0.8)],
+              [(0, 1, 2, 3), (3, 2, 1, 0)], signtex("bulet"))
+    p = "bulet_stand"; names.append(p)          # station pole with sign
+    C(p, "stup", (0, -0.05, 0), 0.05, 2.6, "steel", 8)
+    face("prop_" + p, "lice", [(-0.45, 1.7), (0.45, 1.7), (0.45, 2.6), (-0.45, 2.6)], 0.02, signtex("bulet_stand"))
+    B(p, "ploca", (0, 0.0, 1.68), (0.94, 0.03, 0.94), "steel")
+    B(p, "punjac", (0, 0, 0), (2.6, 0.25, 0.08), "bulet_green")
+
     return pcol, names

@@ -1,0 +1,12 @@
+/* v1.0.33 BULET ride panel */
+.bulet { position: fixed; right: 26px; bottom: 120px; width: 210px; padding: 12px 14px; border-radius: 14px; font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(160deg, rgba(10,30,20,.92), rgba(8,14,12,.88)); border: 1px solid rgba(40,200,120,.5); color: #eafff3;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.bulet.hidden { display: none; }
+.bulet .bt { display: flex; align-items: center; justify-content: space-between; font-weight: 900; letter-spacing: 3px; color: #2fd17d; font-size: 18px; }
+.bulet .bt small { font-size: 10px; letter-spacing: 1px; color: #9fd8b8; }
+.bulet .bs { font-size: 34px; font-weight: 800; margin: 4px 0 2px; } .bulet .bs em { font-size: 13px; font-style: normal; color: #9fd8b8; }
+.bulet .row { display: flex; justify-content: space-between; font-size: 13px; margin-top: 3px; }
+.bulet .bat { height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); margin-top: 8px; overflow: hidden; }
+.bulet .bat span { display: block; height: 100%; background: linear-gradient(90deg, #2fd17d, #a7f3d0); }
+.bulet .hint { margin-top: 8px; font-size: 11px; color: #9fd8b8; }

@@ -2065,6 +2065,12 @@ curb_x(290.15, -431.0, -418.2)
 curb_x(290.15, -407.8, -395.0)
 boxes_mesh("osrp_parking_rubnici", lot_curbs, M_CURB)
 
+# ---------- v1.0.33 BULET e-scooter stations (x, y, heading of the row) ----------
+BULET = [(-230.0, 12.4, 90.0), (70.0, -12.4, 90.0), (-300.0, 166.0, 90.0), (190.0, 40.0, 90.0), (-330.0, -343.6, 90.0),
+         (TX - 25, -432.6, 90.0), (-330.0, 302.2, 90.0), (-30.0, -356.6, 90.0)]
+for (bx, by, bh) in BULET:
+    cprop("bulet_stand", bx - 2.2, by, 0.27, 0.0, 150.0)
+
 ROUTES = [
     [(-452.5, 127.5), (-452.5, -4.0), (452.5, -4.0), (452.5, 127.5)],     # avenue east -> river street west
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
@@ -2076,4 +2082,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.32: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.33: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

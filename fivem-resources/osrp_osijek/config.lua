@@ -196,3 +196,16 @@ Config.PoliceLivery = {
     Models = { 'police3', 'police', 'policet' },
     Colour = 111,                -- white body (GTA paint index) on the station's police cars
 }
+
+-- v1.0.33 BULET e-scooters (rent at the green stations, E). Prices are charged by osrp_framework.
+Config.Bulet = {
+    PerStation = 4,           -- scooters at each station
+    RefillSeconds = 120,      -- a rented scooter comes back to its station after this
+    Unlock = 2, PerMinute = 1,   -- $ to unlock + $ per started minute (keep the same in osrp_framework/server/shop.lua)
+    MaxSpeed = 25.0,          -- km/h (like a real e-scooter)
+    Accel = 2.2, Brake = 6.0, TurnRate = 75.0,
+    BatteryDrain = 0.12,      -- % per second while driving
+    BaseVehicle = 'rcbandito',  -- hidden small car that does the physics under the scooter
+    PropZ = -0.32, PedZ = 0.88,  -- height of the scooter model / of you on it (tune if it floats or sinks)
+    AnimDict = 'anim@heists@box_carry@', AnimName = 'idle',   -- standing with hands forward on the handlebar
+}

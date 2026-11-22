@@ -147,6 +147,16 @@ def draw(key):
         d.rectangle((0, 190, S, 210), fill=(250, 220, 120))
         d.ellipse((150, 380, 190, 420), fill=(200, 0, 0))
         _center_text(d, "OSIJEK", 470, 48, (30, 30, 40))
+    elif key == "bulet":                    # Bulet e-scooter sticker: green, white BULET + bullet icon
+        d.rectangle((0, 0, S, S), fill=(28, 186, 110))
+        _center_text(d, "BULET", S * 0.42, 150, WHITE)
+        d.rounded_rectangle((150, 330, 330, 380), radius=25, fill=WHITE)
+        d.polygon([(330, 330), (380, 355), (330, 380)], fill=WHITE)
+    elif key == "bulet_stand":              # station sign
+        d.rectangle((0, 0, S, S), fill=(28, 186, 110))
+        _center_text(d, "BULET", S * 0.3, 140, WHITE)
+        _center_text(d, "E-ROMOBILI", S * 0.55, 70, WHITE, cond=True)
+        _center_text(d, "E = NAJAM", S * 0.78, 60, (20, 40, 30), cond=True)
     elif key == "gunshop":                  # shop sign
         d.rectangle((0, 0, S, S), fill=(24, 24, 28))
         d.rectangle((10, 10, S - 10, S - 10), outline=(230, 170, 40), width=10)
@@ -155,4 +165,4 @@ def draw(key):
     return img
 
 
-KEYS = ["police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]
+KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]
