@@ -86,6 +86,7 @@ local function stopRide(crash)
     local c = GetEntityCoords(r.veh)
     SetEntityCoords(ped, c.x + 0.6, c.y, c.z + 0.2, false, false, false, false)
     if crash then SetPedToRagdoll(ped, 2500, 2500, 0, false, false, false) end
+    for _, pt in ipairs(r.parts or {}) do if DoesEntityExist(pt.obj) then DeleteObject(pt.obj) end end
     if DoesEntityExist(r.prop) then DeleteObject(r.prop) end
     if DoesEntityExist(r.veh) then DeleteVehicle(r.veh) end
     SendNUIMessage({ t = 'bulet', show = false })
@@ -94,7 +95,9 @@ end
 
 local function startRide(pos, heading)
     local vh = loadModel(B.BaseVehicle)
-    local ph = loadModel('osrpprop_escooter')
+    local ph = loadModel('osrpprop_escooter_body')
+    local wh, sh = loadModel('osrpprop_escooter_wheel'), loadModel('osrpprop_escooter_steer')
+    if not ph or not wh or not sh then ph = loadModel('osrpprop_escooter') wh, sh = nil, nil end      -- old stream files: one piece
     if not vh or not ph then return TriggerEvent('osrp:notify', '~r~BULET:~s~ romobil trenutno nije dostupan.') end
     local ped = PlayerPedId()
     local veh = CreateVehicle(vh, pos.x, pos.y, pos.z + 0.3, heading, true, false)
@@ -107,13 +110,28 @@ local function startRide(pos, heading)
     local prop = CreateObject(ph, pos.x, pos.y, pos.z, true, true, false)
     SetEntityCollision(prop, false, false)
     AttachEntityToEntity(prop, veh, 0, 0.0, 0.0, B.PropZ, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+    -- v1.0.36 animated parts: two spinning wheels and a handlebar that turns with A/D
+    local parts = {}
+    if wh and sh then
+        for _, y in ipairs({ 0.5, -0.5 }) do
+            local w = CreateObject(wh, pos.x, pos.y, pos.z, true, true, false)
+            SetEntityCollision(w, false, false)
+            AttachEntityToEntity(w, prop, 0, 0.0, y, 0.14, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+            parts[#parts + 1] = { obj = w, kind = 'wheel', y = y }
+        end
+        local st = CreateObject(sh, pos.x, pos.y, pos.z, true, true, false)
+        SetEntityCollision(st, false, false)
+        AttachEntityToEntity(st, prop, 0, 0.0, 0.42, 0.40, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+        parts[#parts + 1] = { obj = st, kind = 'steer' }
+        SetModelAsNoLongerNeeded(wh) SetModelAsNoLongerNeeded(sh)
+    end
     AttachEntityToEntity(ped, veh, 0, 0.0, -0.1, B.PedZ, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
     RequestAnimDict(B.AnimDict)
     local t = GetGameTimer()
     while not HasAnimDictLoaded(B.AnimDict) and GetGameTimer() - t < 3000 do Wait(0) end
     TaskPlayAnim(ped, B.AnimDict, B.AnimName, 8.0, -8.0, -1, 1, 0, false, false, false)
     SetModelAsNoLongerNeeded(vh) SetModelAsNoLongerNeeded(ph)
-    ride = { veh = veh, prop = prop, start = GetGameTimer(), speed = 0.0, battery = 100.0, lastSpeed = 0.0, roll = 0.0, pitch = 0.0, bob = 0.0 }
+    ride = { veh = veh, prop = prop, start = GetGameTimer(), speed = 0.0, battery = 100.0, lastSpeed = 0.0, roll = 0.0, pitch = 0.0, bob = 0.0, parts = parts, spin = 0.0, steer = 0.0 }
     TriggerEvent('osrp:notify', ('~g~BULET~s~ - vožnja je počela. ~y~W/A/S/D~s~ vožnja, ~y~F~s~ kraj. Cijena: $%d/min.'):format(B.PerMinute))
 end
 
@@ -169,6 +187,18 @@ CreateThread(function()
                 local bump = math.sin(r.bob * 6.0) * 0.006 * math.min(1.0, real / 3.0)
                 AttachEntityToEntity(ped, r.veh, 0, 0.0, -0.1, B.PedZ - crouch + bump, r.pitch, r.roll, 0.0, false, false, false, false, 2, true)
                 AttachEntityToEntity(r.prop, r.veh, 0, 0.0, 0.0, B.PropZ, r.pitch * 0.3, r.roll * 0.6, 0.0, false, false, false, false, 2, true)
+                -- wheels roll with the real speed (r = 0.14 m), the bar turns into the corner
+                r.spin = (r.spin - math.deg(real * dt / 0.14)) % 360.0
+                r.steer = r.steer + ((((left and 1 or 0) - (right and 1 or 0)) * 22.0) - r.steer) * math.min(1.0, dt * 8.0)
+                for _, pt in ipairs(r.parts) do
+                    if DoesEntityExist(pt.obj) then
+                        if pt.kind == 'wheel' then
+                            AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, pt.y, 0.14, r.spin, 0.0, 0.0, false, false, false, false, 2, true)
+                        else
+                            AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, 0.42, 0.40, 0.0, 0.0, r.steer, false, false, false, false, 2, true)
+                        end
+                    end
+                end
                 if not IsEntityPlayingAnim(ped, B.AnimDict, B.AnimName, 3) then
                     TaskPlayAnim(ped, B.AnimDict, B.AnimName, 8.0, -8.0, -1, 1, 0, false, false, false)
                 end
@@ -192,6 +222,10 @@ CreateThread(function()
         end
         Wait(sleep)
     end
+end)
+
+AddEventHandler('osrp_osijek:buletCharge', function(pct)          -- v1.0.36 powerbank from VOLT
+    if ride then ride.battery = math.min(100.0, ride.battery + (tonumber(pct) or 0.0)) end
 end)
 
 AddEventHandler('onResourceStop', function(res)

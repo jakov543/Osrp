@@ -103,7 +103,7 @@ const routes = {
     return [200, { ok: true }];
   },
 
-  'GET /status': () => [200, { ok: true, service: 'osrp_accounts', version: '1.0.35' }]
+  'GET /status': () => [200, { ok: true, service: 'osrp_accounts', version: '1.0.36' }]
 };
 
 SetHttpHandler((req, res) => {

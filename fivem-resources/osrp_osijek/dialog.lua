@@ -123,6 +123,9 @@ RegisterNUICallback('dialogPick', function(d, cb)
         TriggerServerEvent('osrp:npcBuy', o.arg)
     elseif o.act == 'id' then
         TriggerEvent('osrp:notify', Config.NpcLanguage == 'en' and 'You showed your ~b~ID card~s~.' or 'Pokazao si ~b~osobnu iskaznicu~s~.')
+    elseif o.act == 'clothes' or o.act == 'tech' then         -- v1.0.36 shops (osrp_framework opens its shop window)
+        close()
+        return TriggerEvent(o.act == 'clothes' and 'osrp:openClothes' or 'osrp:openTechShop')
     elseif o.act == 'end' then
         return close()
     end

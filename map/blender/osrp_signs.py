@@ -169,7 +169,66 @@ def draw(key):
         d.rectangle((10, 10, S - 10, S - 10), outline=(230, 170, 40), width=10)
         _center_text(d, "ORUŽARNICA", S * 0.42, 64, (240, 190, 60), cond=True)
         _center_text(d, "LOV · SPORT", S * 0.66, 46, WHITE, cond=True)
+    elif key == "clothes":                  # v1.0.36 clothing shop sign
+        d.rectangle((0, 0, S, S), fill=(250, 246, 240))
+        d.rectangle((12, 12, S - 12, S - 12), outline=(20, 20, 24), width=8)
+        _center_text(d, "STIL", S * 0.4, 170, (20, 20, 24))
+        _center_text(d, "MODA · ODJEĆA", S * 0.72, 50, (190, 40, 90), cond=True)
+    elif key == "tech":                     # v1.0.36 electronics shop sign
+        d.rectangle((0, 0, S, S), fill=(14, 20, 34))
+        _center_text(d, "VOLT", S * 0.4, 170, (60, 200, 255))
+        _center_text(d, "ELEKTRONIKA", S * 0.72, 56, WHITE, cond=True)
+    elif key.startswith("ad_"):             # v1.0.36 billboards (2 : 1, drawn wide, squeezed into the square texture)
+        return _billboard(key[3:])
     return img
 
 
-KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]
+def _billboard(k):
+    W, H = 1024, 512
+    im = Image.new("RGB", (W, H))
+    d = ImageDraw.Draw(im)
+    def grad(c0, c1):
+        for y in range(H):
+            t = y / H
+            d.line([(0, y), (W, y)], fill=tuple(int(c0[i] + (c1[i] - c0[i]) * t) for i in range(3)))
+    def txt(t, y, size, fill, x=None, cond=False):
+        f = _font(size, cond)
+        b = d.textbbox((0, 0), t, font=f)
+        xx = (W - (b[2] - b[0])) / 2 - b[0] if x is None else x
+        d.text((xx, y - (b[3] - b[1]) / 2 - b[1]), t, font=f, fill=fill)
+    if k == "bulet":
+        grad((22, 170, 100), (10, 90, 60))
+        txt("BULET", 170, 200, WHITE)
+        txt("E-romobili po cijelom Osijeku", 320, 54, WHITE, cond=True)
+        d.rounded_rectangle((330, 390, 694, 460), radius=35, fill=WHITE)
+        txt("$2 + $1/min", 425, 46, (16, 120, 70), cond=True)
+    elif k == "volt":
+        grad((10, 16, 34), (30, 50, 110))
+        txt("VOLT", 150, 190, (70, 210, 255), x=60)
+        txt("MOBITELI · RADIO · TABLETI", 300, 48, WHITE, cond=True, x=60)
+        d.rounded_rectangle((860, 110, 980, 380), radius=22, fill=(20, 22, 28), outline=(70, 210, 255), width=6)
+        d.rectangle((876, 140, 964, 345), fill=(60, 120, 220))
+        txt("Odmah do oružarnice", 420, 40, (180, 200, 230), cond=True, x=60)
+    elif k == "stil":
+        grad((250, 236, 240), (230, 190, 210))
+        txt("STIL", 160, 210, (20, 20, 24))
+        txt("NOVA KOLEKCIJA", 310, 66, (190, 40, 90), cond=True)
+        txt("-30% na sve jakne", 410, 52, (20, 20, 24), cond=True)
+    elif k == "osijek":
+        grad((0, 72, 160), (0, 40, 100))
+        for i in range(6):                  # chequer strip
+            for j in range(2):
+                d.rectangle((40 + i * 40, 40 + j * 40, 80 + i * 40, 80 + j * 40), fill=RED if (i + j) % 2 == 0 else WHITE)
+        txt("DOBRODOŠLI", 190, 120, WHITE)
+        txt("U OSIJEK", 330, 140, YELLOW)
+        txt("Grad na Dravi", 445, 44, WHITE, cond=True)
+    elif k == "kava":
+        grad((70, 40, 24), (30, 16, 10))
+        txt("KAVA DRAVA", 170, 130, (245, 220, 180))
+        txt("Svježe pržena, svako jutro", 300, 54, WHITE, cond=True)
+        d.ellipse((440, 360, 584, 470), fill=WHITE)
+        d.ellipse((460, 372, 564, 420), fill=(90, 50, 24))
+    return im.resize((S, S))
+
+
+KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava"]

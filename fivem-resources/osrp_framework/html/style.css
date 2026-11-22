@@ -285,3 +285,54 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 .stbar .st.mic.on { box-shadow: 0 0 12px rgba(34,197,94,.55) !important; border-color: #22c55e; }
 .stbar .st.hp.low { animation: blink 1s infinite; }
 .hud::before { display: none !important; }
+
+/* ---------- v1.0.36 STIL clothing store ---------- */
+.clothes { position: absolute; left: 34px; top: 6vh; bottom: 6vh; width: 400px; display: flex; flex-direction: column;
+  border-radius: 20px; background: linear-gradient(170deg, rgba(22,18,26,.95), rgba(10,9,13,.95)); border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55); color: #f2eef4; animation: hin .3s ease both; overflow: hidden; }
+.cl-head { padding: 20px 22px 14px; border-bottom: 1px solid rgba(255,255,255,.07); }
+.cl-head b { display: block; font-size: 34px; font-weight: 900; letter-spacing: 8px; }
+.cl-head span { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ec4899; font-weight: 800; }
+.cl-list { flex: 1; overflow-y: auto; padding: 12px 14px; display: grid; gap: 8px; }
+.cl-list::-webkit-scrollbar { width: 5px; } .cl-list::-webkit-scrollbar-thumb { background: #3a2e3f; border-radius: 3px; }
+.cl-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px;
+  background: rgba(255,255,255,.035); border: 1px solid transparent; }
+.cl-row.changed { border-color: rgba(236,72,153,.55); background: rgba(236,72,153,.07); }
+.cl-row > i { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-style: normal; font-size: 18px; background: rgba(0,0,0,.35); }
+.cl-row b { display: block; font-size: 13px; } .cl-row small { font-size: 11px; color: #a39aa8; }
+.cl-ctl { display: grid; gap: 5px; }
+.stp { display: flex; align-items: center; gap: 4px; }
+.stp button { width: 24px; height: 24px; border-radius: 7px; border: none; background: #2a2230; color: #fff; font-weight: 900; cursor: pointer; }
+.stp button:hover { background: #ec4899; }
+.stp span { min-width: 58px; text-align: center; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stp em { font-style: normal; font-size: 9px; color: #8d8492; width: 22px; }
+.cl-cam { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.07); }
+.cl-cam button { flex: 1; padding: 8px 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); background: #1b161f; color: #e9e3ec;
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cl-cam button:hover, .cl-cam button.on { border-color: #ec4899; color: #ec4899; }
+.cl-foot { display: flex; align-items: center; gap: 10px; padding: 14px 16px 18px; }
+.cl-foot > div { flex: 1; } .cl-foot small { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #a39aa8; }
+.cl-foot b { font-size: 24px; font-weight: 900; color: #72d16a; }
+.cl-foot button { padding: 12px 18px; border-radius: 12px; border: none; font: inherit; font-weight: 800; cursor: pointer; }
+.cl-cancel { background: #2a2230; color: #e9e3ec; } .cl-buy { background: linear-gradient(90deg, #ec4899, #f472b6); color: #fff; }
+
+/* ---------- v1.0.36 VOLT shop + inventory ---------- */
+.shop { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(3,6,12,.55); animation: fin .2s ease both; }
+@keyframes fin { from { opacity: 0; } to { opacity: 1; } }
+.sh-box { width: min(880px, 92vw); border-radius: 22px; padding: 22px; color: #e8f1ff;
+  background: linear-gradient(165deg, rgba(14,22,40,.97), rgba(7,11,20,.97)); border: 1px solid rgba(56,189,248,.2); box-shadow: 0 30px 70px rgba(0,0,0,.6); }
+.sh-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.sh-head b { font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #38bdf8; margin-right: 14px; }
+.sh-head span { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #8ba3c4; font-weight: 700; }
+.sh-head button { width: 38px; height: 38px; border-radius: 11px; border: 1px solid rgba(255,255,255,.1); background: #111a2b; color: #fff; cursor: pointer; }
+.sh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.sh-card { position: relative; padding: 16px; border-radius: 16px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+  display: flex; flex-direction: column; gap: 6px; transition: transform .15s, border-color .15s; }
+.sh-card:hover { transform: translateY(-2px); border-color: rgba(56,189,248,.5); }
+.sh-card .ic { font-size: 34px; }
+.sh-card b { font-size: 15px; } .sh-card p { font-size: 11px; color: #8ba3c4; line-height: 1.4; flex: 1; }
+.sh-card .own { position: absolute; right: 12px; top: 12px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; background: rgba(34,197,94,.18); color: #4ade80; }
+.sh-card button { margin-top: 6px; padding: 10px; border-radius: 11px; border: none; font: inherit; font-weight: 800; cursor: pointer;
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8); color: #04121f; }
+.sh-card button.use { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.sh-empty { grid-column: 1 / -1; text-align: center; padding: 30px; color: #8ba3c4; }

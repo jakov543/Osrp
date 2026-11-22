@@ -958,25 +958,38 @@ for bx in range(len(CROSS_X) - 1):
 
 # Pedestrian bridge over the Drava (Pješački most) - deck level with the banks, you can walk on it
 BR_X = -80
+M_BRIDGE = material("osrp_bridge_steel_white", (0.86, 0.87, 0.88), rough=0.4, metal=0.6)   # v1.0.36: white like the real bridge
 DECK_TOP = 0.25
-box(col, "osrp_most_paluba", (BR_X, RIVER_Y, DECK_TOP - 0.6), (5, RIVER_W + 8, 0.6), M_STEEL)
+box(col, "osrp_most_paluba", (BR_X, RIVER_Y, DECK_TOP - 0.6), (5, RIVER_W + 8, 0.6), M_BRIDGE)
 box(col, "osrp_most_hodnik", (BR_X, RIVER_Y, DECK_TOP - 0.02), (4.2, RIVER_W + 8, 0.04), M_FLOOR)
 for k, yy in enumerate((RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5)):
-    box(col, f"osrp_most_pilon_{k}", (BR_X - 3.2, yy, BED_Z), (1.2, 1.2, 24 - BED_Z), M_STEEL)
-    box(col, f"osrp_most_pilon_{k}b", (BR_X + 3.2, yy, BED_Z), (1.2, 1.2, 24 - BED_Z), M_STEEL)
-    box(col, f"osrp_most_greda_{k}", (BR_X, yy, 22.5), (7.6, 1.0, 1.0), M_STEEL)
+    box(col, f"osrp_most_pilon_{k}", (BR_X - 3.2, yy, BED_Z), (1.2, 1.2, 24 - BED_Z), M_BRIDGE)
+    box(col, f"osrp_most_pilon_{k}b", (BR_X + 3.2, yy, BED_Z), (1.2, 1.2, 24 - BED_Z), M_BRIDGE)
+    box(col, f"osrp_most_greda_{k}", (BR_X, yy, 22.5), (7.6, 1.0, 1.0), M_BRIDGE)
 for side in (-1, 1):
-    box(col, f"osrp_most_ograda_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP), (0.1, RIVER_W + 8, 1.1), M_STEEL)
-    box(col, f"osrp_most_rukohvat_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP + 1.05), (0.18, RIVER_W + 8, 0.08), M_STEEL)
+    box(col, f"osrp_most_ograda_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP), (0.1, RIVER_W + 8, 1.1), M_BRIDGE)
+    box(col, f"osrp_most_rukohvat_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP + 1.05), (0.18, RIVER_W + 8, 0.08), M_BRIDGE)
     for k in range(13):   # suspension hangers
         t = k / 12
         yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
         top = 22.5 - 18 * math.sin(t * math.pi)
-        box(col, f"osrp_most_sajla_{side}_{k}", (BR_X + side * 2.6, yy, DECK_TOP + 1.1), (0.06, 0.06, max(0.4, top - DECK_TOP - 1.1)), M_STEEL)
+        box(col, f"osrp_most_sajla_{side}_{k}", (BR_X + side * 2.6, yy, DECK_TOP + 1.1), (0.06, 0.06, max(0.4, top - DECK_TOP - 1.1)), M_BRIDGE)
     for k in range(48):   # main cable (stepped segments following the sag curve)
         t = (k + 0.5) / 48
         yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
-        box(col, f"osrp_most_kabel_{side}_{k}", (BR_X + side * 2.6, yy, 22.5 - 18 * math.sin(t * math.pi) - 0.15), (0.25, (RIVER_W - 10) / 48 * 1.9, 0.3), M_STEEL)
+        box(col, f"osrp_most_kabel_{side}_{k}", (BR_X + side * 2.6, yy, 22.5 - 18 * math.sin(t * math.pi) - 0.15), (0.25, (RIVER_W - 10) / 48 * 1.9, 0.3), M_BRIDGE)
+
+# v1.0.36: LED light strips (purple handrails, red pylons) - in-game coloured lights at night come from client.lua (Life.BRIDGE)
+M_LED_PURPLE = material("osrp_lamp_light_led_purple", (0.65, 0.2, 1.0), emit=6.0)
+M_LED_RED = material("osrp_lamp_light_led_red", (1.0, 0.12, 0.2), emit=6.0)
+for side in (-1, 1):
+    box(col, f"osrp_most_led_{side}", (BR_X + side * 2.2, RIVER_Y, DECK_TOP + 0.95), (0.05, RIVER_W + 8, 0.05), M_LED_PURPLE)
+    box(col, f"osrp_most_led_rub_{side}", (BR_X + side * 2.52, RIVER_Y, DECK_TOP - 0.35), (0.04, RIVER_W + 8, 0.06), M_LED_PURPLE)
+    for k, yy in enumerate((RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5)):
+        for fy in (-1, 1):
+            box(col, f"osrp_most_led_pilon_{side}_{k}_{fy}", (BR_X + side * 3.2, yy + fy * 0.62, DECK_TOP), (0.3, 0.04, 22.0 - DECK_TOP), M_LED_RED)
+BRIDGE = {"x": BR_X, "y0": RIVER_Y - RIVER_W / 2 - 4, "y1": RIVER_Y + RIVER_W / 2 + 4, "z": DECK_TOP,
+          "pylons": [RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5], "top": 22.5}
 
 # Promenade: lindens with benches between them
 for i, x in enumerate(range(-530, 531, 25)):
@@ -2023,6 +2036,59 @@ PLACES["gunshop"] = (GSX, GFRONT + 3)
 MAPRECTS.append(("bld", GSX, GSY, GW, GD))
 LANDMARKS.append(("Oružarnica", GSX, GSY))
 
+# ---------- v1.0.36 shops next to the gun shop: STIL (clothes, change your look) + VOLT (phone, radio, tablet ...) ----------
+STORES = {}
+def shop_building(tag, cx, wall_rgb, sign, clerk, label):
+    w, dpt, h = 18.0, 14.0, 4.6
+    cy = GSY
+    front = cy + dpt / 2
+    mw = material(f"osrp_plaster_shop_{tag}", wall_rgb)
+    box(col, f"osrp_{tag}_krov", (cx, cy, h), (w + 0.4, dpt + 0.4, 0.35), M_STONE)
+    box(col, f"osrp_{tag}_pod", (cx, cy, 0.0), (w, dpt, FLOOR_Z), M_FLOOR)
+    box(col, f"osrp_{tag}_strop", (cx, cy, h - 0.05), (w - 0.4, dpt - 0.4, 0.05), M_CEIL)
+    box(col, f"osrp_{tag}_zid_j", (cx, cy - dpt / 2 + 0.15, 0), (w, 0.3, h), mw)
+    for sx in (-1, 1):
+        box(col, f"osrp_{tag}_zid_{sx}", (cx + sx * (w / 2 - 0.15), cy, 0), (0.3, dpt, h), mw)
+        box(col, f"osrp_{tag}_front_{sx}", (cx + sx * 5.25, front - 0.15, 0), (7.5, 0.3, 0.8), mw)
+        box(col, f"osrp_{tag}_izlog_{sx}", (cx + sx * 5.25, front - 0.15, 0.8), (7.5, 0.2, 2.4), M_CLEAR)
+        box(col, f"osrp_{tag}_okvir_{sx}", (cx + sx * 1.45, front - 0.15, FLOOR_Z), (0.2, 0.36, 2.9), M_DOORFRAME)
+    box(col, f"osrp_{tag}_front_gore", (cx, front - 0.15, 3.2), (w, 0.3, h - 3.2), mw)
+    box(col, f"osrp_{tag}_staklo_nad", (cx, front - 0.15, FLOOR_Z + 2.6), (2.7, 0.2, 3.2 - FLOOR_Z - 2.6), M_CLEAR)
+    box(col, f"osrp_{tag}_okvir_g", (cx, front - 0.15, 3.0), (3.1, 0.36, 0.2), M_DOORFRAME)
+    SLIDEDOORS.append((cx, front - 0.5, FLOOR_Z, 0.0, 1.3, "osrpprop_slidedoor"))
+    box(col, f"osrp_{tag}_stepenica", (cx, front + 0.6, 0.0), (4.0, 1.2, FLOOR_Z), M_WHITE_STONE)
+    box(col, f"osrp_{tag}_otirac", (cx, front + 0.5, FLOOR_Z), (2.5, 0.9, 0.012), M_CANOPY)
+    box(col, f"osrp_{tag}_tenda", (cx, front + 0.8, 3.25), (w - 2, 1.6, 0.12), M_CANOPY)
+    cprop(sign, cx, front, 3.3, 0.0, 150.0)
+    box(col, f"osrp_{tag}_pult", (cx + 5.5, cy - 3.2, FLOOR_Z), (4.0, 0.8, 1.05), M_WOOD)
+    plane(col, f"osrp_{tag}_staza", (cx, (front + 1.2 - 357.8) / 2, 0.1), (5.0, -357.8 - front - 1.2), M_WALK)
+    INTERIOR_LIGHTS.extend([(cx + dx, cy + dy, h - 0.3, 7.0, 30.0) for dx in (-5, 5) for dy in (-3, 3)])
+    STAFF.append((clerk, cx + 5.5, cy - 4.0, 0.0, "WORLD_HUMAN_STAND_IMPATIENT"))
+    STORES[tag] = {"x": cx, "y": cy, "w": w, "d": dpt, "clerk": [cx + 5.5, cy - 4.0], "spot": [cx - 5.0, cy - 2.5]}
+    PLACES[tag] = (cx, front + 3)
+    MAPRECTS.append(("bld", cx, cy, w, dpt))
+    LANDMARKS.append((label, cx, cy))
+    return front
+
+_f = shop_building("stil", -2.0, (0.86, 0.80, 0.78), "clothes_sign", "s_f_m_shop_high", "STIL - Odjeća")
+for k in range(3):
+    cprop("clothes_rack", -8.0 + k * 3.2, GSY + 2.5, FLOOR_Z, 0.0)
+for k in range(3):
+    cprop("clothes_shelf", -8.5 + k * 3.0, GSY - 6.6, FLOOR_Z, 0.0)
+cprop("mirror", 6.5, GSY + 1.0, FLOOR_Z, 90.0)
+cprop("changing_booth", -9.8, GSY - 3.0, FLOOR_Z, 90.0)
+cprop("changing_booth", -9.8, GSY - 0.5, FLOOR_Z, 90.0)
+_f = shop_building("volt", 62.0, (0.78, 0.82, 0.88), "tech_sign", "s_m_m_lifeinvad_01", "VOLT - Elektronika")
+for k in range(2):
+    cprop("tech_table", 56.0 + k * 4.0, GSY + 1.5, FLOOR_Z, 0.0)
+for k in range(3):
+    cprop("tech_shelf", 55.0 + k * 3.0, GSY - 6.6, FLOOR_Z, 0.0)
+
+# ---------- v1.0.36 billboards (both sides) ----------
+for model, x, y, hd in (("billboard_osijek", -540.0, 26.0, 0.0), ("billboard_kava", 540.0, -26.0, 0.0), ("billboard_bulet", -200.0, -372.0, 0.0),
+                        ("billboard_volt", 172.0, -374.0, 90.0), ("billboard_stil", -540.0, -26.0, 0.0)):
+    cprop(model, x, y, 0.05, hd, 300.0)
+
 # ---------- v1.0.27 Croatian signs: priority road on the avenue, 50 km/h at the city entrances, street name plates ----------
 for x in CROSS_X:
     for sx in (-1, 1):
@@ -2034,12 +2100,20 @@ for x, y, hd in ((-520, -(ROAD_W / 2 + 1.3), 0.0), (520, ROAD_W / 2 + 1.3, 180.0
 # v1.0.28: places with a roof you can walk under - no rain inside (x, y, width, depth, roof height)
 INDOORS = [(HX, HY, 111, 45, LOB_H), (TX, TY, 200, 26, 12), (PSX, PSY, PW, PD, PG), (GSX, GSY, GW, GD, GH),
            (GX, GY, 28, 32, 7), (PSX, PFRONT + 3.0, 12, 6, 3.6), (HX, HY + 26, 18, 8, 3.8)]
-INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]
+INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]   # (v1.0.36 shops are "bld" too)
 
 # ---------- v1.0.30 entrances (stone step up to the floor) + curbs round the car parks ----------
 for k, (x, y, w) in enumerate(((HX, HY + 22.6, 7.0), (ERX, HY + 22.6, 4.0), (PSX, PFRONT + 0.6, 7.0), (GSX, GFRONT + 0.6, 4.0))):
     box(col, f"osrp_ulaz_stepenica_{k}", (x, y, 0.0), (w, 1.2, FLOOR_Z), M_WHITE_STONE)
     box(col, f"osrp_ulaz_otirac_{k}", (x, y - 0.1, FLOOR_Z), (w - 1.5, 0.9, 0.012), M_CANOPY)
+# v1.0.36: airport + police get the same dark door frame as the hospital entrance (+ airport step and mat)
+M_DOORDARK = material("osrp_door_frame_dark", (0.12, 0.13, 0.16), rough=0.4, metal=0.6)
+for tag, x, y in (("aerodrom", TX, TY + 12.8), ("policija", PSX, PFRONT - 0.15)):
+    for sx in (-1, 1):
+        box(col, f"osrp_{tag}_dovratnik_{sx}", (x + sx * 2.55, y, FLOOR_Z), (0.16, 0.4, 3.0), M_DOORDARK)
+    box(col, f"osrp_{tag}_nadvratnik_okvir", (x, y, FLOOR_Z + 2.92), (5.26, 0.4, 0.16), M_DOORDARK)
+box(col, "osrp_aerodrom_stepenica", (TX, TY + 13.6, 0.0), (8.0, 1.2, FLOOR_Z), M_WHITE_STONE)
+box(col, "osrp_aerodrom_otirac", (TX, TY + 13.5, FLOOR_Z), (5.0, 0.9, 0.012), M_CANOPY)
 lot_curbs = []
 def curb_x(x, y0, y1):                      # curb along y at x
     lot_curbs.append((x, (y0 + y1) / 2, 0.0, 0.3, abs(y1 - y0), 0.28))
@@ -2082,4 +2156,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.35: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.36: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

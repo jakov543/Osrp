@@ -159,6 +159,26 @@
     <div class="s-light" id="sLight">◐</div>
   </div>
 
+  <!-- v1.0.36 STIL clothing store (left panel, you see yourself on the right) -->
+  <div id="clothes" class="clothes hidden">
+    <div class="cl-head"><b>STIL</b><span>Moda · Odjeća</span></div>
+    <div class="cl-list" id="clList"></div>
+    <div class="cl-cam">
+      <button data-cam="head">Glava</button><button data-cam="body">Tijelo</button><button data-cam="legs">Noge</button><button data-cam="feet">Obuća</button>
+      <button data-turn="-30">⟲</button><button data-turn="30">⟳</button>
+    </div>
+    <div class="cl-foot"><div><small>Ukupno</small><b id="clTotal">$0</b></div>
+      <button class="cl-cancel" id="clCancel">Odustani</button><button class="cl-buy" id="clBuy">Kupi</button></div>
+  </div>
+
+  <!-- v1.0.36 VOLT electronics shop + /inventar -->
+  <div id="shop" class="shop hidden">
+    <div class="sh-box">
+      <div class="sh-head"><div><b id="shTitle">VOLT</b><span id="shSub">Elektronika</span></div><button id="shClose">✕</button></div>
+      <div class="sh-grid" id="shGrid"></div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

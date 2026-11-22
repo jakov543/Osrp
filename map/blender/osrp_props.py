@@ -507,6 +507,64 @@ def build_props(h):
     face("prop_" + p, "lice", [(-1.6, 0), (1.6, 0), (1.6, 1.6), (-1.6, 1.6)], 0.09, signtex("gunshop"))
     B(p, "ploca", (0, 0.04, -0.05), (3.3, 0.08, 1.7), "black")
 
+    # ---------------- v1.0.36 shops (STIL clothes, VOLT electronics) + billboards
+    for key in ("clothes", "tech"):
+        p = key + "_sign"; names.append(p)             # wall sign, origin = wall
+        face("prop_" + p, "lice", [(-1.6, 0), (1.6, 0), (1.6, 1.6), (-1.6, 1.6)], 0.09, signtex(key))
+        B(p, "ploca", (0, 0.04, -0.05), (3.3, 0.08, 1.7), "black")
+    M.update({"cloth_a": material("osrp_fabric_cloth_navy", (0.08, 0.12, 0.3)), "cloth_b": material("osrp_fabric_cloth_red", (0.55, 0.08, 0.1)),
+              "cloth_c": material("osrp_fabric_cloth_beige", (0.75, 0.66, 0.5)), "cloth_d": material("osrp_fabric_cloth_grey", (0.35, 0.36, 0.38)),
+              "mirror": material("osrp_metal_mirror_chrome", (0.9, 0.92, 0.95), rough=0.05, metal=1.0),
+              "screen_on": material("osrp_lamp_light_screen", (0.35, 0.6, 0.95), emit=3.0),
+              "lamp": material("osrp_lamp_light_billboard", (1.0, 0.95, 0.85), emit=6.0)})
+    p = "clothes_rack"; names.append(p)                # round-ended rail with hanging clothes
+    for sx in (-0.9, 0.9):
+        B(p, f"noga_{sx}", (sx, 0, 0), (0.05, 0.05, 1.55), "steel")
+        B(p, f"stopa_{sx}", (sx, 0, 0), (0.08, 0.5, 0.04), "steel")
+    B(p, "sipka", (0, 0, 1.52), (1.86, 0.04, 0.04), "steel")
+    for k in range(9):
+        B(p, f"robica_{k}", (-0.8 + k * 0.2, 0, 0.75), (0.05, 0.48, 0.74), ("cloth_a", "cloth_b", "cloth_c", "cloth_d")[k % 4])
+    p = "clothes_shelf"; names.append(p)               # wall shelf with folded clothes
+    B(p, "ledja", (0, -0.2, 0), (2.0, 0.04, 2.2), "wood")
+    for z in (0.3, 0.9, 1.5):
+        B(p, f"polica_{z}", (0, 0, z), (2.0, 0.42, 0.03), "wood")
+        for k in range(5):
+            B(p, f"slozeno_{z}_{k}", (-0.8 + k * 0.4, 0, z + 0.03), (0.32, 0.3, 0.16), ("cloth_a", "cloth_b", "cloth_c", "cloth_d", "cloth_b")[k])
+    p = "mirror"; names.append(p)                      # standing mirror
+    B(p, "okvir", (0, 0, 0.05), (0.8, 0.06, 1.95), "black")
+    B(p, "staklo", (0, -0.035, 0.12), (0.7, 0.01, 1.8), "mirror")
+    B(p, "noga", (0, 0.1, 0), (0.7, 0.3, 0.05), "black")
+    p = "changing_booth"; names.append(p)              # changing cabin with curtain
+    for sx in (-0.65, 0.65):
+        B(p, f"zid_{sx}", (sx, 0, 0), (0.05, 1.3, 2.2), "wood")
+    B(p, "ledja", (0, 0.63, 0), (1.3, 0.05, 2.2), "wood")
+    B(p, "zavjesa", (0, -0.63, 0.25), (1.3, 0.03, 1.95), "cloth_b")
+    p = "tech_table"; names.append(p)                  # display table with phones and tablets
+    B(p, "stol", (0, 0, 0), (1.8, 0.8, 0.9), "white")
+    for k in range(4):
+        B(p, f"mob_{k}", (-0.6 + k * 0.4, -0.1, 0.9), (0.09, 0.17, 0.012), "black")
+        B(p, f"mob_ekran_{k}", (-0.6 + k * 0.4, -0.1, 0.912), (0.08, 0.15, 0.002), "screen_on")
+    B(p, "tablet", (0.0, 0.22, 0.9), (0.3, 0.22, 0.012), "black")
+    B(p, "tablet_ekran", (0.0, 0.22, 0.912), (0.27, 0.19, 0.002), "screen_on")
+    p = "tech_shelf"; names.append(p)                  # wall with TVs and radios
+    B(p, "ledja", (0, -0.2, 0), (2.4, 0.05, 2.4), "black")
+    for k in range(2):
+        B(p, f"tv_{k}", (-0.6 + k * 1.2, -0.15, 1.3), (1.05, 0.06, 0.62), "black")
+        B(p, f"tv_ekran_{k}", (-0.6 + k * 1.2, -0.115, 1.34), (0.98, 0.01, 0.54), "screen_on")
+    B(p, "polica", (0, 0, 0.6), (2.4, 0.4, 0.03), "white")
+    for k in range(5):
+        B(p, f"radio_{k}", (-0.95 + k * 0.48, 0, 0.63), (0.22, 0.1, 0.32), "black")
+        B(p, f"antena_{k}", (-0.88 + k * 0.48, 0, 0.95), (0.015, 0.015, 0.18), "steel")
+    for ad in ("bulet", "volt", "stil", "osijek", "kava"):
+        p = "billboard_" + ad; names.append(p)        # 8 x 4 m billboard on two legs, picture on both sides
+        for sx in (-2.5, 2.5):
+            B(p, f"noga_{sx}", (sx, 0, 0), (0.35, 0.35, 4.2), "steel")
+        B(p, "okvir", (0, 0, 4.0), (8.3, 0.3, 4.3), "black")
+        face("prop_" + p, "lice_p", [(-4.0, 4.15), (4.0, 4.15), (4.0, 8.15), (-4.0, 8.15)], 0.16, signtex("ad_" + ad))
+        face("prop_" + p, "lice_z", [(-4.0, 4.15), (4.0, 4.15), (4.0, 8.15), (-4.0, 8.15)], -0.16, signtex("ad_" + ad))
+        for sx in (-2.6, 0, 2.6):                      # lamps over the picture
+            B(p, f"lampa_{sx}", (sx, 0.55, 8.3), (0.5, 0.25, 0.12), "lamp")
+
     p = "swing"; names.append(p)                   # playground swing (2 seats)
     for sx in (-1.6, 1.6):
         for sy in (-0.7, 0.7):
@@ -676,77 +734,114 @@ def build_props(h):
 
     # ---------------- v1.0.33 BULET e-scooter (rental) - front = +Y, wheels on the ground at z 0
     M.update({"bulet_green": material("osrp_paint_bulet_green", (0.07, 0.55, 0.28)), "deck": material("osrp_screen_deck", (0.05, 0.05, 0.05))})
-    p = "escooter"; names.append(p)             # v1.0.35: modelled after real shared e-scooters (round stem, fork, hub motor, fenders)
-    M.update({"hub": material("osrp_metal_hub_grey", (0.55, 0.57, 0.6), metal=1.0), "lens": material("osrp_lamp_light_head", (1.0, 0.98, 0.9), emit=8.0)})
+    # v1.0.36: BULET e-scooter shaped like a Xiaomi 4 Ultra (black folding stem, swoop frame, rear swing arm, off-road tyres).
+    # Built in parts so the ride can animate it: escooter (whole, parked), escooter_body, escooter_wheel (spins), escooter_steer (turns)
+    M.update({"hub": material("osrp_metal_hub_grey", (0.55, 0.57, 0.6), metal=1.0), "lens": material("osrp_lamp_light_head", (1.0, 0.98, 0.9), emit=8.0),
+              "matblack": material("osrp_plastic_matblack", (0.03, 0.03, 0.035))})
+    R = 0.14                                     # 10 inch off-road tyres
+    PIV = (0.0, 0.42, 0.40)                      # steering pivot (bottom of the fold hinge)
 
-    def tube(part, p0, p1, r, m, n=10):
-        """cylinder from point p0 to p1 (any direction)"""
-        ax = [p1[i] - p0[i] for i in range(3)]
-        L = math.sqrt(sum(c * c for c in ax)) or 1e-6
-        ax = [c / L for c in ax]
-        ref = (0, 0, 1) if abs(ax[2]) < 0.9 else (1, 0, 0)
-        u = [ax[1] * ref[2] - ax[2] * ref[1], ax[2] * ref[0] - ax[0] * ref[2], ax[0] * ref[1] - ax[1] * ref[0]]
-        ul = math.sqrt(sum(c * c for c in u)); u = [c / ul for c in u]
-        v = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]
-        vs = []
-        for base in (p0, p1):
+    def scooter(p, want, off):
+        T = lambda v: (v[0] - off[0], v[1] - off[1], v[2] - off[2])
+
+        def b(part, loc, size, m):
+            return box(pcol, f"osrpprop_{p}__{part}", T(loc), size, M[m])
+
+        def tube(part, p0, p1, r, m, n=10):
+            p0, p1 = T(p0), T(p1)
+            ax = [p1[i] - p0[i] for i in range(3)]
+            L = math.sqrt(sum(c * c for c in ax)) or 1e-6
+            ax = [c / L for c in ax]
+            ref = (0, 0, 1) if abs(ax[2]) < 0.9 else (1, 0, 0)
+            u = [ax[1] * ref[2] - ax[2] * ref[1], ax[2] * ref[0] - ax[0] * ref[2], ax[0] * ref[1] - ax[1] * ref[0]]
+            ul = math.sqrt(sum(c * c for c in u)); u = [c / ul for c in u]
+            v = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]
+            vs = []
+            for base in (p0, p1):
+                for i in range(n):
+                    t = i * 2 * math.pi / n
+                    vs.append(tuple(base[k] + r * (math.cos(t) * u[k] + math.sin(t) * v[k]) for k in range(3)))
+            fs = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+            return _mesh_obj(pcol, f"osrpprop_{p}__{part}", vs, fs, M[m])
+
+        def arc(part, cy, cz, r, a0, a1, w, t, m, n=10):
+            vs = []
+            for i in range(n + 1):
+                a_ = math.radians(a0 + (a1 - a0) * i / n)
+                for rr in (r, r + t):
+                    for x in (-w / 2, w / 2):
+                        vs.append(T((x, cy + rr * math.cos(a_), cz + rr * math.sin(a_))))
+            fs = []
             for i in range(n):
-                t = i * 2 * math.pi / n
-                vs.append(tuple(base[k] + r * (math.cos(t) * u[k] + math.sin(t) * v[k]) for k in range(3)))
-        fs = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
-        return _mesh_obj(pcol, f"osrpprop_{p}__{part}", vs, fs, M[m])
+                q = i * 4
+                fs += [(q, q + 1, q + 5, q + 4), (q + 2, q + 6, q + 7, q + 3), (q, q + 4, q + 6, q + 2), (q + 1, q + 3, q + 7, q + 5)]
+            fs += [(0, 2, 3, 1), (n * 4, n * 4 + 1, n * 4 + 3, n * 4 + 2)]
+            return _mesh_obj(pcol, f"osrpprop_{p}__{part}", vs, fs, M[m])
 
-    R = 0.125                                    # 10 inch wheels
-    for y, tag in ((-0.5, "z"), (0.5, "p")):
-        tube(f"guma_{tag}", (-0.035, y, R), (0.035, y, R), R, "rubber", 16)
-        tube(f"glavcina_{tag}", (-0.04, y, R), (0.04, y, R), 0.07, "hub", 12)
-    # deck: wide, rounded ends, grip tape, green side trims, battery box underneath, rear foot step
-    B(p, "deck", (0, -0.02, 0.12), (0.19, 0.8, 0.07), "deck")
-    tube("deck_prednji", (-0.095, 0.38, 0.155), (0.095, 0.38, 0.155), 0.035, "deck", 10)
-    tube("deck_zadnji", (-0.095, -0.42, 0.155), (0.095, -0.42, 0.155), 0.035, "deck", 10)
-    B(p, "gumica", (0, -0.02, 0.19), (0.17, 0.74, 0.006), "rubber")
-    for sx in (-0.098, 0.098):
-        B(p, f"traka_{sx}", (sx, -0.02, 0.12), (0.006, 0.8, 0.07), "bulet_green")
-    B(p, "baterija", (0, -0.02, 0.07), (0.15, 0.62, 0.05), "black")
-    # rear: fender over the wheel with brake light, stand
-    def arc(part, cy, cz, r, a0, a1, w, t, m, n=10):
-        """curved fender band around a wheel axle at (cy, cz); angles from +Y, counter-clockwise towards +Z"""
-        vs = []
-        for i in range(n + 1):
-            a = math.radians(a0 + (a1 - a0) * i / n)
-            for rr in (r, r + t):
-                for x in (-w / 2, w / 2):
-                    vs.append((x, cy + rr * math.cos(a), cz + rr * math.sin(a)))
-        fs = []
-        for i in range(n):
-            q = i * 4
-            fs += [(q, q + 1, q + 5, q + 4), (q + 2, q + 6, q + 7, q + 3), (q, q + 4, q + 6, q + 2), (q + 1, q + 3, q + 7, q + 5)]
-        fs += [(0, 2, 3, 1), (n * 4, n * 4 + 1, n * 4 + 3, n * 4 + 2)]
-        return _mesh_obj(pcol, f"osrpprop_{p}__{part}", vs, fs, M[m])
+        def wheel(tag, y):
+            tube(f"guma_{tag}", (-0.045, y, R), (0.045, y, R), R, "rubber", 18)
+            for k in range(18):                                   # knobby off-road tread
+                a_ = k * 2 * math.pi / 18
+                for sx in (-0.03, 0.03):
+                    b(f"kvrga_{tag}_{k}_{sx}", (sx, y + math.cos(a_) * (R + 0.004), R + math.sin(a_) * (R + 0.004) - 0.01), (0.028, 0.02, 0.02), "rubber")
+            tube(f"glavcina_{tag}", (-0.048, y, R), (0.048, y, R), 0.075, "hub", 14)
+            tube(f"disk_{tag}", (0.05, y, R), (0.056, y, R), 0.07, "steel", 16)
+            for k in range(5):                                    # rim spokes
+                a_ = k * 2 * math.pi / 5
+                tube(f"zbica_{tag}_{k}", (-0.05, y, R), (-0.05, y + math.cos(a_) * 0.072, R + math.sin(a_) * 0.072), 0.008, "matblack", 5)
 
-    arc("blatobran_z", -0.5, R, R + 0.03, 40, 175, 0.085, 0.012, "bulet_green")
-    B(p, "stop_svjetlo", (0, -0.665, 0.165), (0.06, 0.015, 0.03), "red")
-    tube("nogar", (0.07, -0.25, 0.09), (0.16, -0.33, 0.005), 0.012, "steel", 6)
-    # front: fork, fender, stem (round, leaning back), headlight, display, bars with grips, levers, throttle, phone holder
-    tube("vilica_l", (-0.045, 0.5, R), (-0.035, 0.44, 0.42), 0.016, "steel", 8)
-    tube("vilica_d", (0.045, 0.5, R), (0.035, 0.44, 0.42), 0.016, "steel", 8)
-    arc("blatobran_p", 0.5, R, R + 0.03, 15, 150, 0.075, 0.012, "bulet_green")
-    tube("zglob", (0, 0.43, 0.38), (0, 0.42, 0.46), 0.04, "black", 10)
-    tube("stup", (0, 0.42, 0.44), (0, 0.33, 1.1), 0.032, "bulet_green", 12)
-    tube("svjetlo_kucište", (0, 0.405, 0.98), (0, 0.45, 0.98), 0.045, "black", 12)
-    tube("svjetlo", (0, 0.45, 0.98), (0, 0.455, 0.98), 0.04, "lens", 12)
-    tube("volan", (-0.27, 0.33, 1.1), (0.27, 0.33, 1.1), 0.014, "black", 8)
-    for sx in (-1, 1):
-        tube(f"rucka_{sx}", (sx * 0.18, 0.33, 1.1), (sx * 0.29, 0.33, 1.1), 0.02, "rubber", 8)
-        tube(f"kocnica_{sx}", (sx * 0.1, 0.35, 1.11), (sx * 0.2, 0.39, 1.09), 0.006, "steel", 6)
-    B(p, "gas", (0.15, 0.31, 1.085), (0.03, 0.04, 0.02), "black")
-    B(p, "ekran", (0, 0.33, 1.115), (0.11, 0.08, 0.03), "black")
-    B(p, "ekran_svjetli", (0, 0.335, 1.131), (0.09, 0.06, 0.002), "screen_on")
-    B(p, "mobitel_nosac", (0, 0.29, 1.13), (0.09, 0.03, 0.14), "black")
-    # name plates on the stem, front and back
-    B(p, "ploca_nosac", (0, 0.385, 0.66), (0.32, 0.08, 0.14), "bulet_green")
-    face("prop_" + p, "ploca_p", [(-0.15, 0.67), (0.15, 0.67), (0.15, 0.79), (-0.15, 0.79)], 0.427, signtex("bulet_plate"))
-    face("prop_" + p, "ploca_z", [(-0.15, 0.67), (0.15, 0.67), (0.15, 0.79), (-0.15, 0.79)], 0.343, signtex("bulet_plate"))
+        if "wheelF" in want:
+            wheel("p", 0.5)
+        if "wheelR" in want:
+            wheel("z", -0.5)
+        if "body" in want:
+            b("deck", (0, -0.03, 0.12), (0.2, 0.72, 0.065), "bulet_green")
+            b("gumica", (0, -0.03, 0.185), (0.17, 0.66, 0.006), "rubber")
+            b("baterija", (0, -0.03, 0.08), (0.16, 0.6, 0.045), "matblack")
+            b("ukras", (0, -0.03, 0.135), (0.204, 0.6, 0.012), "matblack")        # black stripe along the sides
+            tube("vrat", (0, 0.28, 0.16), (0, 0.42, 0.4), 0.05, "bulet_green", 12)  # big front neck like the Xiaomi
+            tube("rep", (0, -0.36, 0.16), (0, -0.56, 0.33), 0.035, "bulet_green", 10)  # rear swoop
+            b("rep_kraj", (0, -0.62, 0.3), (0.09, 0.14, 0.05), "bulet_green")
+            for sx in (-0.06, 0.06):                                              # rear swing arm + shock
+                tube(f"vilica_z_{sx}", (sx, -0.3, 0.12), (sx, -0.5, R), 0.018, "matblack", 8)
+            tube("amortizer_z", (0, -0.36, 0.17), (0, -0.5, 0.26), 0.02, "steel", 8)
+            arc("blatobran_z", -0.5, R, R + 0.025, 20, 160, 0.1, 0.012, "matblack")
+            b("stop_svjetlo", (0, -0.69, 0.29), (0.07, 0.02, 0.035), "red")
+            tube("nogar", (0.08, -0.22, 0.1), (0.17, -0.3, 0.005), 0.012, "steel", 6)
+        if "steer" in want:
+            tube("zglob", (0, 0.42, 0.38), (0, 0.415, 0.5), 0.05, "matblack", 12)    # fold hinge
+            b("zglob_kvaka", (0.05, 0.42, 0.42), (0.03, 0.06, 0.06), "bulet_green")
+            tube("stup", (0, 0.415, 0.48), (0, 0.3, 1.13), 0.03, "matblack", 12)
+            for sx in (-0.06, 0.06):                                              # front suspension fork
+                tube(f"vilica_p_{sx}", (sx, 0.43, 0.42), (sx, 0.5, R), 0.02, "matblack", 8)
+                tube(f"amortizer_p_{sx}", (sx, 0.455, 0.3), (sx, 0.475, 0.22), 0.024, "steel", 8)
+            tube("vilica_most", (-0.07, 0.43, 0.42), (0.07, 0.43, 0.42), 0.022, "matblack", 8)
+            arc("blatobran_p", 0.5, R, R + 0.025, 30, 140, 0.09, 0.012, "matblack")
+            tube("svjetlo_kuciste", (0, 0.335, 1.02), (0, 0.375, 1.02), 0.04, "matblack", 12)
+            tube("svjetlo", (0, 0.375, 1.02), (0, 0.38, 1.02), 0.034, "lens", 12)
+            b("kuka", (0, 0.31, 0.92), (0.02, 0.05, 0.05), "steel")
+            tube("volan", (-0.28, 0.3, 1.13), (0.28, 0.3, 1.13), 0.014, "matblack", 8)
+            for sx in (-1, 1):
+                tube(f"rucka_{sx}", (sx * 0.18, 0.3, 1.13), (sx * 0.3, 0.3, 1.13), 0.021, "rubber", 8)
+                tube(f"kocnica_{sx}", (sx * 0.1, 0.32, 1.14), (sx * 0.21, 0.36, 1.12), 0.006, "steel", 6)
+            tube("zvono", (-0.13, 0.3, 1.15), (-0.13, 0.3, 1.17), 0.02, "bulet_green", 10)
+            b("gas", (0.15, 0.28, 1.115), (0.03, 0.04, 0.02), "matblack")
+            b("ekran", (0, 0.3, 1.145), (0.11, 0.08, 0.03), "matblack")
+            b("ekran_svjetli", (0, 0.305, 1.161), (0.09, 0.06, 0.002), "screen_on")
+            b("ploca_nosac", (0, 0.362, 0.69), (0.3, 0.076, 0.13), "bulet_green")
+            pl = [(-0.14, 0.7), (0.14, 0.7), (0.14, 0.81), (-0.14, 0.81)]
+            for tag, y in (("p", 0.402), ("z", 0.322)):
+                face("prop_" + p, "ploca_" + tag, [(x - off[0], z - off[2]) for x, z in pl], y - off[1], signtex("bulet_plate"))
+
+    M.update({"bulet_green": material("osrp_paint_bulet_green", (0.07, 0.55, 0.28)), "deck": material("osrp_screen_deck", (0.05, 0.05, 0.05))})
+    p = "escooter"; names.append(p)
+    scooter(p, {"body", "steer", "wheelF", "wheelR"}, (0, 0, 0))
+    p = "escooter_body"; names.append(p)
+    scooter(p, {"body"}, (0, 0, 0))
+    p = "escooter_wheel"; names.append(p)
+    scooter(p, {"wheelF"}, (0, 0.5, R))
+    p = "escooter_steer"; names.append(p)
+    scooter(p, {"steer"}, PIV)
 
     p = "bulet_stand"; names.append(p)          # station pole with sign
     C(p, "stup", (0, -0.05, 0), 0.05, 2.6, "steel", 8)

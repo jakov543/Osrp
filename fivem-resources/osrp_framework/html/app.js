@@ -321,3 +321,93 @@ function setDeath(d) {
   $('d-gtxt').textContent = d.called ? 'hitna je pozvana' : 'pozovi hitnu (112)';
   $('d-status').textContent = d.status || '';
 }
+
+// ---------- v1.0.36 STIL clothing store + VOLT shop / inventory ----------
+(() => {
+  const FW = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'osrp_framework';
+  const call = (n, d) => fetch(`https://${FW}/${n}`, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(d || {}) })
+    .then((r) => r.json()).catch(() => ({}));
+  const C = { cats: [], start: {}, cam: 'body' };
+  const label = (c) => (c.prop && c.d < 0 ? 'ništa' : `${c.d + 1} / ${c.maxD}`);
+  function total() {
+    let t = 0;
+    for (const c of C.cats) if (c.d !== C.start[c.key][0] || c.t !== C.start[c.key][1]) t += c.price;
+    $('clTotal').textContent = '$' + t;
+  }
+  function drawRow(c) {
+    const el = document.getElementById('cl_' + c.key);
+    el.classList.toggle('changed', c.d !== C.start[c.key][0] || c.t !== C.start[c.key][1]);
+    el.querySelector('.dv').textContent = label(c);
+    el.querySelector('.tv').textContent = `${c.t + 1} / ${c.maxT}`;
+  }
+  function step(c, what, dir) {
+    if (what === 'd') {
+      const min = c.prop ? -1 : 0;
+      c.d += dir;
+      if (c.d >= c.maxD) c.d = min;
+      if (c.d < min) c.d = c.maxD - 1;
+      c.t = 0;
+    } else {
+      c.t = (c.t + dir + c.maxT) % c.maxT;
+    }
+    if (C.cam !== c.cam) { C.cam = c.cam; call('clothesCam', { cam: c.cam }); }
+    call('clothesSet', { key: c.key, d: c.d, t: c.t }).then((r) => {
+      if (r && r.maxD !== undefined) { c.maxD = r.maxD; c.maxT = r.maxT; if (c.t >= c.maxT) c.t = 0; }
+      drawRow(c); total();
+    });
+    drawRow(c); total();
+  }
+  function openClothes(cats) {
+    C.cats = cats; C.start = {}; C.cam = 'body';
+    cats.forEach((c) => { C.start[c.key] = [c.d, c.t]; });
+    $('clList').innerHTML = cats.map((c) => `
+      <div class="cl-row" id="cl_${c.key}"><i>${c.icon}</i>
+        <div><b>${c.label}</b><small>${c.price ? '$' + c.price : 'besplatno'}</small></div>
+        <div class="cl-ctl">
+          <div class="stp"><em>MOD</em><button data-k="${c.key}" data-w="d" data-s="-1">‹</button><span class="dv"></span><button data-k="${c.key}" data-w="d" data-s="1">›</button></div>
+          <div class="stp"><em>BOJA</em><button data-k="${c.key}" data-w="t" data-s="-1">‹</button><span class="tv"></span><button data-k="${c.key}" data-w="t" data-s="1">›</button></div>
+        </div></div>`).join('');
+    cats.forEach(drawRow); total();
+    $('clothes').classList.remove('hidden');
+  }
+  $('clList').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const c = C.cats.find((x) => x.key === b.dataset.k);
+    if (c) step(c, b.dataset.w, +b.dataset.s);
+  });
+  document.querySelectorAll('.cl-cam button').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.cam) { C.cam = b.dataset.cam; call('clothesCam', { cam: b.dataset.cam }); }
+    else call('clothesCam', { turn: +b.dataset.turn, cur: C.cam });
+  }));
+  $('clBuy').addEventListener('click', () => call('clothesBuy'));
+  $('clCancel').addEventListener('click', () => call('shopClose'));
+
+  const S = { mode: 'tech', items: [], owned: {} };
+  function drawShop() {
+    const inv = S.mode === 'inv';
+    $('shTitle').textContent = inv ? 'MOJE STVARI' : 'VOLT';
+    $('shSub').textContent = inv ? 'Inventar · F2' : 'Elektronika';
+    const list = inv ? S.items.filter((i) => (S.owned[i.id] || 0) > 0) : S.items;
+    $('shGrid').innerHTML = list.map((i) => `
+      <div class="sh-card">${S.owned[i.id] ? `<span class="own">x${S.owned[i.id]}</span>` : ''}
+        <div class="ic">${i.icon}</div><b>${i.label}</b><p>${i.desc}</p>
+        ${inv ? `<button class="use" data-use="${i.id}">Koristi</button>` : `<button data-buy="${i.id}">Kupi · $${i.price}</button>`}
+      </div>`).join('') || '<div class="sh-empty">Nemaš ništa. Kupi stvari u VOLT trgovini (odmah do oružarnice).</div>';
+  }
+  $('shGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.buy) call('shopBuy', { id: b.dataset.buy });
+    if (b.dataset.use) call('shopUse', { id: b.dataset.use });
+  });
+  $('shClose').addEventListener('click', () => call('shopClose'));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && (!$('shop').classList.contains('hidden') || !$('clothes').classList.contains('hidden'))) call('shopClose');
+  });
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.action === 'clothesOpen') openClothes(d.cats || []);
+    if (d.action === 'shopOpen') { S.mode = d.mode; S.items = d.items || []; S.owned = d.owned || {}; drawShop(); $('shop').classList.remove('hidden'); }
+    if (d.action === 'shopItems') { S.owned = d.owned || {}; drawShop(); }
+    if (d.action === 'shopClose') { $('shop').classList.add('hidden'); $('clothes').classList.add('hidden'); }
+  });
+})();

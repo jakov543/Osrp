@@ -6,7 +6,7 @@
 
 OsijekDialogPlaces = {     -- local map coordinates (same as the Blender map) for act = 'gps'
     hospital = { -330, -372 }, airport = { 200, -425 }, beach = { -300, 278 }, tvrdja = { 225, 40 },
-    promenade = { 0, 164 }, police = { -60, -381 }, gunshop = { 30, -385 }, park = { -150, 60 }, marina = { 140, 180 }, wreck = { 330, 175 },
+    promenade = { 0, 164 }, police = { -60, -381 }, gunshop = { 30, -385 }, stil = { -2, -386 }, volt = { 62, -386 }, park = { -150, 60 }, marina = { 140, 180 }, wreck = { 330, 175 },
 }
 
 local BYE = { hr = 'Doviđenja!', en = 'Goodbye!' }
@@ -193,6 +193,23 @@ OsijekDialogs = {
         licence = { text = { hr = 'Za vatreno oružje vam treba dozvola iz policijske uprave. Hladno oružje možete kupiti odmah.', en = 'For firearms you need a licence from the police station. Melee weapons you can buy right away.' },
             opts = { { t = { hr = 'Gdje je policija?', en = 'Where is the police?' }, go = 'policegps' } } },
     }) },
+    -- ---------------------------------------------------------------- v1.0.36 shops: STIL (clothes) + VOLT (electronics)
+    clothes = { title = { hr = 'STIL - Odjeća', en = 'STIL - Clothes' }, nodes = merge({
+        start = { text = { { hr = 'Dobro došli u STIL! Nova kolekcija je stigla. Želite li se presvući?', en = 'Welcome to STIL! The new collection is in. Would you like to try something on?' },
+                           { hr = 'Bok! Kabine su lijevo, ogledalo desno. Mogu li pomoći?', en = 'Hi! Changing rooms are on the left, mirror on the right. Can I help?' } },
+            opts = { { t = { hr = 'Želim promijeniti odjeću', en = 'I want to change my clothes' }, act = 'clothes', go = 'start' },
+                     { t = { hr = 'Imate li popust?', en = 'Any discounts?' }, go = 'sale' } } },
+        sale = { text = { hr = 'Ovaj tjedan -30% na jakne! Pogledajte plakat vani.', en = '30% off jackets this week! Check the billboard outside.' },
+            opts = { { t = { hr = 'Super, idem probati', en = 'Great, let me try' }, act = 'clothes', go = 'start' } } },
+    }) },
+    tech = { title = { hr = 'VOLT - Elektronika', en = 'VOLT - Electronics' }, nodes = merge({
+        start = { text = { { hr = 'Dobro došli u VOLT! Mobiteli, radio stanice, tableti... što trebate?', en = 'Welcome to VOLT! Phones, radios, tablets... what do you need?' },
+                           { hr = 'Bok! Imamo nove mobitele na akciji.', en = 'Hi! New phones are on sale.' } },
+            opts = { { t = { hr = 'Pokaži mi ponudu', en = 'Show me what you have' }, act = 'tech', go = 'start' },
+                     { t = { hr = 'Čemu služi radio?', en = 'What is the radio for?' }, go = 'radio' } } },
+        radio = { text = { hr = 'Radio stanicu koriste policija, hitna i ekipe za dogovor. Uz radio dobivate i kanal.', en = 'Police, EMS and crews use radios to talk. You get a channel with it.' },
+            opts = { { t = { hr = 'Pokaži mi ponudu', en = 'Show me what you have' }, act = 'tech', go = 'start' } } },
+    }) },
     worker = { title = { hr = 'Radnik na cesti', en = 'Road worker' }, nodes = merge({
         start = { text = { { hr = 'Pazi, ovdje se radi! Ne prilazi rupi.', en = 'Careful, work in progress! Stay away from the hole.' },
                            { hr = 'Bok. Mijenjamo cijevi, cesta je djelomično zatvorena.', en = 'Hi. We are changing the pipes, the road is partly closed.' } },
@@ -229,7 +246,7 @@ OsijekDialogs = {
 OsijekDialogRoles = {
     s_m_m_doctor_01 = 'doctor', s_f_y_scrubs_01 = 'nurse', s_m_m_paramedic_01 = 'paramedic',
     s_f_y_airhostess_01 = 'hostess', s_m_m_security_01 = 'security', s_m_m_pilot_01 = 'pilot',
-    s_m_y_cop_01 = 'police', s_f_y_cop_01 = 'police', s_m_y_ammucity_01 = 'gunshop',
+    s_m_y_cop_01 = 'police', s_f_y_cop_01 = 'police', s_m_y_ammucity_01 = 'gunshop', s_f_m_shop_high = 'clothes', s_m_m_lifeinvad_01 = 'tech',
     s_m_y_construct_01 = 'worker', s_m_y_construct_02 = 'worker',
     s_m_y_baywatch_01 = 'lifeguard', s_f_y_baywatch_01 = 'lifeguard', s_f_y_beachbarstaff_01 = 'bartender',
 }

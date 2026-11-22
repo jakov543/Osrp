@@ -208,5 +208,5 @@ Config.Bulet = {
     BaseVehicle = 'rcbandito',  -- hidden small car that does the physics under the scooter
     PropZ = -0.32, PedZ = 0.88,  -- height of the scooter model / of you on it (tune if it floats or sinks)
     AnimDict = 'anim@heists@box_carry@', AnimName = 'idle',   -- standing with hands forward on the handlebar
-    LeanDeg = 12.0, PitchDeg = 5.0,  -- v1.0.35 own riding animation: lean into turns / forward + back
+    LeanDeg = 12.0, PitchDeg = 5.0,  -- v1.0.36 own riding animation: lean into turns / forward + back
 }

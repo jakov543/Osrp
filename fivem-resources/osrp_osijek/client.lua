@@ -470,3 +470,47 @@ CreateThread(function()
         Wait(sleep)
     end
 end)
+
+
+-- ===================================================================== v1.0.36: Pješački most lit up at night
+-- purple light along both handrails, red light up the pylons; the colour slowly drifts purple -> magenta -> red -> blue
+local BRIDGE_COLS = { { 150, 60, 255 }, { 230, 40, 200 }, { 255, 30, 60 }, { 70, 90, 255 } }
+local function bridgeColour(t)
+    local n = #BRIDGE_COLS
+    local f = (t / 6000.0) % n
+    local a, b = BRIDGE_COLS[math.floor(f) + 1], BRIDGE_COLS[(math.floor(f) + 1) % n + 1]
+    local k = f - math.floor(f)
+    return a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k
+end
+CreateThread(function()
+    while true do
+        local br = Life and Life.BRIDGE
+        local h = GetClockHours()
+        local night = h >= 19 or h < 7
+        local wait = 1500
+        if br and night then
+            local mid = world({ x = br.x, y = (br.y0 + br.y1) / 2, z = br.z })
+            if #(GetEntityCoords(PlayerPedId()) - mid) < 450.0 then
+                wait = 0
+                local r, g, b = bridgeColour(GetGameTimer())
+                local step = (br.y1 - br.y0) / 10
+                for side = -1, 1, 2 do
+                    for k = 0, 10 do
+                        local p = world({ x = br.x + side * 2.2, y = br.y0 + k * step, z = br.z + 1.0 })
+                        DrawLightWithRange(p.x, p.y, p.z, math.floor(r), math.floor(g), math.floor(b), 6.0, 4.0)
+                    end
+                    for _, py in ipairs(br.pylons) do
+                        for zz = 3, 21, 6 do
+                            local p = world({ x = br.x + side * 3.9, y = py, z = zz })
+                            DrawLightWithRange(p.x, p.y, p.z, 255, 40, 70, 7.0, 5.0)
+                        end
+                    end
+                end
+                -- soft reflection on the Drava under the deck
+                local w = world({ x = br.x, y = (br.y0 + br.y1) / 2, z = br.z - 1.5 })
+                DrawLightWithRange(w.x, w.y, w.z, math.floor(r), math.floor(g), math.floor(b), 40.0, 2.0)
+            end
+        end
+        Wait(wait)
+    end
+end)

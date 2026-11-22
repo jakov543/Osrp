@@ -71,3 +71,29 @@ Config.PoliceUniform = {
     m = { [11] = { 55, 0 }, [8] = { 58, 0 }, [3] = { 41, 0 }, [4] = { 25, 0 }, [6] = { 25, 0 }, [9] = { 0, 0 }, [10] = { 0, 0 }, hat = { -1, 0 } },
     f = { [11] = { 48, 0 }, [8] = { 35, 0 }, [3] = { 44, 0 }, [4] = { 34, 0 }, [6] = { 27, 0 }, [9] = { 0, 0 }, [10] = { 0, 0 }, hat = { -1, 0 } },
 }
+
+-- ---------- v1.0.36 shops (STIL clothes, VOLT electronics) ----------
+-- clothing categories: c = ped component, p = prop (hat, glasses, watch); price is paid for every changed category
+Config.Clothes = {
+    { key = 'c11', label = 'Jakna / majica', icon = '🧥', price = 120, cam = 'body' },
+    { key = 'c8',  label = 'Potkošulja',     icon = '👕', price = 40,  cam = 'body' },
+    { key = 'c3',  label = 'Ruke / rukavice', icon = '🧤', price = 0,  cam = 'body' },
+    { key = 'c4',  label = 'Hlače',          icon = '👖', price = 80,  cam = 'legs' },
+    { key = 'c6',  label = 'Obuća',          icon = '👟', price = 90,  cam = 'feet' },
+    { key = 'c7',  label = 'Ogrlica / kravata', icon = '👔', price = 30, cam = 'body' },
+    { key = 'c1',  label = 'Maska',          icon = '🎭', price = 60,  cam = 'head' },
+    { key = 'p0',  label = 'Kapa / šešir',   icon = '🧢', price = 50,  cam = 'head' },
+    { key = 'p1',  label = 'Naočale',        icon = '🕶️', price = 70,  cam = 'head' },
+    { key = 'p6',  label = 'Sat',            icon = '⌚', price = 150, cam = 'body' },
+}
+-- VOLT electronics: what you buy is kept with your character (/inventar to use it)
+Config.TechItems = {
+    { id = 'phone',      label = 'Mobitel',          icon = '📱', price = 450, desc = 'Pametni telefon - poruke i pozivi (animacija).' },
+    { id = 'radio',      label = 'Radio stanica',    icon = '📻', price = 220, desc = 'Radio za dogovor ekipe (pma-voice kanal ako ga imaš).' },
+    { id = 'tablet',     label = 'Tablet',           icon = '💻', price = 650, desc = 'Veliki ekran za karte i bilješke.' },
+    { id = 'camera',     label = 'Fotoaparat',       icon = '📷', price = 300, desc = 'Slikaj Osijek kao pravi fotograf.' },
+    { id = 'headphones', label = 'Slušalice',        icon = '🎧', price = 90,  desc = 'Za glazbu u šetnji.' },
+    { id = 'powerbank',  label = 'Powerbank',        icon = '🔋', price = 60,  desc = 'Puni mobitel i BULET romobil (+30% baterije).' },
+    { id = 'flashlight', label = 'Baterijska lampa', icon = '🔦', price = 40,  desc = 'Svjetlo za noć (dobiješ je odmah u ruke).' },
+}
+Config.RadioChannel = 1          -- channel the radio item joins when pma-voice is running
