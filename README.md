@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.22 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.23 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.22
-git push origin v1.0.22
+git tag v1.0.23
+git push origin v1.0.23
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -226,6 +226,7 @@ v1.0.16 – **characters, arrival, interiors, HUD**:
 - v1.0.20: red **bike paths** on both Drava banks (lines, bike symbols), new **Šetalište** on the left bank (walkway, trees, lamps, benches looking at the river, path from the footbridge) to the Copacabana beach, 4 **bike rental** stations (cruiser, scorcher, BMX, tribike - F to take), **NPC cyclists** (`Config.Cyclists`) and **joggers** on the promenades, **64 pedestrians** that now appear near you, **real 3D grass** (GTA procedural grass on the lawns, the park and the beach) + calmer grass texture
 - v1.0.21: **house interiors** - every enterable house is a furnished ground-floor flat: living room (sofa, armchair, coffee table, rug, TV on a media unit, dining table + 4 chairs, shelf, floor lamp, plants, wall art), kitchen (fridge, cooker, sink unit, cabinets, table + stools), bathroom (toilet, washbasin, bathtub, towel shelf), bedroom (double bed, bedside tables + lamps, wardrobe, dresser, rug); interior walls with doorways, tiled kitchen/bathroom, white ceiling, plaster inside, a light in every room. All prop names checked against the full GTA V object list (DurtyFree gta-v-data-dumps). Sit on sofas/armchairs/chairs/stools and lie on the bed with E. `Config.FurnitureTurn` turns a kind if it stands the wrong way.
 - v1.0.22: **own props made in Blender** (`map/blender/osrp_props.py`, 46 models `osrpprop_*`): all flat furniture (sofa, beds, kitchen, bathroom...), hospital beds / curtains / cabinets / waiting chairs, airport check-in kiosks, gate seats, departure boards, baggage carousels, luggage carts, tugs, planters; **automatic sliding glass doors** (hospital lobby, emergency entrance, terminal); new **emergency hall** in the hospital (5 treatment bays); **beach rebuilt** - the sand runs down into the Drava, wooden pier with a 1 m board and a **3 m / 5 m diving tower**, lifeguard tower, volleyball court, showers, beach bar; **beach people** (sunbathers, swimmers, divers who climb the tower and jump); sidewalks/curbs now continuous where no street joins; darker grass
+- v1.0.23: **real GTA V street light poles** (avenue + promenade, they light up at night), smaller street trees that fit the houses, trees are put exactly on the ground (no floating trees), clean-up pass so nothing stands inside something else (trees/benches/bins/bushes/hydrants, bushes in the hospital wing, hydrants on the road)
 - **HUD**: custom notifications (colour codes work, success/error/warning), weapon HUD (name, clip / ammo), status row in the money card (health, armour, stamina, voice), server ID, players online and clock
 
 ![map](map/blender/preview_minimap.png)

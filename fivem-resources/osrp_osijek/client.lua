@@ -299,9 +299,14 @@ CreateThread(function()
                             SetEntityHeading(o, (i * 47) % 360 + 0.0)
                             -- v1.0.18: put the trunk exactly on the ground below (ray from just above, never onto a roof)
                             local ok, gz = GetGroundZFor_3dCoord(p.x, p.y, p.z + 1.5, false)
-                            if ok and math.abs(gz - p.z) < 1.5 then SetEntityCoordsNoOffset(o, p.x, p.y, gz - 0.05, false, false, false) end
-                            FreezeEntityPosition(o, true)
-                            FreezeEntityPosition(o, true)
+                            if ok and math.abs(gz - p.z) < 1.5 then
+                                SetEntityCoordsNoOffset(o, p.x, p.y, gz - 0.1, false, false, false)
+                            else
+                                -- v1.0.23: ground not loaded yet -> try again in a moment instead of leaving a floating tree
+                                DeleteObject(o)
+                                o = nil
+                            end
+                            if o then FreezeEntityPosition(o, true) end
                             SetModelAsNoLongerNeeded(hash)
                             treeObjs[i] = o
                         end

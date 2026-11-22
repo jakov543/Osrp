@@ -207,7 +207,7 @@ def windows(col, name, cx, face_y, z0, width, floors, floor_h, mat, facing):
 
 
 # ---------------------------------------------------------------- materials
-M_GRASS = material("osrp_grass", (0.040, 0.085, 0.030))      # v1.0.22: darker, less yellow
+M_GRASS = material("osrp_grass", (0.040, 0.085, 0.030))      # v1.0.23: darker, less yellow
 M_PARK = material("osrp_park_grass", (0.045, 0.100, 0.032))
 M_ROAD = material("osrp_asphalt", (0.06, 0.06, 0.07), rough=0.95)
 M_LINE = material("osrp_road_line", (0.92, 0.92, 0.88))
@@ -248,11 +248,12 @@ M_GLASS_STOP = material("osrp_busstop_glass", (0.55, 0.70, 0.75), rough=0.05)
 
 
 # ---------------------------------------------------------------- props
-def street_light(col, i, x, y, facing):
+STREETLIGHTS = []   # v1.0.23: real GTA V street light poles (they light up at night by themselves)
+
+
+def street_light(col, i, x, y, facing, kind="ulicna_lampa"):
     """facing = +1 arm points to +y, -1 arm points to -y"""
-    cylinder(col, f"osrp_lampa_stup_{i}", (x, y, 0), 0.12, 7.0, M_POLE, verts=8)
-    box(col, f"osrp_lampa_ruka_{i}", (x, y + facing * 0.8, 6.85), (0.12, 1.7, 0.12), M_POLE)
-    box(col, f"osrp_lampa_svjetlo_{i}", (x, y + facing * 1.55, 6.65), (0.45, 0.7, 0.2), M_LAMP)
+    STREETLIGHTS.append((kind, round(x, 2), round(y, 2), 180.0 if facing > 0 else 0.0))
 
 
 TREES = []   # (x, y, scale, kind) - the GTA export swaps these for real GTA V tree props
@@ -291,7 +292,7 @@ SIDE_ROAD_W = 10
 plane(col, "osrp_ground_south", (0, -105, 0), (MAP_W, 530), M_GRASS)
 SOUTH_END = -780                      # v1.0.14: land goes south to the hospital and the airport
 plane(col, "osrp_ground_jug_prosirenje", (0, (-370 + SOUTH_END) / 2, 0), (MAP_W, -370 - SOUTH_END), M_GRASS)
-BEACH_X0, BEACH_X1 = -410, -190        # v1.0.22: the beach runs down into the Drava here (no quay wall)
+BEACH_X0, BEACH_X1 = -410, -190        # v1.0.23: the beach runs down into the Drava here (no quay wall)
 QN = RIVER_Y + RIVER_W / 2              # north quay face
 for k, (a, b, y0) in enumerate(((-MAP_W / 2, BEACH_X0, QN), (BEACH_X0, BEACH_X1, QN + 2), (BEACH_X1, MAP_W / 2, QN))):
     plane(col, f"osrp_ground_north_{k}", ((a + b) / 2, (y0 + QN + 80) / 2, 0), (b - a, QN + 80 - y0), M_GRASS)
@@ -355,7 +356,7 @@ def river_stairs(name, x0, bank):
     return end_x, face
 
 
-for k, (x0, bank) in enumerate(((-200, -1), (100, -1), (400, -1), (0, 1), (300, 1))):     # v1.0.22: beach stairs gone (the beach slopes into the water)
+for k, (x0, bank) in enumerate(((-200, -1), (100, -1), (400, -1), (0, 1), (300, 1))):     # v1.0.23: beach stairs gone (the beach slopes into the water)
     river_stairs(f"osrp_drava_stube_{k}", x0, bank)
 
 # railing along both quays (posts + 2 rails), open at every staircase and at the footbridge
@@ -415,7 +416,7 @@ for k, x in enumerate(range(int(s_end) + 10, MX1, 24)):     # lamps on the ponto
     cylinder(col, f"osrp_marina_lampa_stup_{k}", (x, PY1 - 0.3, DECK), 0.06, 2.6, M_POLE, verts=6)
     box(col, f"osrp_marina_lampa_{k}", (x, PY1 - 0.3, DECK + 2.6), (0.3, 0.3, 0.25), M_LAMP)
 # jet skis at the north staircase by the beach
-BOATS += [(-258.5, 226.0, 0.0, "seashark"), (-258.5, 232.0, 0.0, "seashark")]     # v1.0.22: jet skis at the beach pier
+BOATS += [(-258.5, 226.0, 0.0, "seashark"), (-258.5, 232.0, 0.0, "seashark")]     # v1.0.23: jet skis at the beach pier
 
 # Promenade (south bank)
 PROM_Y = RIVER_Y - RIVER_W / 2 - 11
@@ -527,7 +528,7 @@ def cut_segments(segs, xs, half):
 
 for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
     for side in (-1, 1):
-        # v1.0.22: only cut where a street really joins (no cross streets north of the river street or south of jug2)
+        # v1.0.23: only cut where a street really joins (no cross streets north of the river street or south of jug2)
         if name == "rijeka" and side == 1:
             segs = [(-MAP_W / 2, MAP_W / 2)]
         elif name == "jug2" and side == -1:
@@ -585,7 +586,7 @@ for x in range(-540, 541, 30):
     if clear_of_cross(x + 15, 8):
         street_light(col, li, x + 15, -ROAD_W / 2 - 1.2, 1); li += 1
 for x in range(-535, 536, 25):
-    street_light(col, li, x, PROM_Y + 6.5, 1); li += 1
+    street_light(col, li, x, PROM_Y + 6.5, 1, "park_lampa"); li += 1
 
 # Tvrđa square + cathedral (east)
 TV_X, TV_Y = 225, 62
@@ -646,8 +647,8 @@ for k in range(26):
 
 MAPRECTS = []    # (kind, cx, cy, w, h) - drawn on the GTA minimap / pause map by osrp_osijek
 DOORS = []       # (x, y, z, heading) - real GTA V doors placed in-game by osrp_osijek
-FURNITURE = []   # (kind, x, y, z, heading[, draw range]) - furniture + v1.0.22 custom Blender props (kind "osrpprop_*")
-SLIDEDOORS = []  # v1.0.22: (x, y, z, heading, panel width, model) automatic sliding glass doors (two panels)
+FURNITURE = []   # (kind, x, y, z, heading[, draw range]) - furniture + v1.0.23 custom Blender props (kind "osrpprop_*")
+SLIDEDOORS = []  # v1.0.23: (x, y, z, heading, panel width, model) automatic sliding glass doors (two panels)
 
 
 def cprop(model, x, y, z, h=0.0, r=0.0):
@@ -1030,8 +1031,8 @@ LOB_W, LOB_D, LOB_H = 40, 18, 4.5
 M_HFLOOR = material("osrp_pavement_hospital", (0.82, 0.83, 0.84))
 box(col, "osrp_kbc_katovi", (HX, HY, LOB_H), (110, 44, 24 - LOB_H), M_HOSP)
 box(col, "osrp_kbc_prizemlje_l", (HX - 37.5, HY, 0), (35, 44, LOB_H), M_HOSP)
-box(col, "osrp_kbc_prizemlje_d", (HX + 37.5, HY - 9, 0), (35, 26, LOB_H), M_HOSP)       # v1.0.22: back part solid
-# v1.0.22: emergency hall (35 x 18 m) right of the lobby: 5 treatment bays with beds, curtains, cabinets
+box(col, "osrp_kbc_prizemlje_d", (HX + 37.5, HY - 9, 0), (35, 26, LOB_H), M_HOSP)       # v1.0.23: back part solid
+# v1.0.23: emergency hall (35 x 18 m) right of the lobby: 5 treatment bays with beds, curtains, cabinets
 ERX = HX + 42
 ER_DH = 3.0
 box(col, "osrp_hitna_pod", (HX + 37.5, HY + 13, 0), (35, 18, FLOOR_Z), M_HFLOOR)
@@ -1059,13 +1060,13 @@ box(col, "osrp_kbc_staklo_nad", (HX, HY + 21.85, FLOOR_Z + 3.0), (5, 0.3, LOB_H 
 SLIDEDOORS.append((HX, HY + 21.45, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
 for sx in (-1, 1):   # glass front with a 5 m entrance (sliding doors) in the middle
     box(col, f"osrp_kbc_staklo_{sx}", (HX + sx * 11.25, HY + 21.85, FLOOR_Z), (17.5, 0.3, LOB_H - FLOOR_Z), M_GLASS)
-    for k, (a, b) in enumerate(((20, 40.6), (43.4, 55)) if sx == 1 else ((20, 55),)):      # v1.0.22: open at the ER door
+    for k, (a, b) in enumerate(((20, 40.6), (43.4, 55)) if sx == 1 else ((20, 55),)):      # v1.0.23: open at the ER door
         box(col, f"osrp_kbc_podnozje_{sx}_{k}", (HX + sx * (a + b) / 2, HY + 22.1, 0), (b - a, 0.2, 1.0), M_RIVER_PLINTH)
 box(col, "osrp_kbc_podnozje_z", (HX, HY - 22.1, 0), (110.4, 0.2, 1.0), M_RIVER_PLINTH)
 box(col, "osrp_kbc_recepcija", (HX, HY + 9, FLOOR_Z), (9, 1.2, 1.1), M_WHITE_STONE)
 box(col, "osrp_kbc_recepcija_ploca", (HX, HY + 9, FLOOR_Z + 1.1), (9.4, 1.5, 0.08), M_WOOD)
 block_text("osrp_kbc_natpis_unutra", "HITNA", (HX + text_width("HITNA", 0.3) / 2, HY + 4.1, 2.6), 0.3, (-1, 0, 0), (0, 0, 1), M_SIGN_RED)
-for k in range(4):   # v1.0.22: waiting chairs (Blender props, you can sit)
+for k in range(4):   # v1.0.23: waiting chairs (Blender props, you can sit)
     for dx in (-1.1, 1.1):
         cprop("wchairs", HX - 15 + k * 10 + dx, HY + 16, FLOOR_Z, 180.0)
 INTERIOR_LIGHTS = HOUSE_LIGHTS + [(HX + dx, HY + 13, LOB_H - 0.3) for dx in (-14, 0, 14)] + [(HX + dx, HY + 12, LOB_H - 0.4) for dx in (27, 38, 49)]
@@ -1079,7 +1080,7 @@ STAFF = [("s_f_y_scrubs_01", HX, HY + 8.0, 0.0, "WORLD_HUMAN_CLIPBOARD"),
          ("s_m_m_paramedic_01", HX + 42, HY + 26, 180.0, "WORLD_HUMAN_SMOKING"),
          ("s_m_m_doctor_01", HX + 30, HY + 9, 180.0, "WORLD_HUMAN_CLIPBOARD"),
          ("s_f_y_scrubs_01", HX + 48, HY + 15.2, 0.0, "WORLD_HUMAN_STAND_IMPATIENT")]
-windows(col, "osrp_kbc_prozori_s", HX, HY + 22, LOB_H - 0.6, 106, 5, 3.6, M_GLASS, 1)     # v1.0.22: none on the ground floor (doors)
+windows(col, "osrp_kbc_prozori_s", HX, HY + 22, LOB_H - 0.6, 106, 5, 3.6, M_GLASS, 1)     # v1.0.23: none on the ground floor (doors)
 windows(col, "osrp_kbc_prozori_j", HX, HY - 22, 0.8 + 0.4, 106, 6, 3.6, M_GLASS, -1)
 box(col, "osrp_kbc_krilo", (HX - 40, HY - 40, 0), (30, 36, 15), M_HOSP)
 windows(col, "osrp_kbc_krilo_prozori", HX - 40, HY - 58, 0.8, 28, 3, 3.6, M_GLASS, -1)
@@ -1162,7 +1163,7 @@ for sx in (-1, 1):
     box(col, f"osrp_terminal_zid_bok_{sx}", (TX + sx * 99.8, TY, 0), (0.4, 26, 12), M_TERM)
     box(col, f"osrp_terminal_zid_j_{sx}", (TX + sx * 97.5, TY - 12.8, 0), (5, 0.4, 12), M_TERM)
 box(col, "osrp_terminal_nadvratnik", (TX, TY + 12.8, 4.5), (8, 0.4, 7.5), M_TERM)
-for sx in (-1, 1):     # v1.0.22: fixed glass beside the sliding doors
+for sx in (-1, 1):     # v1.0.23: fixed glass beside the sliding doors
     box(col, f"osrp_terminal_staklo_vrata_{sx}", (TX + sx * 3.25, TY + 12.8, FLOOR_Z), (1.5, 0.3, 4.5 - FLOOR_Z), M_GLASS)
 box(col, "osrp_terminal_staklo_nad", (TX, TY + 12.8, FLOOR_Z + 3.0), (5, 0.3, 4.5 - FLOOR_Z - 3.0), M_GLASS)
 SLIDEDOORS.append((TX, TY + 12.35, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
@@ -1173,7 +1174,7 @@ for k in range(6):   # check-in desks
     x = TX - 70 + k * 12
     box(col, f"osrp_checkin_{k}", (x, TY + 6, FLOOR_Z), (7, 1.2, 1.1), M_STEEL)
     box(col, f"osrp_checkin_traka_{k}", (x + 4.6, TY + 6.5, FLOOR_Z), (2.2, 2.2, 0.5), M_CANOPY)
-for r in range(3):   # v1.0.22: rows of gate seats (Blender props, you can sit)
+for r in range(3):   # v1.0.23: rows of gate seats (Blender props, you can sit)
     for k in range(5):
         for dx in (-1.8, 1.8):
             cprop("gateseats", TX + 30 + k * 12 + dx, TY - 4 + r * 3.5, FLOOR_Z, 180.0)
@@ -1289,7 +1290,7 @@ for side in (-1, 1):
             BENCHES.append((x + 4, side * 14.9, h))        # real bench you can sit on, looking at the street
         else:
             STREETPROPS.append((kind, x + 4, side * 14.9, h))
-        if k % 4 == 0:
+        if k % 4 == 0 and clear_of_cross(x + 9, 8):
             STREETPROPS.append(("hidrant", x + 9, side * 8.9, h))
 for yc in (-350, -180, 125):
     for side in (-1, 1):
@@ -1306,7 +1307,7 @@ for x in (110, 200, 290):
 AIRPROPS += [("air_cargo", -30 + dx, -566, 0.0) for dx in (-15, -5, 5, 15)]
 AIRPROPS += [("air_radar", 470, -560, 0.0), ("air_cone", 45, -600, 0.0), ("air_cone", 355, -600, 0.0)]
 
-# ---------- v1.0.22 Copacabana beach on the north bank: sand runs down into the Drava, pier + diving tower ----------
+# ---------- v1.0.23 Copacabana beach on the north bank: sand runs down into the Drava, pier + diving tower ----------
 BEACH_Y = RIVER_Y + RIVER_W / 2 + 15
 SAND_TOP, SAND_LOW = QN + 2, QN - 33     # slope from the sand (z 0.12) down to z -10.5 under the water
 plane(col, "osrp_plaza_pijesak", ((BEACH_X0 + BEACH_X1) / 2, (SAND_TOP + BEACH_Y + 13) / 2, 0.12), (BEACH_X1 - BEACH_X0, BEACH_Y + 13 - SAND_TOP), M_SAND)
@@ -1506,13 +1507,84 @@ for bx in range(len(CROSS_X) - 1):
         for k in range(5):
             GREEN.append(("grm" if k % 2 == 0 else "trava", random.uniform(x0, x1), random.uniform(y0 + 24, y1 - 24), random.uniform(0, 360)))
 for k in range(int((PARK_X1 - PARK_X0) / 9)):
-    for y in (PARK_Y0 + 1.5, PARK_Y1 - 1.5):
+    for y in (PARK_Y0 + 3.0, PARK_Y1 - 3.0):
         GREEN.append(("grm", PARK_X0 + 4 + k * 9, y, random.uniform(0, 360)))
 for k in range(12):
     GREEN.append(("grm", -405 + k * 20, BEACH_Y + 24, random.uniform(0, 360)))
 for k in range(10):
-    GREEN.append(("grm", HX - 50 + k * 11, HY - 26, random.uniform(0, 360)))
+    if not (HX - 57 < HX - 50 + k * 11 < HX - 23):      # v1.0.23: not inside the back wing
+        GREEN.append(("grm", HX - 50 + k * 11, HY - 26, random.uniform(0, 360)))
 SIGNS += SIGNS_EXTRA + AIRPROPS + STREETPROPS + GREEN
+
+
+# v1.0.23: clean-up pass - nothing stands inside something else (trees in benches, bushes in bins, things in walls)
+def _declutter():
+    import bpy as _b
+    solid = []
+    for o in col.objects:
+        n = o.name
+        if o.type != "MESH" or not any(t in n for t in ("_kuca_", "_zgrada_", "_kbc_", "_terminal_", "_hangar", "_katedrala_", "_stanica_", "_fontana_", "_cvjetnjak_", "_hitna_", "_toranj")):
+            continue
+        if any(t in n for t in ("_pod", "_strop", "_krov", "_ploca", "_prozori", "_trg", "nadstresnica")):
+            continue
+        mw = o.matrix_world
+        vs = [mw @ v.co for v in o.data.vertices]
+        if not vs or min(v.z for v in vs) > 1.0 or max(v.z for v in vs) < 0.8:
+            continue
+        solid.append((min(v.x for v in vs), max(v.x for v in vs), min(v.y for v in vs), max(v.y for v in vs)))
+    grid = {}
+    for b in solid:
+        for gx in range(int(b[0] // 20), int(b[1] // 20) + 1):
+            for gy in range(int(b[2] // 20), int(b[3] // 20) + 1):
+                grid.setdefault((gx, gy), []).append(b)
+
+    def in_solid(x, y, m):
+        return any(b[0] - m < x < b[1] + m and b[2] - m < y < b[3] + m for b in grid.get((int(x // 20), int(y // 20)), []))
+
+    placed = []     # (x, y, radius)
+
+    def free(x, y, r):
+        return all((x - px) ** 2 + (y - py) ** 2 >= (r + pr) ** 2 for px, py, pr in placed if abs(x - px) < 8 and abs(y - py) < 8)
+    RAD = {"stop": 0.3, "semafor": 0.4, "pjesacki": 0.3, "grm": 0.9, "trava": 0.5, "hidrant": 0.35, "kanta": 0.45, "kiosk": 0.5,
+           "bicikl": 0.7, "telefon": 0.6, "posuda": 0.5}
+    stats = {"removed": 0}
+    for (k, x, y, h) in STREETLIGHTS:
+        placed.append((x, y, 0.4))
+    keep = []
+    order = sorted(range(len(SIGNS)), key=lambda i: 2 if SIGNS[i][0] in ("grm", "trava") else (1 if SIGNS[i][0] in RAD else 0))
+    for i in order:
+        k, x, y = SIGNS[i][0], SIGNS[i][1], SIGNS[i][2]
+        r = RAD.get(k, 0.5)
+        if k in RAD and (in_solid(x, y, r * 0.5) or not free(x, y, r)):
+            stats["removed"] += 1
+            continue
+        placed.append((x, y, r))
+        keep.append(i)
+    SIGNS[:] = [SIGNS[i] for i in sorted(keep)]
+    benches = []
+    for b in BENCHES:
+        if in_solid(b[0], b[1], 0.5) or not free(b[0], b[1], 1.1):
+            stats["removed"] += 1
+            continue
+        placed.append((b[0], b[1], 1.1))
+        benches.append(b)
+    BENCHES[:] = benches
+    trees = []
+    for t in TREES:      # move a tree along the sidewalk to a free spot, otherwise drop it
+        x, y = t[0], t[1]
+        for dx in (0, 2.5, -2.5, 4.5, -4.5):
+            if free(x + dx, y, 1.4) and not in_solid(x + dx, y, 1.5):
+                placed.append((x + dx, y, 1.4))
+                trees.append((round(x + dx, 2), y) + tuple(t[2:]))
+                break
+        else:
+            stats["removed"] += 1
+    TREES[:] = trees
+    print(f"[OSRP] clean-up: {stats['removed']} overlapping things removed, {len(TREES)} trees, {len(BENCHES)} benches, {len(SIGNS)} props")
+
+
+_declutter()
+SIGNS += STREETLIGHTS
 WALKS = list(EXTRA_WALKS)   # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
 for a, b in open_segments(-HALF, HALF, SIDE_ROAD_W / 2 + 1):
     for y in (ROAD_W / 2 + 3.3, -(ROAD_W / 2 + 3.3)):
@@ -1529,10 +1601,10 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-# v1.0.22: custom props made in Blender (separate models, placed in-game from FURNITURE / SLIDEDOORS)
+# v1.0.23: custom props made in Blender (separate models, placed in-game from FURNITURE / SLIDEDOORS)
 import sys as _sys, os as _os  # noqa: E401
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.22: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.23: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

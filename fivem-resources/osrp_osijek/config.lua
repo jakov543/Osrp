@@ -12,10 +12,11 @@ Config.StreamDistance = 900.0   -- chunks appear within this distance
 
 -- Real GTA V trees per area (the first model that exists in your GTA version is used, so nothing breaks)
 Config.TreeModels = {
-    av   = { 'prop_tree_birch_01', 'prop_tree_maple_02', 'prop_tree_birch_02' },   -- Europska avenija
-    prom = { 'prop_tree_birch_02', 'prop_tree_birch_01', 'prop_tree_maple_02' },   -- promenada uz Dravu
-    park = { 'prop_tree_oak_01', 'prop_tree_maple_02', 'prop_tree_cedar_02', 'prop_tree_birch_01' },
-    trg  = { 'prop_tree_maple_02', 'prop_tree_birch_01' },                         -- Tvrđa
+    -- v1.0.23: smaller street trees that fit the 4-floor houses (the big oaks/cedars only stay in the park)
+    av   = { 'prop_tree_maple_03', 'prop_tree_birch_03b', 'prop_tree_birch_04' },  -- Europska avenija
+    prom = { 'prop_tree_birch_03', 'prop_tree_birch_04', 'prop_tree_maple_03' },   -- promenada uz Dravu
+    park = { 'prop_tree_maple_02', 'prop_tree_birch_01', 'prop_tree_oak_01', 'prop_tree_birch_03' },
+    trg  = { 'prop_tree_maple_03', 'prop_tree_birch_03b' },                        -- Tvrđa
 }
 
 -- Doors of the houses you can enter: first model that exists in your GTA is used
@@ -99,7 +100,12 @@ Config.SignModels = {
     -- v1.0.18 plants on the grass
     grm     = { 'prop_bush_med_03', 'prop_bush_lrg_04b', 'prop_bush_med_06', 'prop_bush_lrg_01e' },
     trava   = { 'prop_grass_dry_02', 'prop_grass_dry_03', 'prop_bush_dead_02' },
+    -- v1.0.23 real GTA V street light poles (they turn on at night by themselves)
+    ulicna_lampa = { 'prop_streetlight_01', 'prop_streetlight_01b' },
+    park_lampa   = { 'prop_streetlight_03', 'prop_streetlight_01' },
 }
+-- extra turn per prop kind, if a GTA model looks the wrong way (e.g. set ulicna_lampa = 180.0 if the lamp arm points away from the road)
+Config.SignTurn = { ulicna_lampa = 0.0, park_lampa = 0.0 }
 
 Config.Pedestrians = true
 Config.PedCount = 64                -- NPCs walking, jogging, sitting, standing around you (phone, coffee, smoking ...)

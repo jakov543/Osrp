@@ -174,7 +174,7 @@ CreateThread(function()
                 local hash = firstModel(Config.SignModels[s[1]])
                 if load(hash) then
                     local o = CreateObjectNoOffset(hash, ground.x, ground.y, ground.z, false, false, false)
-                    SetEntityHeading(o, s[4])
+                    SetEntityHeading(o, s[4] + ((Config.SignTurn or {})[s[1]] or 0.0))
                     FreezeEntityPosition(o, true)
                     SetModelAsNoLongerNeeded(hash)
                     signs[i] = o
