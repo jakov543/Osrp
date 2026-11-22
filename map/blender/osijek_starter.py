@@ -592,6 +592,8 @@ for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
             box(col, f"osrp_rubnik_{name}_{side}_{k}", ((a + b) / 2, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.0), (b - a, 0.3, 0.28), M_CURB)
             # v1.0.13: sidewalk along the side street (between the cross-street sidewalks)
             sa, sb = a + 2.8, b - 2.8
+            if name == "jug2" and side == -1:          # v1.0.30: at driveways the sidewalk goes right up to the curb end
+                sa, sb = (a + 0.05 if a > -MAP_W / 2 + 1 else a + 2.8), (b - 0.05 if b < MAP_W / 2 - 1 else b - 2.8)
             if sb > sa:
                 box(col, f"osrp_plocnik_{name}_{side}_{k}", ((sa + sb) / 2, yc + side * (SIDE_ROAD_W / 2 + 1.55), 0.0), (sb - sa, 2.5, 0.26), M_WALK)
     # dashed centre line
@@ -601,7 +603,7 @@ for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
             box(col, f"osrp_crta_{name}_{k}_{n}", (xx + 1.5, yc, 0.1), (3.0, 0.13, 0.02), M_LINE)
             xx += 7; n += 1
 
-for k, x in enumerate(DRIVEWAYS):
+for k, x in enumerate(DRIVEWAYS + [150, -60, 30]):     # v1.0.30: also airport road, police, gun shop
     plane(col, f"osrp_prilaz_{k}", (x, -356.6, 0.1), (11, 3.2), M_ROAD)
 
 # stop lines: cross streets before the avenue (right lane) and the avenue before each crossing
@@ -1986,6 +1988,35 @@ INDOORS = [(HX, HY, 111, 45, LOB_H), (TX, TY, 200, 26, 12), (PSX, PSY, PW, PD, P
            (GX, GY, 28, 32, 7), (PSX, PFRONT + 3.0, 12, 6, 3.6), (HX, HY + 26, 18, 8, 3.8)]
 INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]
 
+# ---------- v1.0.30 entrances (stone step up to the floor) + curbs round the car parks ----------
+for k, (x, y, w) in enumerate(((HX, HY + 22.6, 7.0), (ERX, HY + 22.6, 4.0), (PSX, PFRONT + 0.6, 7.0), (GSX, GFRONT + 0.6, 4.0))):
+    box(col, f"osrp_ulaz_stepenica_{k}", (x, y, 0.0), (w, 1.2, FLOOR_Z), M_WHITE_STONE)
+    box(col, f"osrp_ulaz_otirac_{k}", (x, y - 0.1, FLOOR_Z), (w - 1.5, 0.9, 0.012), M_CANOPY)
+lot_curbs = []
+def curb_x(x, y0, y1):                      # curb along y at x
+    lot_curbs.append((x, (y0 + y1) / 2, 0.0, 0.3, abs(y1 - y0), 0.28))
+def curb_y(y, x0, x1):                      # curb along x at y
+    lot_curbs.append(((x0 + x1) / 2, y, 0.0, abs(x1 - x0), 0.3, 0.28))
+# hospital car park (x HX-65..HX+65, y -380..-358)
+curb_x(HX - 65.15, -380.0, -358.3)
+curb_y(-380.15, HX - 65.3, HX - 55.0)
+curb_y(-380.15, HX + 55.0, HX + 65.3)
+# police car park (x PSX-40..PSX+40, y PFRONT..-358)
+curb_x(PSX - 40.15, PFRONT, -358.3)
+curb_x(PSX + 40.15, PFRONT, -358.3)
+curb_y(PFRONT - 0.15, PSX - 40.3, PSX - PW / 2)
+curb_y(PFRONT - 0.15, PSX + PW / 2, PSX + 40.3)
+# gun shop car park (x GSX-15..GSX+15, y GFRONT..-358)
+curb_x(GSX - 15.15, GFRONT, -358.3)
+curb_x(GSX + 15.15, GFRONT, -358.3)
+# airport: the access road meets the car park, curbs round the car park (x 110..290, y -431..-395)
+curb_y(-394.85, 110 - 0.3, 145.0)
+curb_y(-394.85, 155.0, 290.3)
+curb_x(109.85, -431.0, -395.0)
+curb_x(290.15, -431.0, -418.2)
+curb_x(290.15, -407.8, -395.0)
+boxes_mesh("osrp_parking_rubnici", lot_curbs, M_CURB)
+
 ROUTES = [
     [(-452.5, 127.5), (-452.5, -4.0), (452.5, -4.0), (452.5, 127.5)],     # avenue east -> river street west
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
@@ -1997,4 +2028,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.29: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.30: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
