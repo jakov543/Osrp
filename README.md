@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.30 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.31 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.30
-git push origin v1.0.30
+git tag v1.0.31
+git push origin v1.0.31
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -234,6 +234,7 @@ v1.0.16 – **characters, arrival, interiors, HUD**:
 - v1.0.28: no more rain inside buildings (houses, hospital, terminal, police station, gun shop, garages) - rain is switched off for you while you are under one of the city's roofs
 - v1.0.29: solid base under the whole island (no more seeing under the map through gaps in the ground); new Blender props - office desks with PCs, filing cabinets, flag poles with the Croatian flag, stretchers, crash carts with defibrillators, airport security (X-ray machines, metal detectors, guards), queue barriers, café (drinks), gate desks; GTA vending machines, ATMs, bins, wheelchairs
 - v1.0.30: entrances of the hospital (main + emergency), police station and gun shop get a stone step up to the floor with a door mat; driveways from the street into the hospital, police, gun shop and airport road are paved (no grass gaps), sidewalks run right up to the driveways; curbs round the hospital, police, gun shop and airport car parks
+- v1.0.31: sliding glass doors (hospital, emergency, terminal, police, gun shop) can never block you any more (no collision) and open earlier (5 m)
 - **HUD**: custom notifications (colour codes work, success/error/warning), weapon HUD (name, clip / ammo), status row in the money card (health, armour, stamina, voice), server ID, players online and clock
 
 ![map](map/blender/preview_minimap.png)

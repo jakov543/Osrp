@@ -390,6 +390,7 @@ CreateThread(function()
                             local o = CreateObjectNoOffset(hash, c.x + rx * sgn * d[5] / 2, c.y + ry * sgn * d[5] / 2, c.z, false, false, false)
                             SetEntityHeading(o, d[4])
                             FreezeEntityPosition(o, true)
+                            SetEntityCollision(o, false, false)      -- v1.0.31: the glass panels never block the way in
                             s.objs[k] = o
                         end
                         SetModelAsNoLongerNeeded(hash)
@@ -398,10 +399,10 @@ CreateThread(function()
                 end
                 if s then
                     -- anybody (you, other players, NPCs) within 3.5 m opens it
-                    local want = dist < 3.5
+                    local want = dist < 5.0
                     if not want then
                         for _, p in ipairs(GetGamePool('CPed')) do
-                            if #(GetEntityCoords(p) - c) < 3.5 then want = true break end
+                            if #(GetEntityCoords(p) - c) < 4.5 then want = true break end
                         end
                     end
                     local target = want and (d[5] - 0.15) or 0.0
