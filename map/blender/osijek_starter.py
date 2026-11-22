@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.19)
+OSRP - Osijek starter map for Blender (V1.0.20)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -1172,6 +1172,49 @@ for k in range(9):
 for k in range(10):
     tree(col, f"prom_plaza_{k}", -400 + k * 22 + 11, BEACH_Y + 17, 1.1)
 
+# =============================================================== v1.0.20: promenade + bike paths along the Drava
+M_BIKE = material("osrp_asphalt_bike", (0.36, 0.07, 0.05), rough=0.9)
+BIKE_S = PROM_Y - 6.5                         # south bank: bike path on the river side of the street, inside the promenade
+NP_Y = RIVER_Y + RIVER_W / 2 + 38             # north bank promenade (Šetalište) centre
+BIKE_N = NP_Y + 5.25                          # north bike path
+BIKEROUTES = []
+for name, by in (("jug", BIKE_S), ("sjever", BIKE_N)):
+    box(col, f"osrp_biciklisticka_{name}", (0, by, 0.12), (MAP_W - 4, 2.6, 0.02), M_BIKE)
+    lines = []
+    x = -MAP_W / 2 + 4
+    while x < MAP_W / 2 - 6:
+        lines.append((x + 1.0, by, 0.14, 2.0, 0.12, 0.012))
+        x += 5.0
+    for side in (-1, 1):
+        lines.append((0, by + side * 1.22, 0.14, MAP_W - 6, 0.08, 0.012))
+    # bicycle signs painted every 60 m
+    for x in range(-500, 501, 60):
+        lines += [(x - 0.45, by - 0.6, 0.14, 0.5, 0.06, 0.012), (x + 0.45, by - 0.6, 0.14, 0.5, 0.06, 0.012),
+                  (x, by - 0.45, 0.14, 0.06, 0.3, 0.012)]
+    boxes_mesh(f"osrp_biciklisticka_crte_{name}", lines, M_LINE)
+    BIKEROUTES.append((-MAP_W / 2 + 6, by, MAP_W / 2 - 6, by))
+
+# north bank: Šetalište (6 m walkway) + trees, lamps, benches looking at the river, path from the footbridge
+box(col, "osrp_setaliste_sjever", (0, NP_Y, 0.0), (MAP_W - 2, 6.0, 0.12), M_WALK)
+box(col, "osrp_most_staza_sjever", (BR_X, (RIVER_Y + RIVER_W / 2 + 4 + NP_Y - 3) / 2, 0.0), (4.0, NP_Y - 3 - (RIVER_Y + RIVER_W / 2 + 4), 0.12), M_WALK)
+for k, x in enumerate(range(-530, 531, 30)):
+    street_light(col, f"sjever_{k}", x, NP_Y - 3.6, 1)
+    if abs(x - BR_X) > 6:
+        tree(col, f"prom_sjever_{k}", x + 15, BIKE_N + 3.4, 1.0)
+    if k % 2 == 0 and abs(x + 7 - BR_X) > 4:
+        BENCHES.append((x + 7, NP_Y - 2.2, 180.0))
+EXTRA_WALKS = [(-MAP_W / 2 + 10, NP_Y + 1, MAP_W / 2 - 10, NP_Y + 1)]
+
+# bike rental (Bike Osijek) - bikes you can take with F
+for k, (bx, by, h) in enumerate(((-300, BIKE_S - 3.6, 0.0), (150, BIKE_S - 3.6, 0.0), (-140, BIKE_N + 3.5, 180.0), (-180, BEACH_Y + 16, 180.0))):
+    box(col, f"osrp_bicikli_ploca_{k}", (bx, by, 0.0), (8.0, 3.4, 0.14), M_WALK)
+    box(col, f"osrp_bicikli_stalak_{k}", (bx, by + (1.3 if h == 0.0 else -1.3), 0.14), (7.2, 0.12, 0.75), M_STEEL)
+    box(col, f"osrp_bicikli_znak_{k}", (bx - 3.6, by, 0.14), (0.15, 0.15, 2.2), M_POLE)
+    box(col, f"osrp_bicikli_znak_ploca_{k}", (bx - 3.6, by, 2.2), (0.08, 1.2, 0.8), M_SIGN_BLUE)
+    for j, m in enumerate(("cruiser", "scorcher", "bmx", "tribike")):
+        SPECIAL.append((bx - 2.4 + j * 1.6, by, None, h, m, 0))
+MAPRECTS += [("bike", 0, BIKE_S, MAP_W, 2.6), ("bike", 0, BIKE_N, MAP_W, 2.6), ("walk", 0, NP_Y, MAP_W, 6)]
+
 # ---------------------------------------------------------------- city life data (used in-game by osrp_osijek)
 HALF = MAP_W / 2
 MAPRECTS[:0] = [
@@ -1233,7 +1276,7 @@ for k in range(12):
 for k in range(10):
     GREEN.append(("grm", HX - 50 + k * 11, HY - 26, random.uniform(0, 360)))
 SIGNS += SIGNS_EXTRA + AIRPROPS + STREETPROPS + GREEN
-WALKS = []          # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
+WALKS = list(EXTRA_WALKS)   # sidewalk segments NPCs walk along: (x0, y0, x1, y1)
 for a, b in open_segments(-HALF, HALF, SIDE_ROAD_W / 2 + 1):
     for y in (ROAD_W / 2 + 3.3, -(ROAD_W / 2 + 3.3)):
         WALKS.append((a + 2, y, b - 2, y))
@@ -1249,4 +1292,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.19: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.20: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

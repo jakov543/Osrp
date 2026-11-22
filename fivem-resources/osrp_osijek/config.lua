@@ -70,7 +70,7 @@ Config.SignModels = {
 }
 
 Config.Pedestrians = true
-Config.PedCount = 44                -- NPCs walking, sitting, standing around you (phone, coffee, smoking ...)
+Config.PedCount = 64                -- NPCs walking, jogging, sitting, standing around you (phone, coffee, smoking ...)
 Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_01', 'a_f_y_hipster_01', 'a_m_y_hipster_01',
                      'a_f_m_bevhills_01', 'a_m_y_vinewood_01', 'a_f_y_tourist_01', 'a_m_m_skater_01', 'a_f_y_eastsa_01',
                      'a_m_y_bevhills_01', 'a_f_y_bevhills_02', 'a_m_m_eastsa_02', 'a_f_m_tourist_01', 'a_m_y_runner_01',
@@ -132,3 +132,8 @@ Config.NpcChat = {
 -- ===================================================================== v1.0.18
 Config.BenchModels = { 'prop_bench_01a', 'prop_bench_05', 'prop_bench_09' }   -- E = sit (NPCs sit too)
 Config.FountainParticle = 'ent_amb_fountain_pour'                              -- water jets of the Tvrđa fountain
+
+-- ===================================================================== v1.0.20
+Config.Cyclists = 8                 -- NPCs riding bikes on the Drava bike paths
+Config.CyclistSpeed = 6.0           -- m/s (about 22 km/h)
+Config.JoggerShare = 0.35           -- part of the people on the promenades who jog

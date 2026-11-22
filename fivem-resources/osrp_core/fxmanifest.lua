@@ -5,7 +5,7 @@ lua54 'yes'
 name 'osrp_core'
 author 'Bandera'
 description 'OSRP V1 - Osijek Roleplay: map name Osijek, GTA V HUD kept, custom map streaming'
-version '1.0.19'
+version '1.0.20'
 
 client_script 'client.lua'
 server_script 'server.lua'

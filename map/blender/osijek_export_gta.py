@@ -41,7 +41,7 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
 with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
-    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS")}
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES")}
               | {"PLACES": {k: list(v) for k, v in city["PLACES"].items()}}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
     json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4]} for m in city["FURNITURE"]], f)
@@ -270,13 +270,25 @@ for obj in chunk_objs:
     drawables.append(drw)
 
 col_cache = {}
+# v1.0.20: GTA grows real 3D grass / weeds on collision with a procedural ID (ids from Sollumz procids.json)
+PROC_IDS = {"park_grass": 148, "grass": 139, "beach_sand": 143}
 
 
-def collision_mat(colname):
-    if colname not in col_cache:
+def proc_for(name):
+    for k, v in PROC_IDS.items():
+        if k in name:
+            return v
+    return 0
+
+
+def collision_mat(colname, procid=0):
+    key = (colname, procid)
+    if key not in col_cache:
         idx = next((i for i, m in enumerate(collisionmats) if m.name == colname), col_index)
-        col_cache[colname] = create_collision_material_from_index(idx)
-    return col_cache[colname]
+        m = create_collision_material_from_index(idx)
+        m.collision_properties.procedural_id = procid
+        col_cache[key] = m
+    return col_cache[key]
 
 
 for o in bpy.data.objects:
@@ -284,7 +296,7 @@ for o in bpy.data.objects:
         for i, slot in enumerate(o.material_slots):
             name = slot.material.name if slot.material else ""
             base = name.split(".")[0]
-            o.material_slots[i].material = collision_mat(mat_col.get(base, "CONCRETE"))
+            o.material_slots[i].material = collision_mat(mat_col.get(base, "CONCRETE"), proc_for(base))
 
 # ---------------------------------------------------------------- 4. ytyp
 bpy.ops.sollumz.createytyp()

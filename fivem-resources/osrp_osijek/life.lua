@@ -197,23 +197,45 @@ local function pedModel(i)
     return firstModel({ list[math.random(#list)], list[(i % #list) + 1], list[1] })
 end
 
+-- v1.0.20: walkers appear on sidewalks near you (not anywhere in the city); on the promenades some of them jog
+local function nearWalk()
+    local me = GetEntityCoords(PlayerPedId())
+    local mx, my = me.x - Config.Origin.x, me.y - Config.Origin.y
+    local opts = {}
+    for _, w in ipairs(Life.WALKS) do
+        local dx, dy = w[3] - w[1], w[4] - w[2]
+        local len2 = dx * dx + dy * dy
+        local t = len2 > 0 and math.max(0, math.min(1, ((mx - w[1]) * dx + (my - w[2]) * dy) / len2)) or 0
+        local px, py = w[1] + dx * t, w[2] + dy * t
+        if (px - mx) ^ 2 + (py - my) ^ 2 < 200.0 ^ 2 then opts[#opts + 1] = { w, t, math.sqrt(len2) } end
+    end
+    if #opts == 0 then return nil end
+    local o = opts[math.random(#opts)]
+    local t = math.max(0, math.min(1, o[2] + (math.random() * 2 - 1) * 140.0 / math.max(o[3], 1)))
+    return o[1], t, o[3]
+end
+
+local RUNNERS = { 'a_m_y_runner_01', 'a_f_y_runner_01', 'a_m_y_runner_02', 'a_f_y_fitness_01', 'a_m_y_beach_01' }
+
 local function newWalker(i)
-    local w = Life.WALKS[math.random(#Life.WALKS)]
-    local t = math.random()
+    local w, t, len = nearWalk()
+    if not w then return end
     local x, y = w[1] + (w[3] - w[1]) * t, w[2] + (w[4] - w[2]) * t
     local wp = groundAt(x, y, 0.05)
     if not wp then return end
-    local hash = pedModel(i)
+    local jogger = len > 500 and math.abs(w[2] - w[4]) < 1.0 and (w[2] > 150.0) and math.random() < (Config.JoggerShare or 0.35)
+    local hash = jogger and firstModel({ RUNNERS[math.random(#RUNNERS)], RUNNERS[1] }) or pedModel(i)
     if not load(hash) then return end
     local p = CreatePed(4, hash, wp.x, wp.y, wp.z, 0.0, false, true)
     SetBlockingOfNonTemporaryEvents(p, false)
     SetPedKeepTask(p, true)
     SetModelAsNoLongerNeeded(hash)
     local goEnd = math.random() < 0.5
-    peds[i] = { ped = p, walk = w, toEnd = goEnd, sitting = false }
+    local speed = jogger and 2.0 or 1.0
+    peds[i] = { ped = p, walk = w, toEnd = goEnd, sitting = false, speed = speed }
     local tx, ty = goEnd and w[3] or w[1], goEnd and w[4] or w[2]
     local tw = W(tx, ty, 0.3)
-    TaskGoStraightToCoord(p, tw.x, tw.y, tw.z, 1.0, -1, 0.0, 0.5)
+    TaskGoStraightToCoord(p, tw.x, tw.y, tw.z, speed, -1, 0.0, 0.5)
 end
 
 local SCENARIOS = { 'WORLD_HUMAN_SMOKING', 'WORLD_HUMAN_STAND_MOBILE', 'WORLD_HUMAN_AA_COFFEE', 'WORLD_HUMAN_TOURIST_MAP',
@@ -275,7 +297,7 @@ CreateThread(function()
                         e.toEnd = not e.toEnd
                         local nx, ny = e.toEnd and w[3] or w[1], e.toEnd and w[4] or w[2]
                         local nw = W(nx, ny, 0.3)
-                        TaskGoStraightToCoord(e.ped, nw.x, nw.y, nw.z, 1.0, -1, 0.0, 0.5)
+                        TaskGoStraightToCoord(e.ped, nw.x, nw.y, nw.z, e.speed or 1.0, -1, 0.0, 0.5)
                     elseif #(GetEntityCoords(e.ped) - pos) > 260.0 then
                         DeletePed(e.ped); peds[i] = nil     -- respawned closer next round
                     end
@@ -671,5 +693,72 @@ CreateThread(function()
             end
         end
         Wait(sleep)
+    end
+end)
+
+
+-- ===================================================================== v1.0.20: cyclists on the Drava bike paths
+local bikers = {}
+local BIKES = { 'cruiser', 'scorcher', 'bmx', 'tribike', 'fixter', 'tribike2' }
+
+local function newCyclist(i)
+    local routes = Life.BIKEROUTES or {}
+    if #routes == 0 then return end
+    local me = GetEntityCoords(PlayerPedId())
+    local r = routes[math.random(#routes)]
+    local mx = me.x - Config.Origin.x
+    if math.abs((me.y - Config.Origin.y) - r[2]) > 260.0 then return end
+    local dir = math.random() < 0.5 and 1 or -1
+    local x = math.max(r[1] + 5, math.min(r[3] - 5, mx + (math.random() * 2 - 1) * 180.0))
+    local lane = r[2] - dir * 0.6                                  -- ride on the right half of the path
+    local g = groundAt(x, lane, 0.2)
+    if not g or #(g - me) < 35.0 then return end
+    local bh = firstModel({ BIKES[math.random(#BIKES)], 'cruiser', 'bmx' })
+    local ph = firstModel({ RUNNERS[math.random(#RUNNERS)], 'a_m_y_cyclist_01', 'a_m_y_roadcyc_01' })
+    if not bh or not ph or not load(bh) or not load(ph) then return end
+    local v = CreateVehicle(bh, g.x, g.y, g.z, dir == 1 and 270.0 or 90.0, false, false)
+    local d = CreatePedInsideVehicle(v, 4, ph, -1, false, true)
+    SetModelAsNoLongerNeeded(bh)
+    SetModelAsNoLongerNeeded(ph)
+    SetBlockingOfNonTemporaryEvents(d, true)
+    SetEntityAsMissionEntity(v, true, true)
+    local endX = dir == 1 and r[3] or r[1]
+    local t = W(endX, lane, 0.3)
+    TaskVehicleDriveToCoord(d, v, t.x, t.y, t.z, (Config.CyclistSpeed or 6.0), 0, bh, 786603, 3.0, true)
+    bikers[i] = { veh = v, drv = d, target = t, last = GetEntityCoords(v), stuck = 0 }
+end
+
+CreateThread(function()
+    while true do
+        local pos = GetEntityCoords(PlayerPedId())
+        if Config.Cyclists and Config.Cyclists > 0 and inCity(pos, 150.0) then
+            for i = 1, Config.Cyclists do
+                local b = bikers[i]
+                if not b or not DoesEntityExist(b.veh) or not DoesEntityExist(b.drv) or IsEntityDead(b.drv) then
+                    if b then
+                        if DoesEntityExist(b.drv) then DeletePed(b.drv) end
+                        if DoesEntityExist(b.veh) and GetPedInVehicleSeat(b.veh, -1) ~= PlayerPedId() then DeleteVehicle(b.veh) end
+                    end
+                    bikers[i] = nil
+                    newCyclist(i)
+                else
+                    local vp = GetEntityCoords(b.veh)
+                    if #(vp - b.last) < 0.5 then b.stuck = b.stuck + 1 else b.stuck = 0 end
+                    b.last = vp
+                    if #(vp - b.target) < 8.0 or #(vp - pos) > 320.0 or b.stuck > 8 then
+                        DeletePed(b.drv)
+                        if GetPedInVehicleSeat(b.veh, -1) ~= PlayerPedId() then DeleteVehicle(b.veh) end
+                        bikers[i] = nil
+                    end
+                end
+            end
+        else
+            for i, b in pairs(bikers) do
+                if DoesEntityExist(b.drv) then DeletePed(b.drv) end
+                if DoesEntityExist(b.veh) and GetPedInVehicleSeat(b.veh, -1) ~= PlayerPedId() then DeleteVehicle(b.veh) end
+                bikers[i] = nil
+            end
+        end
+        Wait(2500)
     end
 end)

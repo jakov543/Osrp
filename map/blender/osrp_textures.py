@@ -172,19 +172,22 @@ def curb(rng, n, base):
 
 
 def grass(rng, n, base, park=False):
-    patches = fbm(rng, n, [n / 5, n / 12], [1, 0.7])
-    blades = noise(rng, n, 0.6, sx=0.6, sy=1.8)
-    clumps = noise(rng, n, 2.5)
-    shade = 1 + 0.06 * patches + 0.32 * blades + 0.16 * clumps
-    dry = np.clip((patches - 0.55) * 2.0, 0, 1)
-    tint = np.stack([dry * 14, dry * 7, -dry * 4], -1)
+    """v1.0.20: fine blades, soft colour patches, very gentle relief (the old clumps looked lumpy in-game)"""
+    patches = fbm(rng, n, [n / 4, n / 10], [1, 0.6])
+    fine = noise(rng, n, 0.55)
+    blades_a = noise(rng, n, 0.5, sx=0.5, sy=2.2)
+    blades_b = noise(rng, n, 0.5, sx=2.2, sy=0.5)
+    blades = np.maximum(blades_a, blades_b)
+    shade = 1 + 0.03 * patches + 0.12 * fine + 0.20 * blades
+    dry = np.clip((patches - 0.75) * 2.0, 0, 1)
+    tint = np.stack([dry * 6, dry * 4, -dry * 1], -1)
     img = colorize(base, shade, tint).astype(float)
-    dirt = np.clip((noise(rng, n, n / 9) - 0.75) * 3, 0, 1)
-    img = mix(img, np.array([[[78, 62, 42]]], float) * (1 + 0.2 * noise(rng, n, 1))[..., None], dirt * 0.6)
-    if park:   # tiny daisies / clover
-        fl = speckles(rng, n, 0.0012, 0.7)
-        img = mix(img, np.full_like(img, 235), np.clip(fl * 1.5, 0, 1))
-    return img.astype(np.uint8), 0.5 + 0.3 * blades + 0.2 * clumps
+    dark = speckles(rng, n, 0.01, 0.5)
+    img = img * (1 - 0.25 * dark[..., None])
+    if park:   # a few tiny daisies
+        fl = speckles(rng, n, 0.0006, 0.6)
+        img = mix(img, np.full_like(img, 230), np.clip(fl * 1.5, 0, 1))
+    return img.astype(np.uint8), 0.5 + 0.12 * blades + 0.05 * fine
 
 
 def gravel(rng, n, base):
@@ -357,8 +360,8 @@ TABLE = [
     ("cobble",       lambda r, n, b: cobble(r, n, b),         1024, 2.0, 4.0),
     ("curb",         lambda r, n, b: curb(r, n, b),            512, 1.0, 2.0),
     ("gravel_path",  lambda r, n, b: gravel(r, n, b),          512, 2.0, 3.0),
-    ("park_grass",   lambda r, n, b: grass(r, n, b, True),    1024, 5.0, 1.5),
-    ("grass",        lambda r, n, b: grass(r, n, b),          1024, 5.0, 1.5),
+    ("park_grass",   lambda r, n, b: grass(r, n, b, True),    1024, 4.0, 0.5),
+    ("grass",        lambda r, n, b: grass(r, n, b),          1024, 4.0, 0.5),
     ("soil",         lambda r, n, b: soil(r, n, b),            512, 2.0, 2.0),
     ("river_stone",  lambda r, n, b: ashlar(r, n, b, 5),      1024, 3.0, 3.0),
     ("plinth_stone", lambda r, n, b: ashlar(r, n, b, 4),       512, 2.0, 3.0),

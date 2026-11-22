@@ -15,9 +15,9 @@ X0, X1, Y0, Y1 = -590.0, 590.0, -800.0, 380.0
 
 COLORS = {                               # GTA radar style
     "sea": (52, 96, 128), "land": (70, 76, 82), "water": (58, 108, 142), "park": (66, 96, 64),
-    "square": (98, 104, 110), "walk": (104, 110, 116), "road": (156, 162, 168), "bld": (118, 124, 132),
+    "square": (98, 104, 110), "walk": (104, 110, 116), "road": (156, 162, 168), "bld": (118, 124, 132), "bike": (150, 72, 62),
 }
-ORDER = ["land", "water", "park", "square", "walk", "road", "bld"]
+ORDER = ["land", "water", "park", "square", "walk", "road", "bike", "bld"]
 
 ROWS = [(0, "Europska avenija"), (-180, "Kapucinska ulica"), (-350, "Vukovarska ulica"), (125, "Šetalište kardinala Šepera"),
         (164, "Promenada uz Dravu")]
