@@ -113,7 +113,7 @@ local function startRide(pos, heading)
     while not HasAnimDictLoaded(B.AnimDict) and GetGameTimer() - t < 3000 do Wait(0) end
     TaskPlayAnim(ped, B.AnimDict, B.AnimName, 8.0, -8.0, -1, 1, 0, false, false, false)
     SetModelAsNoLongerNeeded(vh) SetModelAsNoLongerNeeded(ph)
-    ride = { veh = veh, prop = prop, start = GetGameTimer(), speed = 0.0, battery = 100.0, lastSpeed = 0.0 }
+    ride = { veh = veh, prop = prop, start = GetGameTimer(), speed = 0.0, battery = 100.0, lastSpeed = 0.0, roll = 0.0, pitch = 0.0, bob = 0.0 }
     TriggerEvent('osrp:notify', ('~g~BULET~s~ - vožnja je počela. ~y~W/A/S/D~s~ vožnja, ~y~F~s~ kraj. Cijena: $%d/min.'):format(B.PerMinute))
 end
 
@@ -158,6 +158,17 @@ CreateThread(function()
                     SetEntityHeading(r.veh, GetEntityHeading(r.veh) + turn)
                 end
                 if not IsEntityInAir(r.veh) then SetVehicleForwardSpeed(r.veh, r.speed) end
+                -- v1.0.34 own riding animation: lean into turns, lean forward when speeding up, back when braking,
+                -- soften the knees at speed and a small bounce from the road
+                local targetRoll = ((left and -1 or 0) + (right and 1 or 0)) * B.LeanDeg * math.min(1.0, real / 4.0)
+                local targetPitch = (fwd and -B.PitchDeg or 0.0) + (back and real > 1.0 and B.PitchDeg * 1.4 or 0.0)
+                r.roll = r.roll + (targetRoll - r.roll) * math.min(1.0, dt * 6.0)
+                r.pitch = r.pitch + (targetPitch - r.pitch) * math.min(1.0, dt * 5.0)
+                r.bob = r.bob + dt * (2.0 + real * 1.6)
+                local crouch = math.min(0.07, real / 7.0 * 0.07)
+                local bump = math.sin(r.bob * 6.0) * 0.006 * math.min(1.0, real / 3.0)
+                AttachEntityToEntity(ped, r.veh, 0, 0.0, -0.1, B.PedZ - crouch + bump, r.pitch, r.roll, 0.0, false, false, false, false, 2, true)
+                AttachEntityToEntity(r.prop, r.veh, 0, 0.0, 0.0, B.PropZ, r.pitch * 0.3, r.roll * 0.6, 0.0, false, false, false, false, 2, true)
                 if not IsEntityPlayingAnim(ped, B.AnimDict, B.AnimName, 3) then
                     TaskPlayAnim(ped, B.AnimDict, B.AnimName, 8.0, -8.0, -1, 1, 0, false, false, false)
                 end

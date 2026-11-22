@@ -699,8 +699,12 @@ def build_props(h):
         B(p, f"rucka_{sx}", (sx, 0.39, 1.055), (0.1, 0.05, 0.05), "rubber")
     B(p, "ekran", (0, 0.36, 1.1), (0.08, 0.06, 0.03), "screen_on")
     B(p, "svjetlo", (0, 0.47, 0.95), (0.07, 0.03, 0.05), "panel_light")
-    _mesh_obj(pcol, f"osrpprop_{p}__logo", [(0.032, 0.475, 0.3), (0.032, 0.425, 0.3), (0.032, 0.365, 0.8), (0.032, 0.415, 0.8)],
-              [(0, 1, 2, 3), (3, 2, 1, 0)], signtex("bulet"))
+    # name plates on the stem, front and back (v1.0.34: readable BULET)
+    B(p, "ploca_nosac", (0, 0.415, 0.62), (0.32, 0.08, 0.14), "bulet_green")     # plate box around the stem
+    face("prop_" + p, "ploca_p", [(-0.15, 0.63), (0.15, 0.63), (0.15, 0.75), (-0.15, 0.75)], 0.457, signtex("bulet_plate"))
+    face("prop_" + p, "ploca_z", [(-0.15, 0.63), (0.15, 0.63), (0.15, 0.75), (-0.15, 0.75)], 0.373, signtex("bulet_plate"))
+    B(p, "deck_gumica", (0, -0.02, 0.16), (0.14, 0.7, 0.008), "rubber")
+    B(p, "stop_svjetlo", (0, -0.62, 0.2), (0.06, 0.02, 0.03), "red")
     p = "bulet_stand"; names.append(p)          # station pole with sign
     C(p, "stup", (0, -0.05, 0), 0.05, 2.6, "steel", 8)
     face("prop_" + p, "lice", [(-0.45, 1.7), (0.45, 1.7), (0.45, 2.6), (-0.45, 2.6)], 0.02, signtex("bulet_stand"))

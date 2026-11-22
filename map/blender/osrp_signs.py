@@ -152,6 +152,13 @@ def draw(key):
         _center_text(d, "BULET", S * 0.42, 150, WHITE)
         d.rounded_rectangle((150, 330, 330, 380), radius=25, fill=WHITE)
         d.polygon([(330, 330), (380, 355), (330, 380)], fill=WHITE)
+    elif key == "bulet_plate":              # wide plate (2.5 : 1) - drawn wide, squeezed into the square texture
+        wide = Image.new("RGB", (1280, 512), (28, 186, 110))
+        dw = ImageDraw.Draw(wide)
+        f = _font(330)
+        b = dw.textbbox((0, 0), "BULET", font=f)
+        dw.text((640 - (b[2] - b[0]) / 2 - b[0], 256 - (b[3] - b[1]) / 2 - b[1]), "BULET", font=f, fill=WHITE)
+        return wide.resize((S, S))
     elif key == "bulet_stand":              # station sign
         d.rectangle((0, 0, S, S), fill=(28, 186, 110))
         _center_text(d, "BULET", S * 0.3, 140, WHITE)
