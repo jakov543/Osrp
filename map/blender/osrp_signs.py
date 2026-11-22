@@ -92,6 +92,22 @@ def draw(key):
         d.rectangle((0, 0, S, S), fill=BLUE)
         d.rectangle((14, 14, S - 14, S - 14), outline=WHITE, width=8)
         _center_text(d, "OSIJEK", S / 2, 120, WHITE)
+    elif key == "flag_hr":                  # Croatian flag: red, white, blue + chequered shield
+        d.rectangle((0, 0, S, S / 3), fill=(255, 0, 0)); d.rectangle((0, S / 3, S, 2 * S / 3), fill=WHITE)
+        d.rectangle((0, 2 * S / 3, S, S), fill=(23, 23, 150))
+        x0, y0, c = S / 2 - 60, S / 2 - 85, 24
+        for r in range(6):
+            for k in range(5):
+                d.rectangle((x0 + k * c, y0 + r * c, x0 + (k + 1) * c, y0 + (r + 1) * c), fill=(255, 0, 0) if (r + k) % 2 == 0 else WHITE)
+        d.pieslice((x0, y0 + 4 * c, x0 + 5 * c, y0 + 8 * c), 0, 180, fill=(255, 0, 0))
+        d.rectangle((x0, y0, x0 + 5 * c, y0 + 6 * c), outline=(255, 0, 0), width=3)
+    elif key == "hitna_sign":
+        d.rectangle((0, 0, S, S), fill=(200, 16, 30))
+        d.rectangle((S / 2 - 45, 90, S / 2 + 45, S - 90), fill=WHITE); d.rectangle((90, S / 2 - 45, S - 90, S / 2 + 45), fill=WHITE)
+    elif key == "gate":
+        d.rectangle((0, 0, S, S), fill=(18, 24, 34))
+        _center_text(d, "IZLAZ  GATE", S * 0.3, 70, (250, 200, 40), cond=True)
+        _center_text(d, "A1 - A6", S * 0.65, 110, WHITE)
     elif key == "gunshop":                  # shop sign
         d.rectangle((0, 0, S, S), fill=(24, 24, 28))
         d.rectangle((10, 10, S - 10, S - 10), outline=(230, 170, 40), width=10)
@@ -100,4 +116,4 @@ def draw(key):
     return img
 
 
-KEYS = ["stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]
+KEYS = ["flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop"]

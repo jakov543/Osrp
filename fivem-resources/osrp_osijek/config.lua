@@ -25,6 +25,13 @@ Config.DoorsLocked = false            -- true = everyone needs a key (lock them 
 
 -- Furniture inside the houses (first existing model per type)
 Config.FurnitureModels = {      -- v1.0.22: first our own Blender furniture (osrpprop_h_*), GTA props as fallback
+    -- v1.0.29 GTA props in the hospital, police station and airport
+    atm         = { 'prop_atm_01' },
+    vend_snack  = { 'prop_vend_snak_01' },
+    vend_soda   = { 'prop_vend_soda_01' },
+    vend_coffee = { 'prop_vend_coffe_01' },
+    bin_in      = { 'prop_bin_08a' },
+    wheelchair  = { 'prop_wheelchair_01' },
     -- living room
     sofa    = { 'osrpprop_h_sofa', 'hei_heist_stn_sofa2seat_02', 'v_res_tre_sofa_s', 'prop_couch_01' },
     fotelja = { 'osrpprop_h_fotelja', 'v_res_m_armchair', 'v_res_d_armchair', 'prop_armchair_01' },

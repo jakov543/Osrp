@@ -240,3 +240,7 @@ OsijekDialogNames = {
     last = { 'Horvat', 'Kovačević', 'Babić', 'Marić', 'Jurić', 'Novak', 'Knežević', 'Vuković', 'Matić', 'Pavlović' },
 }
 OsijekDialogFlights = { 'Los Santos', 'Zagreb', 'Beč', 'Frankfurt', 'London', 'Liberty City' }
+
+-- v1.0.29: café in the airport terminal (same drinks as the beach bar)
+OsijekDialogs.cafe = { title = { hr = 'Kafić', en = 'Café' }, nodes = OsijekDialogs.bartender.nodes }
+OsijekDialogRoles.s_f_y_shop_mid = 'cafe'

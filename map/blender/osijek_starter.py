@@ -300,6 +300,12 @@ for k, (a, b, y0) in enumerate(((-MAP_W / 2, BEACH_X0, QN), (BEACH_X0, BEACH_X1,
 
 BED_Z = -20.0                          # v1.0.24: Drava bed (12 m under the water)
 SEA_Z = -46.0                          # v1.0.24: sea floor around the island
+# v1.0.29: solid base right under the ground of the whole island, so no gap in the ground ever shows the void
+M_BASE = material("osrp_soil_base", (0.18, 0.14, 0.10))
+box(col, "osrp_podloga_jug", (0, (SOUTH_END - 3 + RIVER_Y - RIVER_W / 2 - 3) / 2, -2.0), (MAP_W + 6, (RIVER_Y - RIVER_W / 2 - 3) - (SOUTH_END - 3), 1.97), M_BASE)
+box(col, "osrp_podloga_sjever_a", ((-MAP_W / 2 - 3 + BEACH_X0 - 1) / 2, (RIVER_Y + RIVER_W / 2 + 3 + RIVER_Y + RIVER_W / 2 + 83) / 2, -2.0), (BEACH_X0 - 1 + MAP_W / 2 + 3, 80, 1.97), M_BASE)
+box(col, "osrp_podloga_sjever_b", ((BEACH_X1 + 1 + MAP_W / 2 + 3) / 2, (RIVER_Y + RIVER_W / 2 + 3 + RIVER_Y + RIVER_W / 2 + 83) / 2, -2.0), (MAP_W / 2 + 3 - BEACH_X1 - 1, 80, 1.97), M_BASE)
+box(col, "osrp_podloga_sjever_c", ((BEACH_X0 + BEACH_X1) / 2, (RIVER_Y + RIVER_W / 2 + 6 + RIVER_Y + RIVER_W / 2 + 83) / 2, -2.0), (BEACH_X1 - BEACH_X0, 77, 1.97), M_BASE)
 # Drava + stone banks
 # v1.0.12: no fake water plane - the river bed is open, so the real GTA sea water fills the Drava
 # (the city sits 3 m above sea level, see osrp_osijek Config.Origin). Stone walls go down into the water.
@@ -1170,6 +1176,19 @@ for k in range(5):
         cprop("curtain", bx_ + 3.3, HY + 7.2, FLOOR_Z, 90.0)
 for k in range(3):
     cprop("wchairs", HX + 25 + k * 4, HY + 20.6, FLOOR_Z, 180.0)
+# v1.0.29 hospital props: reception PCs, stretchers, crash carts, wheelchairs, vending machines, flags
+cprop("desk_pc", HX - 2.5, HY + 7.4, FLOOR_Z, 0.0)
+cprop("desk_pc", HX + 2.5, HY + 7.4, FLOOR_Z, 0.0)
+cprop("desk_pc", HX + 48, HY + 12.6, FLOOR_Z, 0.0)
+for k in range(3):
+    cprop("stretcher", HX + 26 + k * 7, HY + 16.5, FLOOR_Z, 90.0)
+for k in range(5):
+    cprop("defib", HX + 21.8 + k * 6.6, HY + 9.2, FLOOR_Z, 0.0)
+FURNITURE += [("wheelchair", HX + 16 + k * 1.0, HY + 19.5, FLOOR_Z, 0.0, 0.0) for k in range(3)]
+FURNITURE += [("vend_soda", HX - 18.5, HY + 6.0, FLOOR_Z, 90.0, 0.0), ("vend_snack", HX - 18.5, HY + 7.5, FLOOR_Z, 90.0, 0.0),
+              ("vend_coffee", HX - 18.5, HY + 9.0, FLOOR_Z, 90.0, 0.0), ("bin_in", HX - 12, HY + 20.8, FLOOR_Z, 180.0, 0.0)]
+for k, dx in enumerate((-30, -26.5, -23)):
+    cprop("flagpole", HX + dx, HY + 30, 0.1, 0.0, 250.0)
 box(col, "osrp_hitna_pult", (HX + 48, HY + 14, FLOOR_Z), (5, 1.0, 1.1), M_WHITE_STONE)
 block_text("osrp_hitna_natpis_unutra", "HITNA", (HX + 37.5 + text_width("HITNA", 0.3) / 2, HY + 4.1, 2.7), 0.3, (-1, 0, 0), (0, 0, 1), M_SIGN_RED)
 box(col, "osrp_kbc_prizemlje_s", (HX, HY + 22 - LOB_D - (44 - LOB_D) / 2, 0), (LOB_W, 44 - LOB_D, LOB_H), M_HOSP)
@@ -1320,6 +1339,22 @@ for k in range(4):
     AIRPORT["stand"].append((TX - 88 + k * 2.2, TY + 10.0, 180.0))
 for x, y, hd in ((TX - 10, TY + 10, 0.0), (TX + 24, TY + 2, 180.0), (TX + 84, TY + 2, 180.0)):
     cprop("infoboard", x, y, FLOOR_Z, hd)
+# v1.0.29 airport: security check (X-ray + metal detectors), queue barriers, café, gate desks, ATMs, bins
+for k, ly in enumerate((TY + 3.0, TY - 4.0)):
+    cprop("xray", TX + 13, ly, FLOOR_Z, 0.0)
+    cprop("metaldet", TX + 15.8, ly - 2.3, FLOOR_Z, 90.0)
+    STAFF.append(("s_m_m_security_01", TX + 13.5, ly + 1.5, 180.0, "WORLD_HUMAN_GUARD_STAND"))
+for x in range(int(TX - 72), int(TX - 6), 3):
+    cprop("qbarrier", x + 1.5, TY + 1.4, FLOOR_Z, 0.0)
+cprop("cafe", TX - 35, TY - 10.5, FLOOR_Z, 0.0)
+STAFF.append(("s_f_y_shop_mid", TX - 35, TY - 11.0, 0.0, "WORLD_HUMAN_STAND_IMPATIENT"))
+for k in range(3):
+    cprop("gatedesk", TX + 36 + k * 24, TY - 10.5, FLOOR_Z, 0.0)
+FURNITURE += [("atm", TX + 7.5 + k * 1.0, TY + 12.1, FLOOR_Z, 0.0, 0.0) for k in range(2)]
+FURNITURE += [("bin_in", TX - 90 + k * 30, TY + 11.5, FLOOR_Z, 0.0, 0.0) for k in range(7)]
+FURNITURE += [("vend_soda", TX + 92, TY + 11.6, FLOOR_Z, 0.0, 0.0), ("vend_snack", TX + 93.5, TY + 11.6, FLOOR_Z, 0.0, 0.0)]
+for k, dx in enumerate((-12, -8.5, 8.5, 12)):
+    cprop("flagpole", TX + dx, TY + 22, 0.1, 0.0, 250.0)
 cprop("carousel", TX - 80, TY - 5, FLOOR_Z, 0.0)
 cprop("carousel", TX - 62, TY - 5, FLOOR_Z, 0.0)
 for k in range(4):
@@ -1718,11 +1753,19 @@ for k in range(3):
     cprop("wchairs", PSX + 12 + k * 3.2, PFRONT - 1.2, FLOOR_Z, 180.0)
 cprop("planter", PSX - 22, PSY + 5, FLOOR_Z, 0.0)
 cprop("planter", PSX + 22, PSY + 5, FLOOR_Z, 0.0)
-for k in range(3):                         # offices: desks with a PC and chair
+for k in range(3):                         # offices: desks with a PC and chair (v1.0.29: Blender props)
     dx = PSX - 22 + k * 5
-    box(col, f"osrp_policija_stol_{k}", (dx, PSY - 6, FLOOR_Z), (1.8, 0.9, 0.75), M_WOOD)
-    box(col, f"osrp_policija_monitor_{k}", (dx, PSY - 6.25, FLOOR_Z + 0.75), (0.6, 0.06, 0.4), M_SCREEN if "M_SCREEN" in globals() else M_GLASS)
-    FURNITURE.append(("stolica", round(dx, 2), round(PSY - 5.2, 2), FLOOR_Z, 0.0, 0.0))
+    cprop("desk_pc", dx, PSY - 6, FLOOR_Z, 0.0)
+    FURNITURE.append(("stolica", round(dx, 2), round(PSY - 5.2, 2), FLOOR_Z, 180.0, 0.0))
+    cprop("filing", dx + 1.4, PSY - PD / 2 + 0.65, FLOOR_Z, 0.0)
+    cprop("desk_pc", dx, PSY - 10.5, FLOOR_Z, 0.0)
+    FURNITURE.append(("stolica", round(dx, 2), round(PSY - 9.7, 2), FLOOR_Z, 180.0, 0.0))
+cprop("desk_pc", PSX - 2.5, PSY + 7.0, FLOOR_Z + 0.0, 180.0)       # front desk computers (behind the counter)
+cprop("desk_pc", PSX + 2.5, PSY + 7.0, FLOOR_Z + 0.0, 180.0)
+cprop("flagpole", PSX + 20, PFRONT + 3.5, 0.1, 0.0, 250.0)
+cprop("flagpole", PSX + 23.5, PFRONT + 3.5, 0.1, 0.0, 250.0)
+FURNITURE += [("vend_coffee", PSX + 21.5, PFRONT - 2.2, FLOOR_Z, 180.0, 0.0), ("vend_snack", PSX + 23.0, PFRONT - 2.2, FLOOR_Z, 180.0, 0.0),
+              ("bin_in", PSX + 8, PFRONT - 1.0, FLOOR_Z, 180.0, 0.0)]
 lockers = []
 for k in range(8):                         # locker room - put on the police uniform here
     lockers.append((PSX - 7.5 + k * 1.0, PSY - PD / 2 + 0.6, FLOOR_Z, 0.9, 0.6, 2.0))
@@ -1954,4 +1997,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.27: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.29: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

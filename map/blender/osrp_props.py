@@ -548,4 +548,82 @@ def build_props(h):
         B(p, f"pistolj_{k}", (-0.6 + k * 0.6, 0, 0.77), (0.24, 0.12, 0.05), "steel")
     B(p, "ploca", (0, 0, 1.05), (2.04, 0.74, 0.03), "black")
 
+    # ---------------- v1.0.29 more props for the police station, hospital and airport (front = +Y)
+    M.update({"cabinet": material("osrp_metal_cabinet_grey", (0.45, 0.47, 0.50)), "keyboard": material("osrp_screen_keys", (0.08, 0.08, 0.09)),
+              "orange": material("osrp_paint_orange", (0.85, 0.35, 0.05)), "screen_on": material("osrp_lamp_light_screen", (0.35, 0.6, 0.95), emit=3.0),
+              "belt": material("osrp_fabric_belt_blue", (0.05, 0.15, 0.45))})
+    p = "desk_pc"; names.append(p)               # office desk with monitor, keyboard, tower, papers (person sits on +Y side)
+    B(p, "ploca", (0, 0, 0.73), (1.6, 0.8, 0.04), "wood")
+    for sx in (-0.75, 0.75):
+        B(p, f"bok_{sx}", (sx, 0, 0), (0.05, 0.75, 0.73), "cabinet")
+    B(p, "ladice", (0.45, 0, 0.05), (0.45, 0.7, 0.6), "cabinet")
+    B(p, "monitor_noga", (0, -0.25, 0.77), (0.2, 0.15, 0.02), "black")
+    B(p, "monitor_vrat", (0, -0.27, 0.79), (0.05, 0.04, 0.15), "black")
+    B(p, "monitor", (0, -0.25, 0.92), (0.62, 0.04, 0.38), "black")
+    B(p, "ekran", (0, -0.227, 0.94), (0.58, 0.005, 0.34), "screen_on")
+    B(p, "tipkovnica", (0, 0.1, 0.77), (0.45, 0.15, 0.02), "keyboard")
+    B(p, "mis", (0.32, 0.1, 0.77), (0.06, 0.1, 0.02), "keyboard")
+    B(p, "papiri", (-0.5, 0.05, 0.77), (0.3, 0.22, 0.03), "white")
+    B(p, "kuciste", (-0.55, -0.15, 0.0), (0.2, 0.45, 0.45), "black")
+    p = "filing"; names.append(p)                # filing cabinet, 4 drawers
+    B(p, "tijelo", (0, 0, 0), (0.5, 0.62, 1.32), "cabinet")
+    for k in range(4):
+        B(p, f"ladica_{k}", (0, 0.312, 0.05 + k * 0.32), (0.46, 0.01, 0.28), "steel")
+        B(p, f"rucka_{k}", (0, 0.33, 0.25 + k * 0.32), (0.14, 0.02, 0.02), "black")
+    p = "flagpole"; names.append(p)              # 8 m flag pole with the Croatian flag
+    C(p, "stup", (0, 0, 0), 0.06, 8.0, "steel", 10)
+    C(p, "baza", (0, 0, 0), 0.3, 0.25, "white", 12)
+    face("prop_" + p, "zastava", [(0.06, 6.2), (2.46, 6.2), (2.46, 7.8), (0.06, 7.8)], 0.0, signtex("flag_hr"))
+    p = "stretcher"; names.append(p)             # ambulance stretcher
+    B(p, "madrac", (0, 0, 0.82), (0.6, 1.95, 0.1), "orange")
+    B(p, "okvir", (0, 0, 0.75), (0.62, 1.98, 0.07), "steel")
+    for sy in (-0.8, 0.8):
+        B(p, f"noge_{sy}", (0, sy, 0.1), (0.5, 0.04, 0.65), "steel")
+        for sx in (-0.25, 0.25):
+            C(p, f"kotac_{sx}_{sy}", (sx, sy, 0), 0.06, 0.1, "rubber", 8)
+    B(p, "jastuk", (0, -0.75, 0.92), (0.45, 0.3, 0.08), "white")
+    p = "defib"; names.append(p)                 # crash cart with defibrillator
+    B(p, "kolica", (0, 0, 0.12), (0.7, 0.5, 0.9), "red")
+    for k in range(4):
+        B(p, f"ladica_{k}", (0, 0.252, 0.18 + k * 0.2), (0.62, 0.01, 0.16), "white")
+    B(p, "defibrilator", (0, 0, 1.02), (0.4, 0.3, 0.18), "yellow")
+    B(p, "ekran", (0, 0.152, 1.07), (0.25, 0.005, 0.1), "screen_on")
+    for sx in (-0.3, 0.3):
+        for sy in (-0.2, 0.2):
+            C(p, f"kotac_{sx}_{sy}", (sx, sy, 0), 0.06, 0.12, "rubber", 8)
+    p = "xray"; names.append(p)                  # airport security X-ray machine with belts (bags go along X)
+    B(p, "traka_ulaz", (-1.9, 0, 0), (1.8, 0.75, 0.75), "black")
+    B(p, "tunel", (0, 0, 0), (2.0, 1.1, 1.6), "white")
+    B(p, "otvor", (0, 0, 0.75), (2.02, 0.7, 0.55), "black")
+    B(p, "traka_izlaz", (2.1, 0, 0), (2.2, 0.75, 0.75), "black")
+    B(p, "valjci", (2.1, 0, 0.75), (2.2, 0.7, 0.02), "steel")
+    B(p, "monitor", (0.5, 0.75, 1.1), (0.5, 0.05, 0.35), "black")
+    B(p, "ekran", (0.5, 0.778, 1.12), (0.46, 0.005, 0.31), "screen_on")
+    B(p, "pult", (0.5, 0.75, 0), (0.6, 0.4, 1.0), "cabinet")
+    B(p, "kofer", (-2.2, 0, 0.75), (0.45, 0.3, 0.6), "case1")
+    p = "metaldet"; names.append(p)              # walk-through metal detector
+    for sx in (-0.48, 0.48):
+        B(p, f"stup_{sx}", (sx, 0, 0), (0.14, 0.6, 2.2), "cabinet")
+    B(p, "vrh", (0, 0, 2.2), (1.1, 0.6, 0.25), "cabinet")
+    B(p, "svjetlo", (0, 0.31, 2.25), (0.3, 0.01, 0.1), "screen_on")
+    p = "qbarrier"; names.append(p)              # queue posts with a blue belt, 3 m
+    for x in (-1.5, 0.0, 1.5):
+        C(p, f"stup_{x}", (x, 0, 0), 0.04, 0.95, "steel", 8)
+        C(p, f"baza_{x}", (x, 0, 0), 0.17, 0.03, "steel", 12)
+    B(p, "traka", (0, 0, 0.82), (3.0, 0.02, 0.06), "belt")
+    p = "cafe"; names.append(p)                  # coffee kiosk in the terminal
+    B(p, "pult", (0, 0.6, 0), (3.0, 0.7, 1.05), "wood")
+    B(p, "ploca", (0, 0.6, 1.05), (3.1, 0.8, 0.05), "white")
+    B(p, "zid", (0, -0.9, 0), (3.0, 0.2, 2.6), "wood")
+    B(p, "aparat", (-0.8, -0.65, 1.0), (0.6, 0.4, 0.6), "steel")
+    B(p, "vitrina", (0.6, 0.6, 1.1), (1.2, 0.6, 0.4), "glass")
+    B(p, "natpis", (0, -0.78, 2.1), (2.2, 0.02, 0.4), "sign_y")
+    for k in range(5):
+        C(p, f"salica_{k}", (-1.2 + k * 0.25, -0.75, 1.62), 0.05, 0.1, "white", 8)
+    p = "gatedesk"; names.append(p)              # boarding gate desk with a GATE sign
+    B(p, "pult", (0, 0, 0), (2.0, 0.7, 1.05), "white")
+    B(p, "ploca", (0, 0, 1.05), (2.1, 0.8, 0.04), "black")
+    C(p, "stup", (0.9, -0.2, 0), 0.04, 2.4, "steel", 8)
+    face("prop_" + p, "natpis", [(0.45, 2.0), (1.35, 2.0), (1.35, 2.6), (0.45, 2.6)], -0.17, signtex("gate"))
+
     return pcol, names
