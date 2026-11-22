@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.18)
+OSRP - Osijek starter map for Blender (V1.0.19)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -307,45 +307,111 @@ for sx in (-1, 1):
     box(col, f"osrp_rub_istok_jug_{sx}", (sx * (MAP_W / 2 + 1.5), (S0 + S1) / 2, -12), (3, S1 - S0, 12.05), M_STONE)
     box(col, f"osrp_rub_istok_sjever_{sx}", (sx * (MAP_W / 2 + 1.5), (N0 + N1) / 2, -12), (3, N1 - N0, 12.05), M_STONE)
 
-# v1.0.18: stone stairs from the quays down to the Drava (get out of the water), marina with boats
+# v1.0.19: stone stairs from the quays down to the Drava, railing along the quays, floating marina with boats
 WATER_Z = -8.0                         # GTA sea level in city coordinates (city is 8 m above the sea)
-STEP_H, STEP_RUN, STAIR_W = 0.25, 0.36, 2.6
-DOCKS = []
+STEP_H, STEP_RUN, STAIR_W, PARAPET = 0.25, 0.36, 3.2, 0.4
+M_FLOAT = material("osrp_white_stone_float", (0.80, 0.80, 0.78))
+
+
+def boxes_mesh(name, boxes, mat):
+    """many boxes in one object: (cx, cy, bottom_z, sx, sy, sz)"""
+    verts, faces = [], []
+    for (bx, by, bz, sx, sy, sz) in boxes:
+        base = len(verts)
+        for z in (bz, bz + sz):
+            for (x, y) in ((-sx / 2, -sy / 2), (sx / 2, -sy / 2), (sx / 2, sy / 2), (-sx / 2, sy / 2)):
+                verts.append((bx + x, by + y, z))
+        faces.extend(tuple(base + i for i in f) for f in _BOX_FACES)
+    return _mesh_obj(col, name, verts, faces, mat)
+
+
+STAIRS = []                            # (x0, bank) - also used for the railing openings
 
 
 def river_stairs(name, x0, bank):
-    """bank = -1 south wall (inner face y = RIVER_Y - RIVER_W/2), +1 north wall. Steps go down along +x."""
+    """bank = -1 south wall (inner face y = RIVER_Y - RIVER_W/2), +1 north wall. Steps go down along +x, parapet on the water side."""
     face = RIVER_Y + bank * RIVER_W / 2
-    yc = face - bank * STAIR_W / 2
+    walk_c = face - bank * (STAIR_W - PARAPET) / 2           # centre of the walkable part (next to the quay wall)
+    par_c = face - bank * (STAIR_W - PARAPET / 2)             # parapet on the water side
     n = int(round((0 - (WATER_Z + 0.35)) / STEP_H))
+    steps, par = [], []
     for k in range(n):
         top = -(k + 1) * STEP_H
-        box(col, f"{name}_stuba_{k}", (x0 + k * STEP_RUN + STEP_RUN / 2, yc, WATER_Z - 3), (STEP_RUN, STAIR_W, top - (WATER_Z - 3)), M_STONE)
+        x = x0 + k * STEP_RUN + STEP_RUN / 2
+        steps.append((x, walk_c, WATER_Z - 3, STEP_RUN, STAIR_W - PARAPET, top - (WATER_Z - 3)))
+        par.append((x, par_c, WATER_Z - 3, STEP_RUN, PARAPET, top + 0.95 - (WATER_Z - 3)))
     end_x = x0 + n * STEP_RUN
-    box(col, f"{name}_odmor", (end_x + 2.5, yc, WATER_Z - 3), (5, STAIR_W, 3 + 0.35), M_STONE)          # landing just above the water
-    ry = face - bank * (STAIR_W - 0.05)
-    for k in range(0, n, 4):          # handrail: posts + stepped rail on the water side
-        top = -(k + 1) * STEP_H
-        box(col, f"{name}_stup_{k}", (x0 + k * STEP_RUN + 0.1, ry, top), (0.06, 0.06, 1.0), M_POLE)
-        box(col, f"{name}_rukohvat_{k}", (x0 + (k + 2) * STEP_RUN, ry, top + 0.95), (4 * STEP_RUN, 0.06, 0.06), M_POLE)
-    return end_x + 2.5, yc
+    land = WATER_Z + 0.35
+    steps.append((end_x + 2.5, face - bank * STAIR_W / 2, WATER_Z - 3, 5, STAIR_W, land - (WATER_Z - 3)))   # landing at the water
+    boxes_mesh(f"{name}_stube", steps, M_STONE)
+    boxes_mesh(f"{name}_parapet", par, M_CURB)
+    for dx in (1.0, 4.0):     # mooring bollards on the landing edge
+        cylinder(col, f"{name}_bitva_{dx}", (end_x + dx, face - bank * (STAIR_W - 0.3), land), 0.16, 0.45, M_IRON, verts=8)
+    STAIRS.append((x0, bank))
+    return end_x, face
 
 
 for k, (x0, bank) in enumerate(((-200, -1), (100, -1), (400, -1), (-330, 1), (0, 1), (300, 1))):
     river_stairs(f"osrp_drava_stube_{k}", x0, bank)
 
-# marina: floating pontoon along the south quay with finger piers, boats tied up
-MX0, MX1 = 125, 205
-PY = RIVER_Y - RIVER_W / 2 + STAIR_W + 1.5
-box(col, "osrp_marina_ponton", ((MX0 + MX1) / 2, PY, WATER_Z - 0.3), (MX1 - MX0, 3.0, 0.65), M_WOOD)
-box(col, "osrp_marina_veza", (MX0 - 5.5, RIVER_Y - RIVER_W / 2 + STAIR_W / 2 + 0.75, WATER_Z - 0.3), (11, STAIR_W + 1.5, 0.65), M_WOOD)   # joins the stairs landing
+# railing along both quays (posts + 2 rails), open at every staircase and at the footbridge
+for bank in (-1, 1):
+    ry = RIVER_Y + bank * (RIVER_W / 2 + 0.25)
+    gaps = [(x0 - 0.4, x0 + 2.9) for (x0, b) in STAIRS if b == bank] + [(-83.5, -76.5)]
+    gaps.sort()
+    segs, cur = [], -MAP_W / 2 + 1
+    for g0, g1 in gaps:
+        segs.append((cur, g0))
+        cur = g1
+    segs.append((cur, MAP_W / 2 - 1))
+    per_chunk = {}
+    for a_, b_ in segs:
+        # cut each piece at the 100 m chunk lines
+        cuts = [a_] + [c * 100.0 for c in range(math.ceil(a_ / 100), math.floor(b_ / 100) + 1) if a_ < c * 100.0 < b_] + [b_]
+        for p0, p1 in zip(cuts, cuts[1:]):
+            lst = per_chunk.setdefault(math.floor((p0 + p1) / 2 / 100), [])
+            for z in (0.55, 1.05):
+                lst.append(((p0 + p1) / 2, ry, z, p1 - p0, 0.06, 0.06))
+            x = p0
+            while x <= p1:
+                lst.append((x, ry, 0.05, 0.07, 0.07, 1.06))
+                x += 3.0
+    for ck, lst in per_chunk.items():
+        boxes_mesh(f"osrp_drava_ograda_{bank}_{ck}", lst, M_POLE)
+
+# marina: floating pontoon on the south side, reached from the staircase at x = 100
+SX0 = 100
+s_end = SX0 + int(round((0 - (WATER_Z + 0.35)) / STEP_H)) * STEP_RUN + 5      # end of the landing
+QF = RIVER_Y - RIVER_W / 2                                                    # south quay face
+DECK = WATER_Z + 0.4                                                          # deck top, 40 cm above the water
+deck, floats = [], []
+
+
+def pontoon(x0, x1, y0, y1):
+    deck.append(((x0 + x1) / 2, (y0 + y1) / 2, DECK - 0.15, x1 - x0, y1 - y0, 0.15))
+    floats.append(((x0 + x1) / 2, (y0 + y1) / 2, WATER_Z - 0.35, x1 - x0 - 0.3, y1 - y0 - 0.3, DECK - 0.15 - (WATER_Z - 0.35)))
+
+
+MX1 = 205
+PY0, PY1 = QF + STAIR_W, QF + STAIR_W + 3.0           # main pontoon along the quay
+pontoon(s_end, s_end + 4, QF + 0.2, PY1)               # walkway from the landing
+pontoon(s_end + 4, MX1, PY0, PY1)
 BOATS = []
-for k, x in enumerate(range(MX0 + 8, MX1 - 4, 14)):
-    box(col, f"osrp_marina_prst_{k}", (x, PY + 6, WATER_Z - 0.3), (1.6, 9, 0.6), M_WOOD)
-    for dy in (2.0, 9.5):
-        cylinder(col, f"osrp_marina_stup_{k}_{dy}", (x + 0.9, PY + dy, WATER_Z - 4), 0.18, 5.0, M_WOOD, verts=8)
-    BOATS.append((x + 4.2, PY + 6.5, 90.0 if k % 2 else 270.0, ("dinghy", "jetmax", "suntrap", "tropic", "squalo", "speeder")[k % 6]))
-BOATS += [(-300, RIVER_Y + RIVER_W / 2 - STAIR_W - 5, 90.0, "seashark"), (-286, RIVER_Y + RIVER_W / 2 - STAIR_W - 5, 90.0, "seashark")]
+fingers = list(range(int(s_end) + 12, MX1 - 2, 14))
+for k, x in enumerate(fingers):
+    pontoon(x - 0.7, x + 0.7, PY1, PY1 + 10)
+    for dy in (3.0, 9.0):
+        cylinder(col, f"osrp_marina_bitva_{k}_{dy}", (x + 0.45, PY1 + dy, DECK), 0.12, 0.35, M_IRON, verts=8)
+    cylinder(col, f"osrp_marina_kolac_{k}", (x, PY1 + 10.4, WATER_Z - 4), 0.2, 4.0 + DECK - WATER_Z + 1.0, M_WOOD, verts=8)
+    if k < len(fingers) - 1:      # one boat in each berth, lengthwise between two fingers, bow to the river
+        BOATS.append((x + 7.0, PY1 + 5.5, 0.0, ("dinghy", "jetmax", "suntrap", "tropic", "squalo", "speeder")[k % 6]))
+boxes_mesh("osrp_marina_paluba", deck, M_WOOD)
+boxes_mesh("osrp_marina_plovci", floats, M_FLOAT)
+for k, x in enumerate(range(int(s_end) + 10, MX1, 24)):     # lamps on the pontoon
+    cylinder(col, f"osrp_marina_lampa_stup_{k}", (x, PY1 - 0.3, DECK), 0.06, 2.6, M_POLE, verts=6)
+    box(col, f"osrp_marina_lampa_{k}", (x, PY1 - 0.3, DECK + 2.6), (0.3, 0.3, 0.25), M_LAMP)
+# jet skis at the north staircase by the beach
+BOATS += [(-306, RIVER_Y + RIVER_W / 2 - STAIR_W - 3.5, 270.0, "seashark"), (-296, RIVER_Y + RIVER_W / 2 - STAIR_W - 3.5, 270.0, "seashark")]
 
 # Promenade (south bank)
 PROM_Y = RIVER_Y - RIVER_W / 2 - 11
@@ -1183,4 +1249,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.18: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.19: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
