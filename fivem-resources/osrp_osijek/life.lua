@@ -608,6 +608,11 @@ SEATS = {
     stolica  = { 'PROP_HUMAN_SEAT_CHAIR', 0.5, 1.0 },
     stolac   = { 'PROP_HUMAN_SEAT_BAR', 0.75, 0.9 },
     krevet_d = { 'WORLD_HUMAN_SUNBATHE_BACK', 0.75, 1.6, '~INPUT_CONTEXT~ Lezi' },
+    -- v1.0.22: Blender props in the hospital, the terminal and on the beach
+    osrpprop_wchairs   = { 'PROP_HUMAN_SEAT_CHAIR', 0.5, 1.3 },
+    osrpprop_gateseats = { 'PROP_HUMAN_SEAT_CHAIR', 0.5, 1.8 },
+    osrpprop_lounger   = { 'WORLD_HUMAN_SUNBATHE_BACK', 0.45, 1.3, '~INPUT_CONTEXT~ Lezi' },
+    osrpprop_hbed      = { 'WORLD_HUMAN_SUNBATHE_BACK', 0.75, 1.4, '~INPUT_CONTEXT~ Lezi' },
 }
 CreateThread(function()
     while true do
@@ -637,7 +642,8 @@ CreateThread(function()
                     EndTextCommandDisplayHelp(0, false, false, -1)
                     if IsControlJustReleased(0, 38) then
                         local c = GetEntityCoords(obj)
-                        TaskStartScenarioAtPosition(ped, sc[1], c.x, c.y, c.z + sc[2], GetEntityHeading(obj) + 180.0, 0, true, true)
+                        -- v1.0.22: the map stores where the piece looks (same for GTA props and our own props)
+                        TaskStartScenarioAtPosition(ped, sc[1], c.x, c.y, c.z + sc[2], f.h + 0.0, 0, true, true)
                         OsijekBenchUsed['f' .. i] = ped
                         sitting = 'f' .. i
                         Wait(800)
@@ -789,4 +795,144 @@ CreateThread(function()
         end
         Wait(2500)
     end
+end)
+
+
+-- ===================================================================== v1.0.22: people on the beach
+-- sunbathers on the loungers, people on the sand, swimmers in the Drava and divers using the pier + tower
+local BEACH_PEDS = { 'a_f_y_beach_01', 'a_f_y_beach_02', 'a_m_y_beach_01', 'a_m_y_beach_02', 'a_m_y_beach_03',
+                     'a_m_y_beach_04', 'a_f_m_beach_01', 'a_m_m_beach_01', 'a_m_m_beach_02', 'a_m_o_beach_01' }
+local SAND_SC = { 'WORLD_HUMAN_SUNBATHE', 'WORLD_HUMAN_SUNBATHE_BACK', 'WORLD_HUMAN_PICNIC', 'WORLD_HUMAN_YOGA',
+                  'WORLD_HUMAN_MUSCLE_FLEX', 'WORLD_HUMAN_TOURIST_MOBILE', 'WORLD_HUMAN_DRINKING', 'WORLD_HUMAN_HANG_OUT_STREET' }
+local beach = { peds = {}, on = false }
+
+local function beachPed(i, x, y, z, h)
+    local m = BEACH_PEDS[(i % #BEACH_PEDS) + 1]
+    local hash = firstModel({ m, 'a_m_y_beach_01' })
+    if not (hash and load(hash)) then return nil end
+    local w = W(x, y, z)
+    local p = CreatePed(4, hash, w.x, w.y, w.z, h or 0.0, false, true)
+    SetModelAsNoLongerNeeded(hash)
+    SetBlockingOfNonTemporaryEvents(p, true)
+    SetPedKeepTask(p, true)
+    SetPedCanRagdoll(p, true)
+    SetPedDiesInWater(p, false)
+    SetPedMaxTimeUnderwater(p, 60.0)
+    beach.peds[#beach.peds + 1] = p
+    return p
+end
+
+local function goTo(p, x, y, z, speed, timeout)
+    local w = W(x, y, z or 0.0)
+    TaskGoStraightToCoord(p, w.x, w.y, w.z, speed or 1.0, -1, 0.0, 0.5)
+    local t = GetGameTimer()
+    while DoesEntityExist(p) and beach.on do
+        local c = GetEntityCoords(p)
+        if #(vec2(c.x, c.y) - vec2(w.x, w.y)) < 0.9 then return true end
+        if GetGameTimer() - t > (timeout or 25000) then return false end
+        Wait(250)
+    end
+    return false
+end
+
+-- a diver: walk onto the pier, climb the tower (or the board), walk off the edge, swim back, repeat
+local function diver(p, k)
+    local B = Life.BEACH
+    local Z = B.z
+    CreateThread(function()
+        while DoesEntityExist(p) and beach.on do
+            local ok = true
+            local route = ({ B.board, B.jump3, B.jump5 })[(k % 3) + 1]
+            -- down the sand onto the pier; tower divers then go up the stairs (points 3 + 4)
+            for n, pt in ipairs(B.jump) do
+                if ok and (n <= 2 or route ~= B.board) then ok = goTo(p, pt[1], pt[2], Z[1], 1.0) end
+            end
+            for n, pt in ipairs(route) do
+                if ok then ok = goTo(p, pt[1], pt[2], Z[1], n == #route and 2.0 or 1.0, n == #route and 4000 or 25000) end
+            end
+            -- in the water now (or stuck): swim back to the beach
+            local t = GetGameTimer()
+            while DoesEntityExist(p) and beach.on and not IsEntityInWater(p) and GetGameTimer() - t < 6000 do Wait(300) end
+            Wait(1500)
+            for _, pt in ipairs(B.out) do
+                if DoesEntityExist(p) and beach.on then goTo(p, pt[1], pt[2], Z[4], 1.0, 45000) end
+            end
+            Wait(math.random(4000, 12000))
+            if not ok and DoesEntityExist(p) and beach.on then        -- reset a stuck diver on the sand
+                local w = W(B.jump[1][1], B.jump[1][2], 0.3)
+                SetEntityCoords(p, w.x, w.y, w.z, false, false, false, false)
+            end
+        end
+    end)
+end
+
+local function beachUp()
+    local B = Life.BEACH
+    if not B then return end
+    beach.on = true
+    local n = 0
+    for i, l in ipairs(B.loungers or {}) do              -- every 2nd lounger has somebody on it
+        if i % 2 == 1 then
+            n = n + 1
+            local p = beachPed(n, l[1], l[2], 0.6, l[3])
+            if p then
+                local w = W(l[1], l[2], 0.12 + 0.45)
+                TaskStartScenarioAtPosition(p, 'WORLD_HUMAN_SUNBATHE_BACK', w.x, w.y, w.z, l[3], 0, true, true)
+            end
+        end
+    end
+    for i, s in ipairs(B.stand or {}) do
+        n = n + 1
+        local p = beachPed(n, s[1], s[2], 0.3, s[3])
+        if p then TaskStartScenarioInPlace(p, SAND_SC[(i % #SAND_SC) + 1], 0, true) end
+    end
+    for i, sw in ipairs(B.swim or {}) do                -- swimmers going back and forth
+        n = n + 1
+        local p = beachPed(n, sw[1], sw[2], B.z[4], 0.0)
+        if p then
+            CreateThread(function()
+                local a = true
+                while DoesEntityExist(p) and beach.on do
+                    if a then goTo(p, sw[3], sw[4], B.z[4], 1.0, 40000) else goTo(p, sw[1], sw[2], B.z[4], 1.0, 40000) end
+                    a = not a
+                    Wait(math.random(1000, 6000))
+                end
+            end)
+        end
+    end
+    for k = 1, 4 do                                       -- divers
+        n = n + 1
+        local p = beachPed(n, B.jump[1][1] + k * 1.5, B.jump[1][2] + k, 0.3, 180.0)
+        if p then
+            Wait(k * 3000)
+            diver(p, k)
+        end
+    end
+end
+
+local function beachDown()
+    beach.on = false
+    for _, p in ipairs(beach.peds) do if DoesEntityExist(p) then DeletePed(p) end end
+    beach.peds = {}
+end
+
+CreateThread(function()
+    while true do
+        local B = Life.BEACH
+        if B and B.jump and B.jump[1] then
+            local c = W(B.jump[1][1], B.jump[1][2], 0.0)
+            local d = #(GetEntityCoords(PlayerPedId()) - c)
+            if d < 160.0 and not beach.on then
+                -- wait for the sand collision under the beach, otherwise people fall through
+                if groundAt(B.jump[1][1], B.jump[1][2], 0.0) then beachUp() end
+            elseif d > 220.0 and beach.on then
+                beachDown()
+            end
+        end
+        Wait(2000)
+    end
+end)
+
+AddEventHandler('onResourceStop', function(res)
+    if res == GetCurrentResourceName() then beachDown() end
 end)

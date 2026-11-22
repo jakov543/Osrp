@@ -41,12 +41,16 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
 with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
-    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES")}
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH")}
               | {"PLACES": {k: list(v) for k, v in city["PLACES"].items()}}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
-    json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4]} for m in city["FURNITURE"]], f)
+    json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4], "r": (m[5] if len(m) > 5 else 0.0)} for m in city["FURNITURE"]], f)
 objs = [o for o in col.objects if o.type == "MESH"]
 print(f"[OSRP] {len(objs)} meshes built")
+# v1.0.22: custom props (osrp_props.py) - every prop becomes its own model "osrpprop_<name>"
+pcol = city["PROP_COL"]
+prop_parts = [o for o in pcol.objects if o.type == "MESH"]
+print(f"[OSRP] {len(prop_parts)} prop parts, {len(city['PROP_NAMES'])} props")
 
 from sollumz.ydr.shader_materials import create_shader  # noqa: E402
 from sollumz.ybn.collision_materials import create_collision_material_from_index, collisionmats  # noqa: E402
@@ -158,7 +162,7 @@ def find_node(mat, name):
 
 
 new_mats, mat_tile, mat_col = {}, {}, {}
-for seed, mat in enumerate(sorted({m for o in objs for m in o.data.materials if m}, key=lambda m: m.name)):
+for seed, mat in enumerate(sorted({m for o in objs + prop_parts for m in o.data.materials if m}, key=lambda m: m.name)):
     r, g, b = (to_srgb(c) for c in mat.diffuse_color[:3])
     rgb = (int(r * 255), int(g * 255), int(b * 255))
     hexcol = "#%02x%02x%02x" % rgb
@@ -216,7 +220,7 @@ def world_uv(o):
             uv.data[li].uv = (u - su, v - sv)
 
 
-for o in objs:
+for o in objs + prop_parts:
     for i, slot in enumerate(o.material_slots):
         if slot.material and slot.material.name in new_mats:
             o.material_slots[i].material = new_mats[slot.material.name]
@@ -257,11 +261,31 @@ for (cx, cy), members in sorted(cells.items()):
 
 print(f"[OSRP] {len(chunk_objs)} chunks")
 
+prop_objs = []
+part_names = [o.name for o in prop_parts]
+for pname in city["PROP_NAMES"]:
+    members = [bpy.data.objects[n] for n in part_names if n.startswith(f"osrpprop_{pname}__")]
+    if not members:
+        print("[OSRP] prop without parts:", pname)
+        continue
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in members:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = members[0]
+    if len(members) > 1:
+        bpy.ops.object.join()
+    obj = bpy.context.view_layer.objects.active
+    obj.name = f"osrpprop_{pname}"
+    bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
+    bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+    prop_objs.append(obj)
+print(f"[OSRP] {len(prop_objs)} custom props")
+
 # ---------------------------------------------------------------- convert chunks to drawables (+ embedded collision)
 bpy.context.scene.auto_create_embedded_col = True
 bpy.context.scene.create_seperate_drawables = True
 drawables = []
-for obj in chunk_objs:
+for obj in chunk_objs + prop_objs:
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -308,7 +332,7 @@ for d in drawables:
 bpy.context.view_layer.objects.active = drawables[0]
 bpy.ops.sollumz.createarchetypefromselected()
 for a in ytyp.archetypes:
-    a.lod_dist = LOD_DIST
+    a.lod_dist = 150.0 if a.name.startswith("osrpprop_") else LOD_DIST
 
 # ---------------------------------------------------------------- 5. export
 st = get_export_settings()

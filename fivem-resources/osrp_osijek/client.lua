@@ -193,7 +193,9 @@ CreateThread(function()
 end)
 
 local function spawnFurniture(i, f)
-    local model = firstModel('f_' .. f.kind, Config.FurnitureModels[f.kind])
+    -- v1.0.22: kinds "osrpprop_*" are our own Blender props (stream/osrpprop_*.ydr), they already face the right way
+    local custom = f.kind:sub(1, 9) == 'osrpprop_'
+    local model = custom and f.kind or firstModel('f_' .. f.kind, Config.FurnitureModels[f.kind])
     if not model then return end
     local hash = joaat(model)
     if not loadModel(hash) then return end
@@ -201,7 +203,7 @@ local function spawnFurniture(i, f)
     local obj = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
     -- GTA furniture models face -Y, the map stores where the piece should look -> turn it (Config.FurnitureTurn)
     local turn = (Config.FurnitureTurn or {})[f.kind]
-    if turn == nil then turn = Config.FurnitureTurnDefault or 180.0 end
+    if turn == nil then turn = (model:sub(1, 9) == 'osrpprop_') and 0.0 or (Config.FurnitureTurnDefault or 180.0) end
     SetEntityHeading(obj, (f.h + turn) % 360.0)
     FreezeEntityPosition(obj, true)
     SetModelAsNoLongerNeeded(hash)
@@ -222,6 +224,7 @@ CreateThread(function()
         end
         for i, f in ipairs(Furniture) do
             local dist = #(pos - world(f))
+            local R = (f.r and f.r > 0) and f.r or Config.InteriorDistance
             if dist < R then
                 if not furnObjs[i] or not DoesEntityExist(furnObjs[i]) then spawnFurniture(i, f) end
             elseif furnObjs[i] and dist > R + 30.0 then
@@ -352,4 +355,69 @@ end)
 CreateThread(function()
     Wait(2000)
     TriggerEvent('chat:addSuggestion', '/osijek', 'Teleport u Osijek (admin)')
+end)
+
+
+-- ===================================================================== v1.0.22: automatic sliding glass doors
+-- Life.SLIDEDOORS: { x, y, z, heading, panel width, model } - two panels slide apart when somebody walks up
+local slide = {}
+local function slidePanels(d)
+    local r = math.rad(d[4])
+    local rx, ry = math.cos(r), math.sin(r)
+    return rx, ry
+end
+CreateThread(function()
+    while true do
+        local ped = PlayerPedId()
+        local pos = GetEntityCoords(ped)
+        local active = false
+        for i, d in ipairs(Life.SLIDEDOORS or {}) do
+            local c = world({ x = d[1], y = d[2], z = d[3] })
+            local dist = #(pos - c)
+            local s = slide[i]
+            if dist < 80.0 then
+                if not s then
+                    local hash = joaat(d[6])
+                    if IsModelInCdimage(hash) and loadModel(hash) then
+                        s = { open = 0.0, objs = {} }
+                        local rx, ry = slidePanels(d)
+                        for k, sgn in ipairs({ -1, 1 }) do
+                            local o = CreateObjectNoOffset(hash, c.x + rx * sgn * d[5] / 2, c.y + ry * sgn * d[5] / 2, c.z, false, false, false)
+                            SetEntityHeading(o, d[4])
+                            FreezeEntityPosition(o, true)
+                            s.objs[k] = o
+                        end
+                        SetModelAsNoLongerNeeded(hash)
+                        slide[i] = s
+                    end
+                end
+                if s then
+                    -- anybody (you, other players, NPCs) within 3.5 m opens it
+                    local want = dist < 3.5
+                    if not want then
+                        for _, p in ipairs(GetGamePool('CPed')) do
+                            if #(GetEntityCoords(p) - c) < 3.5 then want = true break end
+                        end
+                    end
+                    local target = want and (d[5] - 0.15) or 0.0
+                    if math.abs(s.open - target) > 0.01 then
+                        active = true
+                        s.open = s.open + math.max(-0.06, math.min(0.06, target - s.open))
+                        local rx, ry = slidePanels(d)
+                        for k, sgn in ipairs({ -1, 1 }) do
+                            local off = sgn * (d[5] / 2 + s.open)
+                            if DoesEntityExist(s.objs[k]) then
+                                SetEntityCoordsNoOffset(s.objs[k], c.x + rx * off, c.y + ry * off, c.z, false, false, false)
+                            end
+                        end
+                    end
+                    if dist < 12.0 then active = true end
+                end
+            elseif s and dist > 100.0 then
+                for _, o in ipairs(s.objs) do if DoesEntityExist(o) then DeleteObject(o) end end
+                slide[i] = nil
+            end
+        end
+        Wait(active and 0 or 500)
+    end
 end)

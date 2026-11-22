@@ -23,38 +23,38 @@ Config.DoorModels = { 'v_ilev_fh_frontdoor', 'v_ilev_trevtraildr', 'prop_com_ls_
 Config.DoorsLocked = false            -- true = everyone needs a key (lock them from your own scripts)
 
 -- Furniture inside the houses (first existing model per type)
-Config.FurnitureModels = {      -- v1.0.21: all names checked against the full GTA V object list
+Config.FurnitureModels = {      -- v1.0.22: first our own Blender furniture (osrpprop_h_*), GTA props as fallback
     -- living room
-    sofa    = { 'hei_heist_stn_sofa2seat_02', 'v_res_tre_sofa_s', 'prop_couch_01' },
-    fotelja = { 'v_res_m_armchair', 'v_res_d_armchair', 'prop_armchair_01' },
-    stolic  = { 'apa_mp_h_tab_coffee_07', 'apa_mp_h_tab_coffee_08', 'prop_table_04' },
-    tepih   = { 'apa_mp_h_acc_rugwoolm_01', 'apa_mp_h_acc_rugwooll_03' },
-    tvstol  = { 'apa_mp_h_str_avunitm_01', 'prop_tv_cabinet_03' },
-    tv      = { 'prop_tv_flat_01', 'prop_tv_flat_02', 'prop_tv_03' },
-    polica  = { 'apa_mp_h_str_shelffloorm_02', 'v_res_cabinet' },
-    slika   = { 'apa_mp_h_acc_artwalll_01', 'apa_mp_h_acc_artwallm_02' },
-    lampa   = { 'apa_mp_h_lit_floorlamp_01', 'apa_mp_h_floorlamp_a' },
-    stol    = { 'apa_mp_h_din_table_04', 'v_res_tre_table2', 'prop_table_03' },
-    stolica = { 'hei_heist_din_chair_01', 'apa_mp_h_din_chair_04', 'prop_chair_01a' },
-    biljka  = { 'apa_mp_h_acc_plant_tall_01', 'prop_plant_int_01a', 'prop_pot_plant_01a' },
+    sofa    = { 'osrpprop_h_sofa', 'hei_heist_stn_sofa2seat_02', 'v_res_tre_sofa_s', 'prop_couch_01' },
+    fotelja = { 'osrpprop_h_fotelja', 'v_res_m_armchair', 'v_res_d_armchair', 'prop_armchair_01' },
+    stolic  = { 'osrpprop_h_stolic', 'apa_mp_h_tab_coffee_07', 'apa_mp_h_tab_coffee_08', 'prop_table_04' },
+    tepih   = { 'osrpprop_h_tepih', 'apa_mp_h_acc_rugwoolm_01', 'apa_mp_h_acc_rugwooll_03' },
+    tvstol  = { 'osrpprop_h_tvstol', 'apa_mp_h_str_avunitm_01', 'prop_tv_cabinet_03' },
+    tv      = { 'osrpprop_h_tv', 'prop_tv_flat_01', 'prop_tv_flat_02', 'prop_tv_03' },
+    polica  = { 'osrpprop_h_polica', 'apa_mp_h_str_shelffloorm_02', 'v_res_cabinet' },
+    slika   = { 'osrpprop_h_slika', 'apa_mp_h_acc_artwalll_01', 'apa_mp_h_acc_artwallm_02' },
+    lampa   = { 'osrpprop_h_lampa', 'apa_mp_h_lit_floorlamp_01', 'apa_mp_h_floorlamp_a' },
+    stol    = { 'osrpprop_h_stol', 'apa_mp_h_din_table_04', 'v_res_tre_table2', 'prop_table_03' },
+    stolica = { 'osrpprop_h_stolica', 'hei_heist_din_chair_01', 'apa_mp_h_din_chair_04', 'prop_chair_01a' },
+    biljka  = { 'osrpprop_h_biljka', 'apa_mp_h_acc_plant_tall_01', 'prop_plant_int_01a', 'prop_pot_plant_01a' },
     -- kitchen
-    hladnjak = { 'prop_fridge_01', 'prop_fridge_03' },
-    stednjak = { 'v_res_ovenhobmod', 'prop_cooker_03' },
-    sudoper  = { 'v_res_m_sinkunit', 'prop_sink_06' },
-    ormaric  = { 'prop_cs_kitchen_cab_l', 'prop_cs_kitchen_cab_r' },
-    kuh_stol = { 'prop_table_03', 'prop_table_04' },
-    stolac   = { 'v_ilev_fh_kitchenstool', 'prop_chair_04a' },
+    hladnjak = { 'osrpprop_h_hladnjak', 'prop_fridge_01', 'prop_fridge_03' },
+    stednjak = { 'osrpprop_h_stednjak', 'v_res_ovenhobmod', 'prop_cooker_03' },
+    sudoper  = { 'osrpprop_h_sudoper', 'v_res_m_sinkunit', 'prop_sink_06' },
+    ormaric  = { 'osrpprop_h_ormaric', 'prop_cs_kitchen_cab_l', 'prop_cs_kitchen_cab_r' },
+    kuh_stol = { 'osrpprop_h_kuh_stol', 'prop_table_03', 'prop_table_04' },
+    stolac   = { 'osrpprop_h_stolac', 'v_ilev_fh_kitchenstool', 'prop_chair_04a' },
     -- bathroom
-    wc        = { 'prop_toilet_01', 'prop_toilet_02' },
-    umivaonik = { 'v_res_mbsink', 'prop_sink_02' },
-    kada      = { 'v_res_mbath', 'apa_mp_h_bathtub_01' },
-    rucnik    = { 'prop_towel_shelf_01' },
+    wc        = { 'osrpprop_h_wc', 'prop_toilet_01', 'prop_toilet_02' },
+    umivaonik = { 'osrpprop_h_umivaonik', 'v_res_mbsink', 'prop_sink_02' },
+    kada      = { 'osrpprop_h_kada', 'v_res_mbath', 'apa_mp_h_bathtub_01' },
+    rucnik    = { 'osrpprop_h_rucnik', 'prop_towel_shelf_01' },
     -- bedroom
-    krevet_d     = { 'apa_mp_h_bed_double_08', 'hei_heist_bed_double_08' },
-    nocni        = { 'hei_heist_bed_table_dble_04', 'apa_mp_h_bed_table_wide_12' },
-    stolna_lampa = { 'apa_mp_h_lit_lamptable_02', 'v_res_desklamp' },
-    ormar        = { 'v_res_tre_wardrobe' },
-    komoda       = { 'v_res_mbdresser', 'apa_mp_h_bed_chestdrawer_02' },
+    krevet_d     = { 'osrpprop_h_krevet_d', 'apa_mp_h_bed_double_08', 'hei_heist_bed_double_08' },
+    nocni        = { 'osrpprop_h_nocni', 'hei_heist_bed_table_dble_04', 'apa_mp_h_bed_table_wide_12' },
+    stolna_lampa = { 'osrpprop_h_stolna_lampa', 'apa_mp_h_lit_lamptable_02', 'v_res_desklamp' },
+    ormar        = { 'osrpprop_h_ormar', 'v_res_tre_wardrobe' },
+    komoda       = { 'osrpprop_h_komoda', 'v_res_mbdresser', 'apa_mp_h_bed_chestdrawer_02' },
     -- hospital / terminal
     automat = { 'prop_vend_snak_01', 'prop_vend_soda_01', 'prop_vend_soda_02' },
     kava    = { 'prop_vend_coffe_01', 'prop_vend_water_01' },
@@ -107,7 +107,7 @@ Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_0
                      'a_f_m_bevhills_01', 'a_m_y_vinewood_01', 'a_f_y_tourist_01', 'a_m_m_skater_01', 'a_f_y_eastsa_01',
                      'a_m_y_bevhills_01', 'a_f_y_bevhills_02', 'a_m_m_eastsa_02', 'a_f_m_tourist_01', 'a_m_y_runner_01',
                      'a_f_y_runner_01', 'a_m_o_genstreet_01', 'a_f_o_genstreet_01', 'a_m_y_genstreet_01', 'a_f_y_genhot_01',
-                     'a_m_m_tourist_01', 'a_m_y_student_01', 'a_f_y_student_01', 'a_m_m_farmer_01', 'a_f_m_fatwhite_01' }
+                     'a_m_m_tourist_01', 'a_m_y_hipster_01', 'a_f_y_hipster_01', 'a_m_m_farmer_01', 'a_f_m_fatwhite_01' }
 
 Config.Traffic = true
 Config.TrafficCount = 10            -- cars with drivers driving around the city

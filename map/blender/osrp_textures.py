@@ -178,9 +178,9 @@ def grass(rng, n, base, park=False):
     blades_a = noise(rng, n, 0.5, sx=0.5, sy=2.2)
     blades_b = noise(rng, n, 0.5, sx=2.2, sy=0.5)
     blades = np.maximum(blades_a, blades_b)
-    shade = 1 + 0.03 * patches + 0.12 * fine + 0.20 * blades
-    dry = np.clip((patches - 0.75) * 2.0, 0, 1)
-    tint = np.stack([dry * 6, dry * 4, -dry * 1], -1)
+    shade = 0.86 + 0.03 * patches + 0.12 * fine + 0.20 * blades     # v1.0.22: darker overall
+    dry = np.clip((patches - 0.85) * 2.0, 0, 1)
+    tint = np.stack([dry * 1.5, dry * 1.5, -dry * 0.5], -1)          # v1.0.22: almost no yellow patches
     img = colorize(base, shade, tint).astype(float)
     dark = speckles(rng, n, 0.01, 0.5)
     img = img * (1 - 0.25 * dark[..., None])
