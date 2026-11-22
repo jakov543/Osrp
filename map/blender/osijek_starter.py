@@ -297,20 +297,66 @@ QN = RIVER_Y + RIVER_W / 2              # north quay face
 for k, (a, b, y0) in enumerate(((-MAP_W / 2, BEACH_X0, QN), (BEACH_X0, BEACH_X1, QN + 2), (BEACH_X1, MAP_W / 2, QN))):
     plane(col, f"osrp_ground_north_{k}", ((a + b) / 2, (y0 + QN + 80) / 2, 0), (b - a, QN + 80 - y0), M_GRASS)
 
+BED_Z = -20.0                          # v1.0.24: Drava bed (12 m under the water)
+SEA_Z = -46.0                          # v1.0.24: sea floor around the island
 # Drava + stone banks
 # v1.0.12: no fake water plane - the river bed is open, so the real GTA sea water fills the Drava
 # (the city sits 3 m above sea level, see osrp_osijek Config.Origin). Stone walls go down into the water.
-box(col, "osrp_obala_jug", (0, RIVER_Y - RIVER_W / 2 - 1.5, -12), (MAP_W, 3, 12.05), M_STONE)
+box(col, "osrp_obala_jug", (0, RIVER_Y - RIVER_W / 2 - 1.5, BED_Z), (MAP_W, 3, -BED_Z + 0.05), M_STONE)
 for k, (a, b) in enumerate(((-MAP_W / 2, BEACH_X0 - 1), (BEACH_X1 + 1, MAP_W / 2))):
-    box(col, f"osrp_obala_sjever_{k}", ((a + b) / 2, RIVER_Y + RIVER_W / 2 + 1.5, -12), (b - a, 3, 12.05), M_STONE)
+    box(col, f"osrp_obala_sjever_{k}", ((a + b) / 2, RIVER_Y + RIVER_W / 2 + 1.5, BED_Z), (b - a, 3, -BED_Z + 0.05), M_STONE)
 # outer quay walls: the city stands 3 m above the GTA sea, these walls go down into the water so it is not a floating plate
 S0, S1 = SOUTH_END, -105 + 265            # south land band (y)
 N0, N1 = RIVER_Y + RIVER_W / 2, RIVER_Y + RIVER_W / 2 + 80
-box(col, "osrp_rub_jug", (0, S0 - 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
-box(col, "osrp_rub_sjever", (0, N1 + 1.5, -12), (MAP_W + 6, 3, 12.05), M_STONE)
+box(col, "osrp_rub_jug", (0, S0 - 1.5, BED_Z), (MAP_W + 6, 3, -BED_Z + 0.05), M_STONE)
+box(col, "osrp_rub_sjever", (0, N1 + 1.5, BED_Z), (MAP_W + 6, 3, -BED_Z + 0.05), M_STONE)
 for sx in (-1, 1):
-    box(col, f"osrp_rub_istok_jug_{sx}", (sx * (MAP_W / 2 + 1.5), (S0 + S1) / 2, -12), (3, S1 - S0, 12.05), M_STONE)
-    box(col, f"osrp_rub_istok_sjever_{sx}", (sx * (MAP_W / 2 + 1.5), (N0 + N1) / 2, -12), (3, N1 - N0, 12.05), M_STONE)
+    box(col, f"osrp_rub_istok_jug_{sx}", (sx * (MAP_W / 2 + 1.5), (S0 + S1) / 2, BED_Z), (3, S1 - S0, -BED_Z + 0.05), M_STONE)
+    box(col, f"osrp_rub_istok_sjever_{sx}", (sx * (MAP_W / 2 + 1.5), (N0 + N1) / 2, BED_Z), (3, N1 - N0, -BED_Z + 0.05), M_STONE)
+
+# ---------- v1.0.24 under the water: Drava bed, rock slope round the island, sea floor, wreck, rocks, weed ----------
+M_BED = material("osrp_beach_sand_riverbed", (0.20, 0.18, 0.13))
+M_ROCK = material("osrp_stones_seabed", (0.17, 0.17, 0.16))
+plane(col, "osrp_drava_dno", (0, RIVER_Y, BED_Z), (MAP_W + 2, RIVER_W + 2), M_BED)
+
+
+def slope_band(name, x0, y0, x1, y1, ox, oy, z_in, z_out, mat):
+    """quad strip from the line (x0,y0)-(x1,y1) at z_in, pushed out by (ox,oy) to z_out - split every 100 m"""
+    L = math.hypot(x1 - x0, y1 - y0)
+    n = max(1, int(math.ceil(L / GRID)))
+    for i in range(n):
+        t0, t1 = i / n, (i + 1) / n
+        ax, ay = x0 + (x1 - x0) * t0, y0 + (y1 - y0) * t0
+        bx, by = x0 + (x1 - x0) * t1, y0 + (y1 - y0) * t1
+        v = [(ax, ay, z_in), (bx, by, z_in), (bx + ox, by + oy, z_out), (ax + ox, ay + oy, z_out)]
+        cross = (bx - ax) * oy - (by - ay) * ox
+        _mesh_obj(col, f"{name}_{i}", v, [(0, 1, 2, 3) if cross < 0 else (3, 2, 1, 0)], mat)
+
+
+HW, OUT = MAP_W / 2 + 3, 30.0
+# rocks from the foot of the outer walls down to the sea floor (south, north, east + west land parts, river mouths)
+slope_band("osrp_more_kosina_jug", -HW, S0 - 3, HW, S0 - 3, 0, -OUT, BED_Z, SEA_Z, M_ROCK)
+slope_band("osrp_more_kosina_sjever", HW, N1 + 3, -HW, N1 + 3, 0, OUT, BED_Z, SEA_Z, M_ROCK)
+for sx in (-1, 1):
+    for nm, (ya, yb) in (("j", (S0 - 3, S1)), ("s", (N0, N1 + 3)), ("r", (RIVER_Y - RIVER_W / 2, RIVER_Y + RIVER_W / 2))):
+        a, b = (ya, yb) if sx > 0 else (yb, ya)
+        slope_band(f"osrp_more_kosina_{nm}_{sx}", sx * HW, a, sx * HW, b, sx * OUT, 0, BED_Z, SEA_Z, M_ROCK)
+# sea floor all round (the part under the city is hidden)
+plane(col, "osrp_more_dno", (0, (S0 - 3 - OUT + N1 + 3 + OUT) / 2, SEA_Z), (2 * (HW + OUT) + 40, (N1 + 3 + OUT) - (S0 - 3 - OUT) + 40), M_BED)
+# rocks + weed on the Drava bed
+rng = random.Random(24)
+UNDERWATER = []      # custom props under the water (added to FURNITURE later)
+for k in range(70):
+    x, y = rng.uniform(-530, 530), rng.uniform(RIVER_Y - RIVER_W / 2 + 4, RIVER_Y + RIVER_W / 2 - 4)
+    if BEACH_X0 - 5 < x < BEACH_X1 + 5 and y > 212:
+        continue
+    blob(col, f"osrp_drava_kamen_{k}", (x, y, BED_Z + 0.2), rng.uniform(0.6, 2.2), M_ROCK, squash=0.5)
+for k in range(40):
+    x, y = rng.uniform(-520, 520), rng.uniform(RIVER_Y - RIVER_W / 2 + 6, RIVER_Y + RIVER_W / 2 - 6)
+    UNDERWATER.append(("osrpprop_kelp", round(x, 2), round(y, 2), BED_Z, float(rng.randint(0, 359)), 120.0))
+# the wreck of an old Drava cargo boat + a sunken row boat near the beach
+UNDERWATER.append(("osrpprop_wreck", 330.0, 212.0, BED_Z, 72.0, 250.0))
+UNDERWATER.append(("osrpprop_wreck_small", -150.0, 226.0, BED_Z, 200.0, 150.0))
 
 # v1.0.19: stone stairs from the quays down to the Drava, railing along the quays, floating marina with boats
 WATER_Z = -8.0                         # GTA sea level in city coordinates (city is 8 m above the sea)
@@ -470,8 +516,8 @@ def open_segments(x0, x1, gap_half):
 for side in (-1, 1):
     y_edge = side * (ROAD_W / 2)
     for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)):
-        box(col, f"osrp_rubnik_{side}_{k}", ((a + b) / 2, y_edge + side * 0.15, 0.1), (b - a, 0.3, 0.18), M_CURB)
-        box(col, f"osrp_plocnik_av_{side}_{k}", ((a + b) / 2, y_edge + side * 4.15, 0.1), (b - a, 7.7, 0.16), M_WALK)   # up to the houses
+        box(col, f"osrp_rubnik_{side}_{k}", ((a + b) / 2, y_edge + side * 0.15, 0.0), (b - a, 0.3, 0.28), M_CURB)
+        box(col, f"osrp_plocnik_av_{side}_{k}", ((a + b) / 2, y_edge + side * 4.15, 0.0), (b - a, 7.7, 0.26), M_WALK)   # up to the houses
 
 # Side streets
 plane(col, "osrp_ulica_jug", (0, -180, 0.1), (MAP_W, SIDE_ROAD_W), M_ROAD)
@@ -489,8 +535,8 @@ for i, x in enumerate(CROSS_X):
     for side in (-1, 1):
         xe = x + side * SIDE_ROAD_W / 2
         for (ya, yb, tag) in ((-345, -185, "j2"), (-175, -ROAD_W / 2 - 6.3, "j"), (ROAD_W / 2 + 6.3, 120, "s")):
-            box(col, f"osrp_rubnik_p_{i}_{side}_{tag}", (xe + side * 0.15, (ya + yb) / 2, 0.1), (0.3, yb - ya, 0.18), M_CURB)
-            box(col, f"osrp_plocnik_p_{i}_{side}_{tag}", (xe + side * 1.55, (ya + yb) / 2, 0.1), (2.5, yb - ya, 0.16), M_WALK)
+            box(col, f"osrp_rubnik_p_{i}_{side}_{tag}", (xe + side * 0.15, (ya + yb) / 2, 0.0), (0.3, yb - ya, 0.28), M_CURB)
+            box(col, f"osrp_plocnik_p_{i}_{side}_{tag}", (xe + side * 1.55, (ya + yb) / 2, 0.0), (2.5, yb - ya, 0.26), M_WALK)
         # dashed centre line
         for k, yy in enumerate(range(-340, 120, 10)):
             if abs(yy) < ROAD_W / 2 + 7 or abs(yy + 180) < 8:
@@ -536,11 +582,11 @@ for name, yc in (("jug2", -350), ("jug", -180), ("rijeka", 125)):
         else:
             segs = open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2)
         for k, (a, b) in enumerate(segs):
-            box(col, f"osrp_rubnik_{name}_{side}_{k}", ((a + b) / 2, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.1), (b - a, 0.3, 0.18), M_CURB)
+            box(col, f"osrp_rubnik_{name}_{side}_{k}", ((a + b) / 2, yc + side * (SIDE_ROAD_W / 2 + 0.15), 0.0), (b - a, 0.3, 0.28), M_CURB)
             # v1.0.13: sidewalk along the side street (between the cross-street sidewalks)
             sa, sb = a + 2.8, b - 2.8
             if sb > sa:
-                box(col, f"osrp_plocnik_{name}_{side}_{k}", ((sa + sb) / 2, yc + side * (SIDE_ROAD_W / 2 + 1.55), 0.1), (sb - sa, 2.5, 0.16), M_WALK)
+                box(col, f"osrp_plocnik_{name}_{side}_{k}", ((sa + sb) / 2, yc + side * (SIDE_ROAD_W / 2 + 1.55), 0.0), (sb - sa, 2.5, 0.26), M_WALK)
     # dashed centre line
     for k, (a, b) in enumerate(open_segments(-MAP_W / 2, MAP_W / 2, SIDE_ROAD_W / 2 + 4)):
         xx, n = a + 2, 0
@@ -647,7 +693,7 @@ for k in range(26):
 
 MAPRECTS = []    # (kind, cx, cy, w, h) - drawn on the GTA minimap / pause map by osrp_osijek
 DOORS = []       # (x, y, z, heading) - real GTA V doors placed in-game by osrp_osijek
-FURNITURE = []   # (kind, x, y, z, heading[, draw range]) - furniture + v1.0.23 custom Blender props (kind "osrpprop_*")
+FURNITURE = list(UNDERWATER)   # (kind, x, y, z, heading[, draw range]) - furniture + v1.0.23 custom Blender props (kind "osrpprop_*")
 SLIDEDOORS = []  # v1.0.23: (x, y, z, heading, panel width, model) automatic sliding glass doors (two panels)
 
 
@@ -847,8 +893,8 @@ DECK_TOP = 0.25
 box(col, "osrp_most_paluba", (BR_X, RIVER_Y, DECK_TOP - 0.6), (5, RIVER_W + 8, 0.6), M_STEEL)
 box(col, "osrp_most_hodnik", (BR_X, RIVER_Y, DECK_TOP - 0.02), (4.2, RIVER_W + 8, 0.04), M_FLOOR)
 for k, yy in enumerate((RIVER_Y - RIVER_W / 2 + 5, RIVER_Y + RIVER_W / 2 - 5)):
-    box(col, f"osrp_most_pilon_{k}", (BR_X - 3.2, yy, -12), (1.2, 1.2, 36), M_STEEL)
-    box(col, f"osrp_most_pilon_{k}b", (BR_X + 3.2, yy, -12), (1.2, 1.2, 36), M_STEEL)
+    box(col, f"osrp_most_pilon_{k}", (BR_X - 3.2, yy, BED_Z), (1.2, 1.2, 24 - BED_Z), M_STEEL)
+    box(col, f"osrp_most_pilon_{k}b", (BR_X + 3.2, yy, BED_Z), (1.2, 1.2, 24 - BED_Z), M_STEEL)
     box(col, f"osrp_most_greda_{k}", (BR_X, yy, 22.5), (7.6, 1.0, 1.0), M_STEEL)
 for side in (-1, 1):
     box(col, f"osrp_most_ograda_{side}", (BR_X + side * 2.3, RIVER_Y, DECK_TOP), (0.1, RIVER_W + 8, 1.1), M_STEEL)
@@ -947,7 +993,7 @@ M_SAND = material("osrp_beach_sand", (0.78, 0.68, 0.48))
 M_RWLIGHT = material("osrp_lamp_light_runway", (1.0, 0.85, 0.5), emit=25.0)
 M_HANGAR = material("osrp_hangar_metal", (0.55, 0.58, 0.60), rough=0.4, metal=0.7)
 SPECIAL = []        # (x, y, z or None, heading, model, livery) vehicles placed in-game (ambulances, planes, heli)
-PLACES = {}         # named points used by the scripts (hospital door, EMS garage, ...)
+PLACES = {"wreck": (330, 212)}         # named points used by the scripts (hospital door, EMS garage, ...)
 
 
 def line(name, x, y, sx, sy, mat=None, z=0.1):
@@ -1212,6 +1258,14 @@ for k in range(28):
     line(f"osrp_terminal_mjesto2_{k}", TX - 84 + k * 6.2, -405, 0.12, 5.0)
 plane(col, "osrp_cesta_aerodrom", (150, -376, 0.1), (10, 38), M_ROAD)
 line("osrp_cesta_aerodrom_crta", 150, -376, 0.13, 34)
+# v1.0.24: curbs + sidewalks along the airport road and the service roads (no more road edge floating over the grass)
+for sx in (-1, 1):
+    box(col, f"osrp_rubnik_aerodrom_{sx}", (150 + sx * 5.15, -376.5, 0.0), (0.3, 37, 0.28), M_CURB)
+    box(col, f"osrp_plocnik_aerodrom_{sx}", (150 + sx * 6.55, -378.0, 0.0), (2.5, 34, 0.26), M_WALK)
+    for k, (a, b) in enumerate(((-460, -418.2), (-407.8, -395)) if sx < 0 else ((-460, -395),)):   # open where the link road joins
+        box(col, f"osrp_rubnik_servisna_{sx}_{k}", (312 + sx * 5.15, (a + b) / 2, 0.0), (0.3, b - a, 0.28), M_CURB)
+for sy in (-1, 1):
+    box(col, f"osrp_rubnik_servisna_veza_{sy}", (298.5, -413 + sy * 5.15, 0.0), (16.4, 0.3, 0.28), M_CURB)
 SIGNS_EXTRA = [("stop", 150 + 6, -358.5, 0.0)]
 # control tower, hangars, windsock
 cylinder(col, "osrp_toranj_stup", (390, -470, 0), 3.6, 30, M_TERM, verts=14)
@@ -1320,8 +1374,11 @@ def sand_z(y):
 for i, (cx_, hx_) in enumerate(_cuts((BEACH_X0 + BEACH_X1) / 2, (BEACH_X1 - BEACH_X0) / 2)):
     a, b = cx_ - hx_, cx_ + hx_
     _mesh_obj(col, f"osrp_plaza_kosina_{i}", [(a, SAND_LOW, -10.5), (b, SAND_LOW, -10.5), (b, SAND_TOP, 0.12), (a, SAND_TOP, 0.12)], [(0, 1, 2, 3)], M_SAND)
+for i, (cx_, hx_) in enumerate(_cuts((BEACH_X0 + BEACH_X1) / 2, (BEACH_X1 - BEACH_X0) / 2)):     # v1.0.24: on down to the river bed
+    a, b = cx_ - hx_, cx_ + hx_
+    _mesh_obj(col, f"osrp_plaza_kosina_dno_{i}", [(a, SAND_LOW - 24, BED_Z + 0.02), (b, SAND_LOW - 24, BED_Z + 0.02), (b, SAND_LOW, -10.5), (a, SAND_LOW, -10.5)], [(0, 1, 2, 3)], M_SAND)
 for k, x in enumerate((BEACH_X0 - 0.5, BEACH_X1 + 0.5)):     # stone side walls where the quay stops
-    box(col, f"osrp_plaza_zid_{k}", (x, (SAND_LOW + QN + 3) / 2, -12), (1.0, QN + 3 - SAND_LOW, 12.17), M_STONE)
+    box(col, f"osrp_plaza_zid_{k}", (x, (SAND_LOW + QN + 3) / 2 - 8, BED_Z), (1.0, QN + 3 - SAND_LOW + 16, -BED_Z + 0.17), M_STONE)
 # pier on posts, 0.7 m above the water, from the sand out into the river
 PIER_X = -252.5
 PIER_Z = WATER_Z + 0.7
@@ -1332,7 +1389,7 @@ pier.append((PIER_X, (PIER_Y0 + PIER_Y1) / 2, PIER_Z - 0.25, 5, PIER_Y0 - PIER_Y
 y = PIER_Y1 + 1
 while y < PIER_Y0:
     for dx in (-2.2, 2.2):
-        posts.append((PIER_X + dx, y, -14, 0.35, 0.35, PIER_Z - 0.25 + 14))
+        posts.append((PIER_X + dx, y, BED_Z, 0.35, 0.35, PIER_Z - 0.25 - BED_Z))
     y += 4
 # steps out of the water on the west side of the pier end (0.35 m each)
 pier += [(PIER_X - 2.75 - 0.5 * (3 - k), PIER_Y1 + 3, WATER_Z - 2.0, 0.5, 3, 2.0 + PIER_Z - 0.25 - WATER_Z - (3 - k) * 0.35) for k in range(4)]
@@ -1357,7 +1414,7 @@ tower.append((TW_X0 + 3.4, PIER_Y1 + 9.5, T5 - 0.25, 3.0, 3.0, 0.25))          #
 for (px, py) in ((TW_X0 + 0.2, PIER_Y1 - 0.8), (TW_X0 + 3.8, PIER_Y1 - 0.8), (TW_X0 + 0.2, PIER_Y1 + 2.8), (TW_X0 + 3.8, PIER_Y1 + 2.8),
                  (TW_X0 + 2.1, PIER_Y1 + 8.2), (TW_X0 + 4.7, PIER_Y1 + 8.2), (TW_X0 + 2.1, PIER_Y1 + 10.8), (TW_X0 + 4.7, PIER_Y1 + 10.8)):
     top = T3 - 0.25 if py < PIER_Y1 + 5 else T5 - 0.25
-    tower.append((px, py, -14, 0.25, 0.25, top + 14))
+    tower.append((px, py, BED_Z, 0.25, 0.25, top - BED_Z))
 boxes_mesh("osrp_plaza_toranj", tower, M_WHITE_STONE)
 # railings (open on the jump sides: 3 m to the south, 5 m to the east)
 trail += [(TW_X0 + 0.02, PIER_Y1 + 0.5, T3, 0.05, 3.0, 1.0)]
@@ -1607,4 +1664,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.23: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.24: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

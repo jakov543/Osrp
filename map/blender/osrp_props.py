@@ -393,4 +393,72 @@ def build_props(h):
         B(p, f"ladica_{k}", (0, 0.251, 0.07 + k * 0.26), (0.92, 0.01, 0.22), "dark")
     B(p, "ogledalo", (0, -0.22, 0.85), (0.7, 0.03, 0.8), "glass")
 
+    # ---------------- v1.0.24 under the water: sunken boats + river weed (front = +Y, base = river bed)
+    M.update({"rust": material("osrp_metal_rust_wreck", (0.26, 0.12, 0.06), rough=0.9),
+              "rust2": material("osrp_metal_rust_dark", (0.14, 0.09, 0.06), rough=0.95),
+              "oldwood": material("osrp_wood_wreck", (0.20, 0.15, 0.10)),
+              "weed": material("osrp_leaves_riverweed", (0.10, 0.22, 0.08))})
+
+    def hull(prop, part, length, beam, depth, roll, sink, m, segs=10, broken=0.0):
+        """V-shaped open hull along Y, rolled by `roll` degrees and sunk `sink` m into the bed; `broken` cuts the bow off"""
+        cr, sr = math.cos(math.radians(roll)), math.sin(math.radians(roll))
+
+        def R(x, y, z):
+            return (x * cr - z * sr, y, x * sr + z * cr - sink)
+        vs, fs = [], []
+        ys = [-length / 2 + i * (length * (1 - broken)) / segs for i in range(segs + 1)]
+        for y in ys:
+            t = (y + length / 2) / length                      # 0 stern .. 1 bow
+            w = beam / 2 * (1 - max(0, t - 0.7) / 0.3 * 0.9) if t > 0.7 else beam / 2
+            kz = depth * 0.15 * max(0, t - 0.75) / 0.25        # bow keel rises
+            for (x, z) in ((-w, depth), (-w * 0.9, depth * 0.35), (0, kz), (w * 0.9, depth * 0.35), (w, depth)):
+                vs.append(R(x, y, z))
+        n = 5
+        for i in range(segs):
+            for j in range(n - 1):
+                a, b = i * n + j, i * n + j + 1
+                fs.append((a, b, b + n, a + n))
+                fs.append((a + n, b + n, b, a))            # both sides visible (open, broken hull)
+        fs.append((0, 1, 2, 3, 4)); fs.append((4, 3, 2, 1, 0))        # stern plate
+        return _mesh_obj(pcol, f"osrpprop_{prop}__{part}", vs, fs, M[m])
+
+    def tilted_box(prop, part, c, size, roll, sink, m):
+        cr, sr = math.cos(math.radians(roll)), math.sin(math.radians(roll))
+        x0, y0, z0 = c
+        sx, sy, sz = size
+        vs = []
+        for z in (z0, z0 + sz):
+            for (x, y) in ((x0 - sx / 2, y0 - sy / 2), (x0 + sx / 2, y0 - sy / 2), (x0 + sx / 2, y0 + sy / 2), (x0 - sx / 2, y0 + sy / 2)):
+                vs.append((x * cr - z * sr, y, x * sr + z * cr - sink))
+        return _mesh_obj(pcol, f"osrpprop_{prop}__{part}", vs, [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)], M[m])
+
+    p = "wreck"; names.append(p)                # 26 m river cargo boat, lying on its side, bow broken off
+    hull(p, "trup", 26, 7, 4.2, 22, 0.8, "rust", 12, 0.12)
+    tilted_box(p, "paluba", (0, -2, 3.4), (6.0, 16, 0.15), 22, 0.8, "rust2")
+    tilted_box(p, "kabina", (0, -9.5, 3.55), (4.6, 4.0, 3.0), 22, 0.8, "rust")
+    tilted_box(p, "kabina_krov", (0, -9.5, 6.55), (5.0, 4.4, 0.2), 22, 0.8, "rust2")
+    tilted_box(p, "dimnjak", (0, -11.0, 6.75), (0.9, 0.9, 2.2), 22, 0.8, "rust2")
+    tilted_box(p, "jarbol", (0, 2.0, 3.55), (0.35, 0.35, 6.5), 22, 0.8, "rust2")
+    tilted_box(p, "grotlo", (0, 3.0, 3.55), (3.2, 5.0, 0.6), 22, 0.8, "rust")
+    for k, (x, y) in enumerate(((5.5, 4.0), (6.5, 6.0), (-6.0, -3.0), (4.8, 12.5))):     # spilled barrels + crates
+        C(p, f"bacva_{k}", (x, y, 0), 0.35, 0.95, "rust", 10)
+    for k, (x, y, sz) in enumerate(((7.0, 9.0, 1.2), (-5.0, 8.0, 1.0))):
+        B(p, f"sanduk_{k}", (x, y, 0), (sz, sz, sz * 0.8), "oldwood")
+    B(p, "pramac", (2.0, 15.5, 0), (4.5, 3.5, 1.4), "rust")                                # the broken-off bow piece
+    blob(pcol, "osrpprop_wreck__sidro", (-4.0, 14.0, 0.3), 0.6, M["rust2"], squash=0.4)
+
+    p = "wreck_small"; names.append(p)          # sunken wooden row boat
+    hull(p, "trup", 5.0, 1.6, 0.8, -35, 0.15, "oldwood", 6)
+    tilted_box(p, "klupa", (0, 0.2, 0.55), (1.4, 0.3, 0.06), -35, 0.15, "oldwood")
+    B(p, "veslo", (1.6, 0.5, 0), (0.12, 2.6, 0.05), "oldwood")
+
+    p = "kelp"; names.append(p)                 # river weed clump
+    rr = __import__("random").Random(7)
+    for k in range(9):
+        a = k * 0.7
+        x, y = math.cos(a) * 0.5 * (k % 3), math.sin(a) * 0.5 * (k % 3)
+        hgt = rr.uniform(1.2, 3.2)
+        B(p, f"list_{k}", (x, y, 0), (0.18, 0.04, hgt), "weed")
+        B(p, f"list2_{k}", (x + 0.1, y, 0), (0.04, 0.18, hgt * 0.8), "weed")
+
     return pcol, names

@@ -40,11 +40,17 @@ local function loadDict(d)
     while not HasAnimDictLoaded(d) and GetGameTimer() - t < 4000 do Wait(0) end
 end
 
+-- v1.0.24: wait a moment for the map collision there; the city is flat, so fall back to street level
 local function ground(p)
-    RequestCollisionAtCoord(p.x, p.y, p.z)
-    local ok, gz = GetGroundZFor_3dCoord(p.x, p.y, p.z + 8.0, false)
-    if not ok or math.abs(gz - p.z) > 4.0 then return nil end
-    return vector3(p.x, p.y, gz)
+    local t = GetGameTimer()
+    repeat
+        RequestCollisionAtCoord(p.x, p.y, p.z)
+        local ok, gz = GetGroundZFor_3dCoord(p.x, p.y, p.z + 8.0, false)
+        if ok and math.abs(gz - p.z) <= 4.0 then return vector3(p.x, p.y, gz) end
+        Wait(100)
+    until GetGameTimer() - t > 1500
+    if OsijekInCityFlat and OsijekInCityFlat(p) then return vector3(p.x, p.y, Config.Origin.z + 0.12) end
+    return nil
 end
 
 local function pick(list) return list[math.random(#list)] end
@@ -56,6 +62,10 @@ end
 
 local function inCity(p)
     return #(vec2(p.x, p.y) - vec2(Config.Origin.x, Config.Origin.y)) < Config.CityRadius
+end
+-- a point on a street of the city (road level is Config.Origin.z)
+function OsijekInCityFlat(p)
+    return inCity(p) and math.abs(p.z - Config.Origin.z) < 3.0
 end
 
 -- a street point some distance from the player (on a real street), with ground loaded
@@ -101,8 +111,13 @@ end
 local function car(model, p, heading)
     local h = load(model or pick(Config.TrafficModels))
     if not h then return nil end
+    RequestCollisionAtCoord(p.x, p.y, p.z)
     local v = CreateVehicle(h, p.x, p.y, p.z + 0.4, heading or 0.0, false, false)
     SetEntityAsMissionEntity(v, true, true)
+    local t = GetGameTimer()        -- v1.0.24: do not let the car drop through a map part that is still loading
+    FreezeEntityPosition(v, true)
+    while not HasCollisionLoadedAroundEntity(v) and GetGameTimer() - t < 3000 do Wait(50) end
+    FreezeEntityPosition(v, false)
     SetVehicleOnGroundProperly(v)
     SetModelAsNoLongerNeeded(h)
     return v
@@ -342,7 +357,12 @@ EVENTS.chase = function()
     local start = ground(wps[1])
     if not start then return false end
     local sv = car(pick({ 'sultan', 'buffalo', 'futo', 'blista' }), start)
-    local pv = car('police', start - vector3(0.0, 0.0, 0.0) + vector3(-28.0, 0.0, 0.0))
+    local dir = wps[2] - wps[1]
+    dir = dir / math.max(0.1, #dir)
+    local hd = GetHeadingFromVector_2d(dir.x, dir.y)
+    local pstart = ground(start - dir * 25.0) or start
+    local pv = car('police', pstart, hd)
+    if sv then SetEntityHeading(sv, hd) end
     if not sv or not pv then delete({ sv, pv }) return false end
     local sd, pd = npc(nil, start), npc('s_m_y_cop_01', start)
     if not sd or not pd then delete({ sv, pv, sd, pd }) return false end
@@ -376,6 +396,7 @@ local function run(name)
     local ok, res = pcall(fn)
     if not ok then print(('[osrp_osijek] event %s failed: %s'):format(name, tostring(res))) end
     active = active - 1
+    return ok and res
 end
 
 CreateThread(function()
@@ -411,5 +432,11 @@ RegisterNetEvent('osrp_osijek:testEvent', function(name)
         for k in pairs(EVENTS) do names[#names + 1] = k end
         return notify('Događaji: ~y~' .. table.concat(names, ', '))
     end
-    CreateThread(function() run(name) end)
+    CreateThread(function()
+        -- v1.0.24: tell the admin when an event could not start here (and why)
+        if not run(name) then
+            local why = ({ hit_and_run = 'stani na cestu (pješke) i probaj opet', thief = 'izađi iz vozila' })[name] or 'nema slobodne ulice u blizini, pomakni se malo'
+            notify(('~o~Događaj %s se ne može pokrenuti:~s~ %s.'):format(name, why))
+        end
+    end)
 end)

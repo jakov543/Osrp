@@ -172,22 +172,45 @@ def curb(rng, n, base):
 
 
 def grass(rng, n, base, park=False):
-    """v1.0.20: fine blades, soft colour patches, very gentle relief (the old clumps looked lumpy in-game)"""
-    patches = fbm(rng, n, [n / 4, n / 10], [1, 0.6])
-    fine = noise(rng, n, 0.55)
-    blades_a = noise(rng, n, 0.5, sx=0.5, sy=2.2)
-    blades_b = noise(rng, n, 0.5, sx=2.2, sy=0.5)
-    blades = np.maximum(blades_a, blades_b)
-    shade = 0.86 + 0.03 * patches + 0.12 * fine + 0.20 * blades     # v1.0.22: darker overall
-    dry = np.clip((patches - 0.85) * 2.0, 0, 1)
-    tint = np.stack([dry * 1.5, dry * 1.5, -dry * 0.5], -1)          # v1.0.22: almost no yellow patches
-    img = colorize(base, shade, tint).astype(float)
-    dark = speckles(rng, n, 0.01, 0.5)
-    img = img * (1 - 0.25 * dark[..., None])
+    """v1.0.24: real-looking lawn - tens of thousands of thin blades (dark roots, bright lime tips) that flow in
+    soft waves, drawn seamlessly (wrap-around) over a dark base"""
+    # flow direction field: blades lean the same way in waves (like the reference photo)
+    flow = fbm(rng, n, [n / 7, n / 16], [1, 0.5]) * np.pi * 1.2 + rng.uniform(0, np.pi)
+    img = np.zeros((n, n, 3), float)
+    dark = fbm(rng, n, [n / 6, n / 20], [1, 0.5])
+    img[...] = np.array([20, 44, 13], float) * (0.92 + 0.16 * dark[..., None])
+    height = np.full((n, n), 0.25)
+    nb = int(n * n * 0.06)                        # ~63k blades at 1024 px
+    bx, by = rng.uniform(0, n, nb), rng.uniform(0, n, nb)
+    ang = flow[by.astype(int) % n, bx.astype(int) % n] + rng.normal(0, 0.35, nb)
+    length = rng.uniform(n * 0.03, n * 0.075, nb)
+    bend = rng.normal(0, 0.6, nb)
+    hue = rng.uniform(0, 1, nb)
+    lit = rng.uniform(0.75, 1.15, nb)
+    root = np.array([22, 52, 14], float)
+    tip_a = np.array([118, 178, 42], float)       # lime
+    tip_b = np.array([62, 120, 30], float)        # deeper green
+    if park:
+        tip_a = np.array([96, 158, 44], float)
+    steps = 14
+    for k in range(steps + 1):                    # draw from root to tip, tips land on top
+        t = k / steps
+        a = ang + bend * t * t
+        x = (bx + np.cos(a) * length * t).astype(int) % n
+        y = (by + np.sin(a) * length * t).astype(int) % n
+        tip = tip_a * (1 - hue[:, None]) + tip_b * hue[:, None]
+        col = (root * (1 - t ** 0.8) + tip * t ** 0.8) * lit[:, None]
+        width = 1 if t > 0.55 else 2              # blades get thinner to the tip
+        for dx in range(width):
+            img[y, (x + dx) % n] = col
+            height[y, (x + dx) % n] = 0.3 + 0.7 * t
+    # soft light / shadow waves over the lawn and a few dry blades
+    wave = fbm(rng, n, [n / 4], [1])
+    img *= (0.95 + 0.08 * wave)[..., None]        # gentle, so the tiling does not show
     if park:   # a few tiny daisies
-        fl = speckles(rng, n, 0.0006, 0.6)
+        fl = speckles(rng, n, 0.0005, 0.6)
         img = mix(img, np.full_like(img, 230), np.clip(fl * 1.5, 0, 1))
-    return img.astype(np.uint8), 0.5 + 0.12 * blades + 0.05 * fine
+    return np.clip(img, 0, 255).astype(np.uint8), height
 
 
 def gravel(rng, n, base):
