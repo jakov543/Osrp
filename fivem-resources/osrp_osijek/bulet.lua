@@ -183,7 +183,9 @@ CreateThread(function()
                 r.roll = r.roll + (targetRoll - r.roll) * math.min(1.0, dt * 6.0)
                 r.pitch = r.pitch + (targetPitch - r.pitch) * math.min(1.0, dt * 5.0)
                 r.bob = r.bob + dt * (2.0 + real * 1.6)
-                local crouch = math.min(0.07, real / 7.0 * 0.07)
+                local crouch = math.min(0.07, real / 7.0 * 0.07) + (back and real > 1.0 and 0.05 or 0.0)
+                local kick = (r.kick or 0.0) > 0.0 and math.max(0.0, math.sin(r.kick * math.pi)) * 0.06 or 0.0
+                crouch = crouch + kick
                 local bump = math.sin(r.bob * 6.0) * 0.006 * math.min(1.0, real / 3.0)
                 AttachEntityToEntity(ped, r.veh, 0, 0.0, -0.1, B.PedZ - crouch + bump, r.pitch, r.roll, 0.0, false, false, false, false, 2, true)
                 AttachEntityToEntity(r.prop, r.veh, 0, 0.0, 0.0, B.PropZ, r.pitch * 0.3, r.roll * 0.6, 0.0, false, false, false, false, 2, true)
@@ -198,6 +200,21 @@ CreateThread(function()
                             AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, 0.42, 0.40, 0.0, 0.0, r.steer, false, false, false, false, 2, true)
                         end
                     end
+                end
+                -- v1.0.37 custom rider animation on top of the stand pose:
+                --  * both hands locked on the grips (arm IK, follows the turning bar)
+                --  * head looks where you steer, knees bend more when you brake, push-off dip when starting slow
+                local steerObj, gx, gy, gz = r.prop, 0.25, 0.3, 1.13
+                for _, pt in ipairs(r.parts) do if pt.kind == 'steer' then steerObj, gy, gz = pt.obj, -0.12, 0.73 end end
+                if B.HandIK ~= false and DoesEntityExist(steerObj) then
+                    SetIkTarget(ped, 3, steerObj, 0, -gx, gy, gz, 0, 120, 120)     -- left hand
+                    SetIkTarget(ped, 4, steerObj, 0, gx, gy, gz, 0, 120, 120)      -- right hand
+                end
+                SetIkTarget(ped, 1, r.prop, 0, r.steer / 22.0 * 2.5, 8.0, 1.5, 0, 250, 250)   -- look ahead / into the turn
+                if fwd and real < 2.5 then
+                    r.kick = (r.kick or 0.0) + dt * 2.2
+                else
+                    r.kick = 0.0
                 end
                 if not IsEntityPlayingAnim(ped, B.AnimDict, B.AnimName, 3) then
                     TaskPlayAnim(ped, B.AnimDict, B.AnimName, 8.0, -8.0, -1, 1, 0, false, false, false)

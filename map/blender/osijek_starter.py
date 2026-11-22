@@ -958,7 +958,7 @@ for bx in range(len(CROSS_X) - 1):
 
 # Pedestrian bridge over the Drava (Pješački most) - deck level with the banks, you can walk on it
 BR_X = -80
-M_BRIDGE = material("osrp_bridge_steel_white", (0.86, 0.87, 0.88), rough=0.4, metal=0.6)   # v1.0.36: white like the real bridge
+M_BRIDGE = material("osrp_bridge_steel_white", (0.86, 0.87, 0.88), rough=0.4, metal=0.6)   # v1.0.37: white like the real bridge
 DECK_TOP = 0.25
 box(col, "osrp_most_paluba", (BR_X, RIVER_Y, DECK_TOP - 0.6), (5, RIVER_W + 8, 0.6), M_BRIDGE)
 box(col, "osrp_most_hodnik", (BR_X, RIVER_Y, DECK_TOP - 0.02), (4.2, RIVER_W + 8, 0.04), M_FLOOR)
@@ -979,7 +979,7 @@ for side in (-1, 1):
         yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
         box(col, f"osrp_most_kabel_{side}_{k}", (BR_X + side * 2.6, yy, 22.5 - 18 * math.sin(t * math.pi) - 0.15), (0.25, (RIVER_W - 10) / 48 * 1.9, 0.3), M_BRIDGE)
 
-# v1.0.36: LED light strips (purple handrails, red pylons) - in-game coloured lights at night come from client.lua (Life.BRIDGE)
+# v1.0.37: LED light strips (purple handrails, red pylons) - in-game coloured lights at night come from client.lua (Life.BRIDGE)
 M_LED_PURPLE = material("osrp_lamp_light_led_purple", (0.65, 0.2, 1.0), emit=6.0)
 M_LED_RED = material("osrp_lamp_light_led_red", (1.0, 0.12, 0.2), emit=6.0)
 for side in (-1, 1):
@@ -2036,7 +2036,7 @@ PLACES["gunshop"] = (GSX, GFRONT + 3)
 MAPRECTS.append(("bld", GSX, GSY, GW, GD))
 LANDMARKS.append(("Oružarnica", GSX, GSY))
 
-# ---------- v1.0.36 shops next to the gun shop: STIL (clothes, change your look) + VOLT (phone, radio, tablet ...) ----------
+# ---------- v1.0.37 shops next to the gun shop: STIL (clothes, change your look) + VOLT (phone, radio, tablet ...) ----------
 STORES = {}
 def shop_building(tag, cx, wall_rgb, sign, clerk, label):
     w, dpt, h = 18.0, 14.0, 4.6
@@ -2084,7 +2084,7 @@ for k in range(2):
 for k in range(3):
     cprop("tech_shelf", 55.0 + k * 3.0, GSY - 6.6, FLOOR_Z, 0.0)
 
-# ---------- v1.0.36 billboards (both sides) ----------
+# ---------- v1.0.37 billboards (both sides) ----------
 for model, x, y, hd in (("billboard_osijek", -540.0, 26.0, 0.0), ("billboard_kava", 540.0, -26.0, 0.0), ("billboard_bulet", -200.0, -372.0, 0.0),
                         ("billboard_volt", 172.0, -374.0, 90.0), ("billboard_stil", -540.0, -26.0, 0.0)):
     cprop(model, x, y, 0.05, hd, 300.0)
@@ -2100,13 +2100,13 @@ for x, y, hd in ((-520, -(ROAD_W / 2 + 1.3), 0.0), (520, ROAD_W / 2 + 1.3, 180.0
 # v1.0.28: places with a roof you can walk under - no rain inside (x, y, width, depth, roof height)
 INDOORS = [(HX, HY, 111, 45, LOB_H), (TX, TY, 200, 26, 12), (PSX, PSY, PW, PD, PG), (GSX, GSY, GW, GD, GH),
            (GX, GY, 28, 32, 7), (PSX, PFRONT + 3.0, 12, 6, 3.6), (HX, HY + 26, 18, 8, 3.8)]
-INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]   # (v1.0.36 shops are "bld" too)
+INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]   # (v1.0.37 shops are "bld" too)
 
 # ---------- v1.0.30 entrances (stone step up to the floor) + curbs round the car parks ----------
 for k, (x, y, w) in enumerate(((HX, HY + 22.6, 7.0), (ERX, HY + 22.6, 4.0), (PSX, PFRONT + 0.6, 7.0), (GSX, GFRONT + 0.6, 4.0))):
     box(col, f"osrp_ulaz_stepenica_{k}", (x, y, 0.0), (w, 1.2, FLOOR_Z), M_WHITE_STONE)
     box(col, f"osrp_ulaz_otirac_{k}", (x, y - 0.1, FLOOR_Z), (w - 1.5, 0.9, 0.012), M_CANOPY)
-# v1.0.36: airport + police get the same dark door frame as the hospital entrance (+ airport step and mat)
+# v1.0.37: airport + police get the same dark door frame as the hospital entrance (+ airport step and mat)
 M_DOORDARK = material("osrp_door_frame_dark", (0.12, 0.13, 0.16), rough=0.4, metal=0.6)
 for tag, x, y in (("aerodrom", TX, TY + 12.8), ("policija", PSX, PFRONT - 0.15)):
     for sx in (-1, 1):
@@ -2156,4 +2156,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.36: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.37: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
