@@ -13,7 +13,7 @@ def build_props(h):
     pcol = bpy.data.collections.new("OSRP_Props")
     bpy.context.scene.collection.children.link(pcol)
     M = {
-        "steel": h["M_STEEL"], "pole": h["M_POLE"], "glass": h["M_GLASS"], "white": material("osrp_ceramic_white", (0.86, 0.87, 0.87)),
+        "steel": h["M_STEEL"], "pole": h["M_POLE"], "glass": h["M_CLEAR"], "mirror": h["M_GLASS"], "white": material("osrp_ceramic_white", (0.86, 0.87, 0.87)),
         "black": material("osrp_screen_black", (0.02, 0.02, 0.025), rough=0.1),
         "blue": material("osrp_fabric_seat_blue", (0.10, 0.22, 0.42)), "teal": material("osrp_fabric_teal", (0.05, 0.40, 0.38)),
         "mattress": material("osrp_fabric_bedding", (0.75, 0.77, 0.80)), "curtain": material("osrp_fabric_curtain", (0.45, 0.62, 0.70)),
@@ -349,7 +349,7 @@ def build_props(h):
     B(p, "ormaric", (0, 0, 0), (0.7, 0.45, 0.8), "white")
     B(p, "umivaonik", (0, 0.02, 0.8), (0.65, 0.45, 0.1), "white")
     C(p, "slavina", (0, -0.16, 0.9), 0.02, 0.16, "steel", 6)
-    B(p, "ogledalo", (0, -0.215, 1.15), (0.6, 0.02, 0.75), "glass")
+    B(p, "ogledalo", (0, -0.215, 1.15), (0.6, 0.02, 0.75), "mirror")
 
     p = H("kada")                               # bath tub 1.7 x 0.75 (long side along x)
     B(p, "rub_l", (0, -0.34, 0), (1.7, 0.07, 0.58), "white")
@@ -391,7 +391,7 @@ def build_props(h):
     B(p, "tijelo", (0, 0, 0), (1.0, 0.5, 0.85), "oak")
     for k in range(3):
         B(p, f"ladica_{k}", (0, 0.251, 0.07 + k * 0.26), (0.92, 0.01, 0.22), "dark")
-    B(p, "ogledalo", (0, -0.22, 0.85), (0.7, 0.03, 0.8), "glass")
+    B(p, "ogledalo", (0, -0.22, 0.85), (0.7, 0.03, 0.8), "mirror")
 
     # ---------------- v1.0.24 under the water: sunken boats + river weed (front = +Y, base = river bed)
     M.update({"rust": material("osrp_metal_rust_wreck", (0.26, 0.12, 0.06), rough=0.9),

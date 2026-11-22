@@ -8,7 +8,7 @@ local called = nil          -- 'ems' | 'ai' | nil
 local calledAt = 0
 local healCall = false      -- /hitna while alive (injured): the ambulance treats you
 
-local function draw2D(text, y)
+local function draw2D(text, y)   -- (kept for other messages)
     SetTextFont(4)
     SetTextScale(0.0, 0.5)
     SetTextColour(255, 255, 255, 230)
@@ -87,7 +87,19 @@ RegisterCommand('hitna', function()
 end, false)
 RegisterCommand('112', function() ExecuteCommand('hitna') end, false)
 
+-- v1.0.25: NUI death screen (red title, ring countdown, G = 112, E = respawn) instead of plain text
+local shown = false
+local function deathUi(show, left, status)
+    if not show then
+        if shown then SendNUIMessage({ action = 'death', show = false }) shown = false end
+        return
+    end
+    shown = true
+    SendNUIMessage({ action = 'death', show = true, left = left, total = Config.RespawnSeconds, called = called ~= nil, status = status })
+end
+
 CreateThread(function()
+    local lastSend = 0
     while true do
         local sleep = 500
         if OSRP.Spawned then
@@ -95,36 +107,40 @@ CreateThread(function()
             if IsEntityDead(ped) then
                 sleep = 0
                 deadSince = deadSince or GetGameTimer()
-                local left = Config.RespawnSeconds - math.floor((GetGameTimer() - deadSince) / 1000)
+                local left = math.max(0, Config.RespawnSeconds - math.floor((GetGameTimer() - deadSince) / 1000))
+                local status = ''
                 if not called then
-                    draw2D('Onesviješten si. ~r~G~s~ - pozovi hitnu (112)', 0.78)
                     if IsControlJustReleased(0, 47) then callAmbulance(false) end
                 elseif called == 'ems' then
                     local wait = Config.EmsWaitSeconds - math.floor((GetGameTimer() - calledAt) / 1000)
-                    draw2D(('Hitna je pozvana. Ako nitko ne stigne za ~y~%d~s~ s, dolazi vozilo hitne.'):format(math.max(0, wait)), 0.78)
+                    status = ('Hitna je pozvana. Ako nitko ne stigne za %d s, dolazi vozilo hitne.'):format(math.max(0, wait))
                     if wait <= 0 then
                         called = 'ai'
                         sendAi('player')
                     end
+                elseif called == 'pending' then
+                    status = 'Zovem 112...'
                 else
-                    draw2D('~r~Hitna je na putu...~s~', 0.78)
+                    status = 'Vozilo hitne pomoći je na putu - prati sirenu.'
                 end
-                if left > 0 then
-                    draw2D(('Buđenje u bolnici moguće za ~r~%d~s~ s'):format(left), 0.83)
-                else
-                    draw2D('~g~E~s~ - probudi se u bolnici (KBC Osijek)', 0.83)
-                    if IsControlJustReleased(0, 38) then
-                        local h = Config.Hospital
-                        deadSince = nil
-                        called = nil
-                        OSRP.SpawnAt(h.x, h.y, h.z, h.w, OSRP.Data)
-                        OSRP.Notify('Probudio si se u ~b~KBC Osijek~s~.')
-                    end
+                if left <= 0 and IsControlJustReleased(0, 38) then
+                    local h = Config.Hospital
+                    deadSince = nil
+                    called = nil
+                    deathUi(false)
+                    OSRP.SpawnAt(h.x, h.y, h.z, h.w, OSRP.Data)
+                    OSRP.Notify('Probudio si se u ~b~KBC Osijek~s~.')
+                elseif GetGameTimer() - lastSend > 250 then
+                    lastSend = GetGameTimer()
+                    deathUi(true, left, status)
                 end
             else
+                deathUi(false)
                 deadSince = nil
                 if called == 'ems' then called = nil end
             end
+        else
+            deathUi(false)
         end
         Wait(sleep)
     end

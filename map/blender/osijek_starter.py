@@ -245,6 +245,7 @@ M_SOIL = material("osrp_soil", (0.22, 0.15, 0.10))
 M_WHITE_STONE = material("osrp_white_stone", (0.82, 0.80, 0.74))
 M_GOLD = material("osrp_gold", (0.85, 0.65, 0.20), rough=0.3, metal=1.0)
 M_GLASS_STOP = material("osrp_busstop_glass", (0.55, 0.70, 0.75), rough=0.05)
+M_CLEAR = material("osrp_clear_glass", (0.62, 0.78, 0.82), rough=0.05)      # v1.0.25: see-through glass
 
 
 # ---------------------------------------------------------------- props
@@ -1082,8 +1083,16 @@ box(col, "osrp_kbc_prizemlje_d", (HX + 37.5, HY - 9, 0), (35, 26, LOB_H), M_HOSP
 ERX = HX + 42
 ER_DH = 3.0
 box(col, "osrp_hitna_pod", (HX + 37.5, HY + 13, 0), (35, 18, FLOOR_Z), M_HFLOOR)
-for k, (a, b) in enumerate(((HX + 20, ERX - 1.3), (ERX + 1.3, HX + 55))):
-    box(col, f"osrp_hitna_zid_p_{k}", ((a + b) / 2, HY + 21.85, 0), (b - a, 0.3, LOB_H), M_HOSP)
+for k, (a, b) in enumerate(((HX + 20, ERX - 1.3), (ERX + 1.3, HX + 55))):     # v1.0.25: big see-through windows
+    box(col, f"osrp_hitna_zid_p_{k}", ((a + b) / 2, HY + 21.85, 0), (b - a, 0.3, 1.0), M_HOSP)
+    box(col, f"osrp_hitna_staklo_{k}", ((a + b) / 2, HY + 21.85, 1.0), (b - a, 0.2, 2.6), M_CLEAR)
+    box(col, f"osrp_hitna_zid_pv_{k}", ((a + b) / 2, HY + 21.85, 3.6), (b - a, 0.3, LOB_H - 3.6), M_HOSP)
+    for x in range(int(a) + 4, int(b), 5):          # window posts
+        box(col, f"osrp_hitna_stup_{k}_{x}", (x, HY + 21.85, 1.0), (0.12, 0.32, 2.6), M_STEEL)
+M_HBAND = material("osrp_ceramic_hospital_band", (0.16, 0.52, 0.55))
+for k, (x, y, sx_, sy_) in enumerate(((HX + 37.5, HY + 4.03, 34.6, 0.06), (HX + 54.67, HY + 13, 0.06, 17.4), (HX + 20.33, HY + 7.25, 0.06, 6.3), (HX + 20.33, HY + 17.75, 0.06, 8.3),
+                                      (HX, HY + 4.03, 39.6, 0.06), (HX - 19.85, HY + 13, 0.06, 17.4))):
+    box(col, f"osrp_hitna_pojas_{k}", (x, y, FLOOR_Z), (sx_, sy_, 1.1), M_HBAND)       # teal wall band in ER + lobby
 box(col, "osrp_hitna_zid_nad", (ERX, HY + 21.85, FLOOR_Z + ER_DH), (2.6, 0.3, LOB_H - FLOOR_Z - ER_DH), M_HOSP)
 box(col, "osrp_hitna_zid_d", (HX + 54.85, HY + 13, 0), (0.3, 18, LOB_H), M_HOSP)
 for k, (a, b) in enumerate(((HY + 4, HY + 10.5), (HY + 13.5, HY + 22))):     # wall to the lobby, 3 m doorway
@@ -1102,10 +1111,10 @@ box(col, "osrp_hitna_pult", (HX + 48, HY + 14, FLOOR_Z), (5, 1.0, 1.1), M_WHITE_
 block_text("osrp_hitna_natpis_unutra", "HITNA", (HX + 37.5 + text_width("HITNA", 0.3) / 2, HY + 4.1, 2.7), 0.3, (-1, 0, 0), (0, 0, 1), M_SIGN_RED)
 box(col, "osrp_kbc_prizemlje_s", (HX, HY + 22 - LOB_D - (44 - LOB_D) / 2, 0), (LOB_W, 44 - LOB_D, LOB_H), M_HOSP)
 box(col, "osrp_kbc_pod", (HX, HY + 22 - LOB_D / 2, 0), (LOB_W, LOB_D, FLOOR_Z), M_HFLOOR)
-box(col, "osrp_kbc_staklo_nad", (HX, HY + 21.85, FLOOR_Z + 3.0), (5, 0.3, LOB_H - FLOOR_Z - 3.0), M_GLASS)   # above the sliding doors
+box(col, "osrp_kbc_staklo_nad", (HX, HY + 21.85, FLOOR_Z + 3.0), (5, 0.3, LOB_H - FLOOR_Z - 3.0), M_CLEAR)   # above the sliding doors
 SLIDEDOORS.append((HX, HY + 21.45, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
 for sx in (-1, 1):   # glass front with a 5 m entrance (sliding doors) in the middle
-    box(col, f"osrp_kbc_staklo_{sx}", (HX + sx * 11.25, HY + 21.85, FLOOR_Z), (17.5, 0.3, LOB_H - FLOOR_Z), M_GLASS)
+    box(col, f"osrp_kbc_staklo_{sx}", (HX + sx * 11.25, HY + 21.85, FLOOR_Z), (17.5, 0.3, LOB_H - FLOOR_Z), M_CLEAR)
     for k, (a, b) in enumerate(((20, 40.6), (43.4, 55)) if sx == 1 else ((20, 55),)):      # v1.0.23: open at the ER door
         box(col, f"osrp_kbc_podnozje_{sx}_{k}", (HX + sx * (a + b) / 2, HY + 22.1, 0), (b - a, 0.2, 1.0), M_RIVER_PLINTH)
 box(col, "osrp_kbc_podnozje_z", (HX, HY - 22.1, 0), (110.4, 0.2, 1.0), M_RIVER_PLINTH)
@@ -1204,16 +1213,19 @@ TX, TY = 200, -447
 M_TFLOOR = material("osrp_pavement_terminal", (0.70, 0.70, 0.68))
 box(col, "osrp_terminal_pod", (TX, TY, 0), (199.2, 25.2, FLOOR_Z), M_TFLOOR)
 for sx in (-1, 1):
-    box(col, f"osrp_terminal_zid_s_{sx}", (TX + sx * 52, TY + 12.8, 0), (96, 0.4, 12), M_TERM)        # north wall, 8 m door
-    box(col, f"osrp_terminal_staklo_s_{sx}", (TX + sx * 19.5, TY + 13.15, FLOOR_Z), (31, 0.3, 4.2), M_GLASS)
+    box(col, f"osrp_terminal_zid_s_{sx}", (TX + sx * 67.5, TY + 12.8, 0), (65, 0.4, 12), M_TERM)        # north wall, 8 m door
+    box(col, f"osrp_terminal_zid_s_nad_{sx}", (TX + sx * 19.5, TY + 12.8, 4.5), (31, 0.4, 7.5), M_TERM)
+    box(col, f"osrp_terminal_staklo_s_{sx}", (TX + sx * 19.5, TY + 12.8, FLOOR_Z), (31, 0.3, 4.5 - FLOOR_Z), M_CLEAR)     # v1.0.25: see-through
+    for x in range(5, 35, 5):
+        box(col, f"osrp_terminal_stup_s_{sx}_{x}", (TX + sx * x, TY + 12.8, FLOOR_Z), (0.15, 0.35, 4.5 - FLOOR_Z), M_STEEL)
     box(col, f"osrp_terminal_zid_bok_{sx}", (TX + sx * 99.8, TY, 0), (0.4, 26, 12), M_TERM)
     box(col, f"osrp_terminal_zid_j_{sx}", (TX + sx * 97.5, TY - 12.8, 0), (5, 0.4, 12), M_TERM)
 box(col, "osrp_terminal_nadvratnik", (TX, TY + 12.8, 4.5), (8, 0.4, 7.5), M_TERM)
 for sx in (-1, 1):     # v1.0.23: fixed glass beside the sliding doors
-    box(col, f"osrp_terminal_staklo_vrata_{sx}", (TX + sx * 3.25, TY + 12.8, FLOOR_Z), (1.5, 0.3, 4.5 - FLOOR_Z), M_GLASS)
-box(col, "osrp_terminal_staklo_nad", (TX, TY + 12.8, FLOOR_Z + 3.0), (5, 0.3, 4.5 - FLOOR_Z - 3.0), M_GLASS)
+    box(col, f"osrp_terminal_staklo_vrata_{sx}", (TX + sx * 3.25, TY + 12.8, FLOOR_Z), (1.5, 0.3, 4.5 - FLOOR_Z), M_CLEAR)
+box(col, "osrp_terminal_staklo_nad", (TX, TY + 12.8, FLOOR_Z + 3.0), (5, 0.3, 4.5 - FLOOR_Z - 3.0), M_CLEAR)
 SLIDEDOORS.append((TX, TY + 12.35, FLOOR_Z, 0.0, 2.5, "osrpprop_slidedoor_w"))
-box(col, "osrp_terminal_staklo_j", (TX, TY - 12.85, 0.6), (190, 0.3, 9.5), M_GLASS)
+box(col, "osrp_terminal_staklo_j", (TX, TY - 12.85, 0.6), (190, 0.3, 9.5), M_CLEAR)
 box(col, "osrp_terminal_podnozje_j", (TX, TY - 12.8, 0), (190, 0.4, 0.6), M_TERM)
 box(col, "osrp_terminal_vrh_j", (TX, TY - 12.8, 10.1), (190, 0.4, 1.9), M_TERM)
 for k in range(6):   # check-in desks
@@ -1226,6 +1238,23 @@ for r in range(3):   # v1.0.23: rows of gate seats (Blender props, you can sit)
             cprop("gateseats", TX + 30 + k * 12 + dx, TY - 4 + r * 3.5, FLOOR_Z, 180.0)
 for k in range(4):   # self check-in kiosks
     cprop("checkin", TX - 88 + k * 2.2, TY + 9, FLOOR_Z, 0.0)
+# v1.0.25: passengers in the terminal - queues at the desks, people on the gate seats, walkers, people at the carousels
+AIRPORT = {"queue": [], "seats": [], "walk": [], "stand": [], "z": [FLOOR_Z]}
+for k in (0, 1, 2, 3, 4, 5):
+    for q in range(3 if k % 2 == 0 else 2):
+        AIRPORT["queue"].append((TX - 70 + k * 12, TY + 4.6 - q * 1.1, 0.0))
+for r in range(3):
+    for k in range(5):
+        for dx in (-1.8, 1.8):
+            for off in (-1.36, -0.68, 0.0, 0.68, 1.36):
+                AIRPORT["seats"].append((round(TX + 30 + k * 12 + dx - off, 2), round(TY - 4 + r * 3.5 - 0.04, 2), 180.0))
+AIRPORT["walk"] = [(TX - 92, TY + 1), (TX - 40, TY + 1.5), (TX, TY + 1), (TX + 20, TY + 9), (TX + 60, TY + 9.5), (TX + 92, TY + 1),
+                   (TX + 60, TY - 9.5), (TX + 20, TY - 9), (TX - 30, TY - 10), (TX - 92, TY - 9), (TX, TY + 10)]
+for cx_ in (TX - 80, TX - 62):
+    for k in range(4):
+        AIRPORT["stand"].append((cx_ - 3 + k * 2, TY - 7.6, 0.0))
+for k in range(4):
+    AIRPORT["stand"].append((TX - 88 + k * 2.2, TY + 10.0, 180.0))
 for x, y, hd in ((TX - 10, TY + 10, 0.0), (TX + 24, TY + 2, 180.0), (TX + 84, TY + 2, 180.0)):
     cprop("infoboard", x, y, FLOOR_Z, hd)
 cprop("carousel", TX - 80, TY - 5, FLOOR_Z, 0.0)
@@ -1664,4 +1693,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.24: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.25: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

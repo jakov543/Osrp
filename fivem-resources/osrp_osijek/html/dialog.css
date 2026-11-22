@@ -1,0 +1,25 @@
+/* v1.0.25 NPC dialog (cinematic, bottom centre) */
+.dlg { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 7vh;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.8) 100%);
+  font-family: "Segoe UI", Arial, sans-serif; color: #fff; animation: dlgIn .45s ease both; }
+.dlg.hidden { display: none; }
+@keyframes dlgIn { from { opacity: 0; } to { opacity: 1; } }
+.dlg-bars::before, .dlg-bars::after { content: ""; position: fixed; left: 0; right: 0; height: 7vh; background: #000; }
+.dlg-bars::before { top: 0; } .dlg-bars::after { bottom: 0; height: 3vh; }
+.dlg-name { font-size: 30px; font-weight: 700; letter-spacing: .5px; text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+.dlg-role { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9fb3c8; margin-top: 2px; }
+.dlg-text { max-width: 760px; text-align: center; font-size: 17px; line-height: 1.45; margin-top: 8px; min-height: 26px;
+  text-shadow: 0 2px 8px rgba(0,0,0,.9); }
+.dlg-text b { color: #fff; }
+.dlg-line { width: min(760px, 70vw); height: 2px; margin: 14px 0 16px; background: linear-gradient(90deg, transparent, #3b82f6 20%, #60a5fa 50%, #3b82f6 80%, transparent);
+  box-shadow: 0 0 10px rgba(59,130,246,.7); }
+.dlg-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 980px; }
+.dlg-opt { min-width: 200px; max-width: 300px; padding: 11px 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,.35);
+  background: rgba(12,14,18,.82); color: #fff; font: 600 13px "Segoe UI", Arial, sans-serif; cursor: pointer; text-align: center;
+  transition: background .15s, border-color .15s, transform .15s; position: relative; }
+.dlg-opt:hover { background: rgba(37,99,235,.85); border-color: #93c5fd; transform: translateY(-2px); }
+.dlg-opt i { position: absolute; left: 7px; top: 5px; font-style: normal; font-size: 10px; color: #93a3b8; }
+.dlg-bye { margin-top: 12px; min-width: 150px; padding: 9px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,.35);
+  background: rgba(12,14,18,.82); color: #fff; font: 600 13px "Segoe UI", Arial, sans-serif; cursor: pointer; }
+.dlg-bye:hover { background: rgba(185,28,28,.85); border-color: #fca5a5; }
+.dlg-hint { margin-top: 10px; font-size: 11px; color: #8b9bb0; }

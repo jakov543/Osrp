@@ -368,12 +368,54 @@ def water(rng, n, base):
     return colorize(base, 1 + 0.18 * ripple + 0.5 * glint), None
 
 
+def facade_panels(rng, n, base, cols=4, rows=3, joint_px=4.0):
+    """v1.0.25: modern ventilated facade - large smooth panels with dark joints (hospital, terminal)"""
+    tid, u, v, edge = tiles(n, cols, rows, stagger=0.0)
+    var = per_tile(rng, tid, 0.012)
+    fine = noise(rng, n, 0.6)
+    dirt = np.clip(fbm(rng, n, [n / 5, n / 14], [1, 0.5]), 0, None)
+    streak = np.clip(noise(rng, n, 1.5, sx=0.3, sy=10.0), 0, 1)
+    joint = np.clip(1 - edge / joint_px, 0, 1)
+    shade = (1 + var + 0.025 * fine - 0.05 * dirt - 0.04 * streak * v) * (1 - 0.6 * joint)
+    return colorize(base, shade), 0.6 - 0.5 * joint
+
+
+def vinyl(rng, n, base):
+    """v1.0.25: hospital floor - speckled vinyl in 1.2 m sheets with thin welded seams"""
+    tid, u, v, edge = tiles(n, 2, 2, stagger=0.0)
+    speck = speckles(rng, n, 0.05, 0.6)
+    speck2 = speckles(rng, n, 0.03, 0.5)
+    cloud = fbm(rng, n, [n / 4, n / 12], [1, 0.5])
+    seam = np.clip(1 - edge / 1.5, 0, 1)
+    shade = 1 + 0.04 * cloud - 0.10 * speck + 0.08 * speck2 - 0.25 * seam
+    img = colorize(base, shade).astype(float)
+    shine = np.clip(fbm(rng, n, [n / 2], [1]), 0, 1)[..., None]      # polished look
+    img = img * (0.96 + 0.08 * shine)
+    return np.clip(img, 0, 255).astype(np.uint8), 0.5 - 0.3 * seam
+
+
+def terrazzo(rng, n, base):
+    """v1.0.25: airport floor - big polished stone tiles with terrazzo chips"""
+    tid, u, v, edge = tiles(n, 2, 2, stagger=0.0)
+    var = per_tile(rng, tid, 0.012)
+    chips = speckles(rng, n, 0.08, 0.9)
+    dark = speckles(rng, n, 0.03, 0.7)
+    joint = np.clip(1 - edge / 2.0, 0, 1)
+    shade = (1 + var + 0.12 * chips - 0.18 * dark) * (1 - 0.35 * joint)
+    return colorize(base, shade), 0.5 - 0.3 * joint
+
+
 def flat(rng, n, base):
     return colorize(base, 1 + 0.05 * noise(rng, n, 1.0)), None
 
 
 # material-name key -> (recipe, texture size, tile size in metres, normal strength or 0)
 TABLE = [
+    ("plaster_hospital", lambda r, n, b: facade_panels(r, n, b, 4, 3), 1024, 6.0, 1.5),    # v1.0.25
+    ("plaster_terminal", lambda r, n, b: facade_panels(r, n, b, 3, 2, 3.0), 1024, 6.0, 1.5),
+    ("pavement_hospital", lambda r, n, b: vinyl(r, n, b),     1024, 2.4, 0.8),
+    ("pavement_terminal", lambda r, n, b: terrazzo(r, n, b),  1024, 2.4, 1.0),
+    ("ceramic_hospital", lambda r, n, b: pavement(r, n, b),    512, 0.6, 1.5),
     ("asphalt",      lambda r, n, b: asphalt(r, n, b),        1024, 6.0, 2.0),
     ("road_line",    lambda r, n, b: road_line(r, n, b),       256, 2.0, 0.0),
     ("pavement",     lambda r, n, b: pavement(r, n, b),       1024, 2.0, 3.0),

@@ -209,6 +209,7 @@ window.addEventListener('message', (e) => {
       if (d.progress !== undefined) $('ldBar').style.width = Math.round(d.progress * 100) + '%';
       break;
     case 'notify': notify(d.text, d.kind, d.time); break;
+    case 'death': setDeath(d); break;
     case 'weapon': setWeapon(d); break;
     case 'status': setStatus(d); break;
     case 'showHud': $('hud').classList.remove('hidden'); break;
@@ -288,4 +289,18 @@ function setVeh(d) {
   f.style.width = (d.fuel * 100).toFixed(0) + '%'; f.classList.toggle('low', d.fuel < 0.15);
   e.style.width = (d.engine * 100).toFixed(0) + '%'; e.classList.toggle('low', d.engine < 0.3);
   $('sLight').classList.toggle('on', !!d.lights);
+}
+
+// ---------- v1.0.25 death screen ----------
+function setDeath(d) {
+  const box = $('death');
+  if (!d.show) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  const total = Math.max(1, d.total || 60), left = Math.max(0, d.left || 0);
+  $('d-left').textContent = left;
+  $('d-arc').style.strokeDashoffset = (326.7 * (1 - left / total)).toFixed(1);
+  $('d-e').classList.toggle('off', left > 0);
+  $('d-g').classList.toggle('done', !!d.called);
+  $('d-gtxt').textContent = d.called ? 'hitna je pozvana' : 'pozovi hitnu (112)';
+  $('d-status').textContent = d.status || '';
 }

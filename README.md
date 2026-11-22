@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.24 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.25 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.24
-git push origin v1.0.24
+git tag v1.0.25
+git push origin v1.0.25
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -228,6 +228,7 @@ v1.0.16 – **characters, arrival, interiors, HUD**:
 - v1.0.22: **own props made in Blender** (`map/blender/osrp_props.py`, 46 models `osrpprop_*`): all flat furniture (sofa, beds, kitchen, bathroom...), hospital beds / curtains / cabinets / waiting chairs, airport check-in kiosks, gate seats, departure boards, baggage carousels, luggage carts, tugs, planters; **automatic sliding glass doors** (hospital lobby, emergency entrance, terminal); new **emergency hall** in the hospital (5 treatment bays); **beach rebuilt** - the sand runs down into the Drava, wooden pier with a 1 m board and a **3 m / 5 m diving tower**, lifeguard tower, volleyball court, showers, beach bar; **beach people** (sunbathers, swimmers, divers who climb the tower and jump); sidewalks/curbs now continuous where no street joins; darker grass
 - v1.0.23: **real GTA V street light poles** (avenue + promenade, they light up at night), smaller street trees that fit the houses, trees are put exactly on the ground (no floating trees), clean-up pass so nothing stands inside something else (trees/benches/bins/bushes/hydrants, bushes in the hospital wing, hydrants on the road)
 - v1.0.24: new **grass texture** (thousands of thin blades, dark roots + lime tips, flowing like a real lawn); sidewalks and curbs sit on the ground (no gap under them), curbs + sidewalks along the airport and service roads; **under the water**: Drava bed with rocks and river weed, quay walls go down to the bed, rocky slope round the island down to a sea floor (no more floating city), **sunken cargo boat** + sunken row boat; random **events** wait for the map to load (they used to fail silently), police car starts behind the chased car, `/dogadaj` tells you why an event could not start
+- v1.0.25: **NPC dialogs** - press E near any NPC: camera on their face, name + role, text and answer buttons (1-9 / click, ESC); citizens, doctor, nurse, paramedic, airport hostess, security, pilot, travellers, lifeguard, beach bar (drinks), answers set GPS, get treatment, buy drinks; NPC language `Config.NpcLanguage` = 'hr' / 'en'; **passengers in the airport** (queues, gate seats, kiosks, baggage belts, walkers); **see-through glass** (glass_pv) on the hospital lobby, new emergency windows, terminal fronts and sliding doors; new textures: hospital facade panels, vinyl hospital floor with a teal wall band, terminal panels + terrazzo floor; **new death screen** (red ONESVIJEŠTEN, 60 s ring, G = 112, E = respawn)
 - **HUD**: custom notifications (colour codes work, success/error/warning), weapon HUD (name, clip / ammo), status row in the money card (health, armour, stamina, voice), server ID, players online and clock
 
 ![map](map/blender/preview_minimap.png)

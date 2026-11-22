@@ -459,6 +459,7 @@ end)
 
 -- ===================================================================== staff (hospital reception, doctor, airport check-in, security, pilot)
 local staff = {}
+OsijekPedInfo = {}          -- v1.0.25: model + scenario of the NPCs (dialogs use it)
 CreateThread(function()
     while true do
         local pos = GetEntityCoords(PlayerPedId())
@@ -476,6 +477,7 @@ CreateThread(function()
                     TaskStartScenarioInPlace(p, st[5], 0, true)
                     SetModelAsNoLongerNeeded(hash)
                     staff[i] = p
+                    OsijekPedInfo[p] = { model = st[1], scenario = st[5], frozen = true }
                 end
             elseif d > 150.0 and staff[i] then
                 if DoesEntityExist(staff[i]) then DeletePed(staff[i]) end
@@ -527,39 +529,47 @@ end
 
 local function npcSay(ped, lines, speech)
     if not ped or not DoesEntityExist(ped) or IsPedDeadOrDying(ped, true) then return end
-    TaskTurnPedToFaceEntity(ped, PlayerPedId(), 1500)
-    PlayPedAmbientSpeechNative(ped, speech or 'GENERIC_HI', 'SPEECH_PARAMS_FORCE_NORMAL')
+    if not (OsijekPedInfo[ped] and OsijekPedInfo[ped].frozen) then TaskTurnPedToFaceEntity(ped, PlayerPedId(), 1500) end
+    if Config.NpcVoice ~= false then PlayPedAmbientSpeechNative(ped, speech or 'GENERIC_HI', 'SPEECH_PARAMS_FORCE_NORMAL') end
     bubble(ped, lines[math.random(#lines)])
 end
 
+OsijekExtraTalkers = {}        -- v1.0.25: beach + airport people can be talked to too
 local function allTalkers()
     local list = {}
     for _, e in pairs(peds) do if e.ped then list[#list + 1] = e.ped end end
     for _, p in pairs(staff) do list[#list + 1] = p end
+    for p in pairs(OsijekExtraTalkers) do list[#list + 1] = p end
     return list
+end
+
+local function L(t)       -- text in the NPC language (Config.NpcLanguage = 'hr' | 'en')
+    if type(t) ~= 'table' then return t end
+    return t[Config.NpcLanguage or 'hr'] or t.hr or t.en
 end
 
 CreateThread(function()
     while true do
         local sleep = 500
         local me = PlayerPedId()
-        if Config.NpcTalk and not IsPedInAnyVehicle(me, false) then
+        if Config.NpcTalk and not IsPedInAnyVehicle(me, false) and not (OsijekDialogOpen and OsijekDialogOpen()) then
             local pos = GetEntityCoords(me)
             for _, p in ipairs(allTalkers()) do
-                if DoesEntityExist(p) then
+                if DoesEntityExist(p) and not IsPedInAnyVehicle(p, false) and not IsPedDeadOrDying(p, true) then
                     local d = #(GetEntityCoords(p) - pos)
                     if d < 2.6 then
                         sleep = 0
                         if not talked[p] or GetGameTimer() - talked[p] > 60000 then
                             talked[p] = GetGameTimer()
-                            npcSay(p, Config.NpcGreetings)
+                            local g = L(Config.NpcGreetings)
+                            npcSay(p, g)
                         end
                         BeginTextCommandDisplayHelp('STRING')
-                        AddTextComponentSubstringPlayerName('~INPUT_CONTEXT~ Talk')
+                        AddTextComponentSubstringPlayerName(Config.NpcLanguage == 'en' and '~INPUT_CONTEXT~ Talk' or '~INPUT_CONTEXT~ Razgovaraj')
                         EndTextCommandDisplayHelp(0, false, false, -1)
                         if IsControlJustReleased(0, 38) then
                             talked[p] = GetGameTimer()
-                            npcSay(p, Config.NpcChat, 'GENERIC_HOWS_IT_GOING')
+                            if OsijekOpenDialog then OsijekOpenDialog(p) else npcSay(p, L(Config.NpcChat), 'GENERIC_HOWS_IT_GOING') end
                         end
                         break
                     end
@@ -819,6 +829,7 @@ local function beachPed(i, x, y, z, h)
     SetPedDiesInWater(p, false)
     SetPedMaxTimeUnderwater(p, 60.0)
     beach.peds[#beach.peds + 1] = p
+    OsijekExtraTalkers[p] = true
     return p
 end
 
@@ -912,7 +923,7 @@ end
 
 local function beachDown()
     beach.on = false
-    for _, p in ipairs(beach.peds) do if DoesEntityExist(p) then DeletePed(p) end end
+    for _, p in ipairs(beach.peds) do OsijekExtraTalkers[p] = nil if DoesEntityExist(p) then DeletePed(p) end end
     beach.peds = {}
 end
 
@@ -935,4 +946,101 @@ end)
 
 AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() then beachDown() end
+end)
+
+-- ===================================================================== v1.0.25: passengers in the airport terminal
+-- queues at the check-in desks, people on the gate seats, at the kiosks + baggage belts, walkers with luggage
+local AIR_PEDS = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_f_y_tourist_01', 'a_m_m_tourist_01', 'a_f_y_hipster_01',
+                   'a_m_y_hipster_01', 'a_m_m_business_01', 'a_f_m_tourist_01', 'a_f_y_bevhills_01', 'a_m_y_bevhills_01' }
+local air = { peds = {}, on = false }
+
+local function airPed(i, x, y, h, scenario)
+    local A = Life.AIRPORT
+    local hash = firstModel({ AIR_PEDS[(i % #AIR_PEDS) + 1], 'a_m_y_business_01' })
+    if not (hash and load(hash)) then return nil end
+    local w = W(x, y, A.z[1])
+    local p = CreatePed(4, hash, w.x, w.y, w.z, h or 0.0, false, true)
+    SetModelAsNoLongerNeeded(hash)
+    SetBlockingOfNonTemporaryEvents(p, true)
+    SetPedKeepTask(p, true)
+    air.peds[#air.peds + 1] = p
+    OsijekExtraTalkers[p] = true
+    OsijekPedInfo[p] = { role = 'traveler', scenario = scenario }
+    if scenario then TaskStartScenarioInPlace(p, scenario, 0, true) end
+    return p
+end
+
+local function airUp()
+    local A = Life.AIRPORT
+    if not A then return end
+    air.on = true
+    local n = 0
+    local QSC = { 'WORLD_HUMAN_STAND_IMPATIENT', 'WORLD_HUMAN_STAND_MOBILE', 'WORLD_HUMAN_TOURIST_MOBILE' }
+    for i, q in ipairs(A.queue or {}) do
+        if math.random() < 0.8 then n = n + 1 airPed(n, q[1], q[2], q[3], QSC[(i % #QSC) + 1]) end
+    end
+    for i, s in ipairs(A.seats or {}) do              -- about every 3rd seat is taken
+        if math.random() < 0.33 then
+            n = n + 1
+            local p = airPed(n, s[1], s[2], s[3])
+            if p then
+                local w = W(s[1], s[2], A.z[1] + 0.5)
+                TaskStartScenarioAtPosition(p, 'PROP_HUMAN_SEAT_CHAIR', w.x, w.y, w.z, s[3], 0, true, true)
+                OsijekPedInfo[p].scenario = nil
+                OsijekPedInfo[p].frozen = true          -- stays seated while you talk
+            end
+        end
+    end
+    local SSC = { 'WORLD_HUMAN_STAND_IMPATIENT', 'WORLD_HUMAN_STAND_MOBILE', 'WORLD_HUMAN_AA_COFFEE' }
+    for i, s in ipairs(A.stand or {}) do
+        if math.random() < 0.7 then n = n + 1 airPed(n, s[1], s[2], s[3], SSC[(i % #SSC) + 1]) end
+    end
+    local W_ = A.walk or {}
+    for k = 1, 10 do                                  -- walkers going from point to point
+        n = n + 1
+        local a = W_[math.random(#W_)]
+        local p = airPed(n, a[1], a[2], 0.0)
+        if p then
+            CreateThread(function()
+                while DoesEntityExist(p) and air.on do
+                    if not (OsijekDialogOpen and OsijekDialogOpen()) or #(GetEntityCoords(p) - GetEntityCoords(PlayerPedId())) > 6.0 then
+                        local b = W_[math.random(#W_)]
+                        local w = W(b[1], b[2], A.z[1])
+                        TaskGoStraightToCoord(p, w.x, w.y, w.z, 1.0, 30000, 0.0, 0.5)
+                    end
+                    Wait(math.random(9000, 20000))
+                end
+            end)
+        end
+    end
+end
+
+local function airDown()
+    air.on = false
+    for _, p in ipairs(air.peds) do
+        OsijekExtraTalkers[p] = nil
+        OsijekPedInfo[p] = nil
+        if DoesEntityExist(p) then DeletePed(p) end
+    end
+    air.peds = {}
+end
+
+CreateThread(function()
+    while true do
+        local A = Life.AIRPORT
+        if A and A.walk and A.walk[1] then
+            local c = W(A.walk[3][1], A.walk[3][2], A.z[1])
+            local d = #(GetEntityCoords(PlayerPedId()) - c)
+            if d < 140.0 and not air.on then
+                if groundAt(A.walk[3][1], A.walk[3][2], A.z[1]) then airUp() end
+            elseif d > 190.0 and air.on then
+                airDown()
+            end
+        end
+        Wait(2000)
+    end
+end)
+
+AddEventHandler('onResourceStop', function(res)
+    if res == GetCurrentResourceName() then airDown() end
 end)

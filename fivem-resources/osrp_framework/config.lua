@@ -21,7 +21,7 @@ Config.Jobs = {
 }
 
 Config.PaydayMinutes = 10          -- salary goes to bank every X minutes
-Config.RespawnSeconds = 15         -- how long before you can respawn after death
+Config.RespawnSeconds = 60         -- how long before you can respawn after death
 Config.MeDistance = 20.0           -- /me /do visible distance (meters)
 Config.DisableWanted = true        -- no GTA police wanted stars (roleplay police only)
 

@@ -115,3 +115,31 @@ AddEventHandler('playerDropped', function()
     local src = source
     lastCall[src], lastBill[src], lastReward[src], thefts[src] = nil, nil, nil, nil
 end)
+
+-- ---------- v1.0.25: NPC dialogs (osrp_osijek) - doctor/nurse treatment, beach bar ----------
+local lastNpc = {}
+RegisterNetEvent('osrp:npcHeal', function()
+    local src = source
+    if not OSRP.GetPlayer(src) then return end
+    local pos = pedPos(src)
+    if not pos or #(pos - Config.HospitalDoor) > 80.0 then return end          -- anywhere inside KBC Osijek
+    if lastNpc[src] and os.time() - lastNpc[src] < 5 then return end
+    lastNpc[src] = os.time()
+    local acct = charge(src, Config.HealPrice)
+    if not acct then return notify(src, ('~r~Nemaš $%d~s~ za liječenje.'):format(Config.HealPrice)) end
+    TriggerClientEvent('osrp:healed', src)
+    notify(src, ('Plaćeno ~r~$%d~s~ (s %s).'):format(Config.HealPrice, acct))
+end)
+
+local SHOP = { limunada = { 5, 'Limunada' }, pivo = { 6, 'Pivo' }, kava = { 3, 'Kava' }, sok = { 4, 'Sok' } }
+RegisterNetEvent('osrp:npcBuy', function(item)
+    local src = source
+    local it = SHOP[item]
+    if not it or not OSRP.GetPlayer(src) then return end
+    if lastNpc[src] and os.time() - lastNpc[src] < 3 then return end
+    lastNpc[src] = os.time()
+    local acct = charge(src, it[1])
+    if not acct then return notify(src, ('~r~Nemaš $%d.'):format(it[1])) end
+    TriggerClientEvent('osrp_osijek:drink', src, item)
+    notify(src, ('%s: plaćeno ~r~$%d~s~ (s %s).'):format(it[2], it[1], acct))
+end)

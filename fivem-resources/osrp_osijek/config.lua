@@ -149,22 +149,18 @@ Config.TakenRespawnMinutes = 15     -- a taken one comes back after this time
 Config.ArrivalCutscene = true       -- new characters fly into Osijek airport (cutscene)
 Config.ArrivalPlane = { 'luxor', 'shamal', 'nimbus', 'velum2' }
 
-Config.NpcTalk = true               -- NPCs greet you when you walk up, press E to talk (English)
+Config.NpcTalk = true               -- NPCs greet you when you walk up, press E to talk (dialog window with answers)
+Config.NpcLanguage = 'hr'           -- v1.0.25: language of everything the NPCs say: 'hr' (hrvatski) or 'en' (English)
+Config.NpcVoice = true              -- GTA voice sound when they greet you (the GTA voices are always English audio)
 Config.NpcGreetings = {
-    'Hey there!', 'Hi! Nice day, isn\'t it?', 'Hello, welcome to Osijek!', 'Good morning!', 'Oh, hi! How are you?',
-    'Hey, nice to see a new face.', 'Hello! Lovely weather today.', 'Hi, can I help you?',
+    hr = { 'Bok!', 'Dobar dan!', 'Pozdrav, dobro došli u Osijek!', 'Dobro jutro!', 'O, bok! Kako si?', 'Hej, novo lice u gradu?', 'Lijep dan danas, ha?', 'Mogu li pomoći?' },
+    en = { 'Hey there!', 'Hi! Nice day, isn\'t it?', 'Hello, welcome to Osijek!', 'Good morning!', 'Oh, hi! How are you?',
+           'Hey, nice to see a new face.', 'Hello! Lovely weather today.', 'Hi, can I help you?' },
 }
 Config.NpcChat = {
-    'Have you seen the cathedral? The tower is almost 100 metres tall!',
-    'I am on my way to work, the traffic on Europska avenija is crazy.',
-    'If you get hurt, KBC Osijek is on Vukovarska street.',
-    'The promenade by the Drava is the best place for a walk.',
-    'I just flew in, the airport is south of the city.',
-    'Did you hear? There was an accident near the park this morning.',
-    'Try the beach at Copacabana in the summer!',
-    'Sorry, I am in a hurry. See you around!',
-    'The old town, Tvrđa, has the best cafés in Osijek.',
-    'Be careful, there are pickpockets around here.',
+    hr = { 'Jesi vidio konkatedralu? Toranj je visok skoro 100 metara!', 'Šetnica uz Dravu je najljepša za šetnju.', 'Pazi se, ima džepara okolo.' },
+    en = { 'Have you seen the cathedral? The tower is almost 100 metres tall!', 'The promenade by the Drava is the best place for a walk.',
+           'Be careful, there are pickpockets around here.' },
 }
 
 -- ===================================================================== v1.0.18

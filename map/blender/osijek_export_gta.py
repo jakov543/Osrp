@@ -41,7 +41,7 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
 with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
-    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH")}
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH", "AIRPORT")}
               | {"PLACES": {k: list(v) for k, v in city["PLACES"].items()}}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
     json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4], "r": (m[5] if len(m) > 5 else 0.0)} for m in city["FURNITURE"]], f)
@@ -119,6 +119,7 @@ RECIPES = {
     "roof_tiles":     (0.30, 0.6, stripes(20) + bricks(32, 20, color="#00000030"), 2.0, "ROOF_TILE"),
     "plaster_":       (0.20, 1.2, [], 4.0, "CONCRETE"),
     "window_glass":   (0.15, 2.0, grid(128, color="#ffffff30", width=6), 1.6, "GLASS_OPAQUE"),
+    "clear_glass":    (0.0, 1.0, [], 2.0, "GLASS_OPAQUE"),
     "busstop_glass":  (0.10, 2.0, [], 2.0, "GLASS_OPAQUE"),
     "bench_wood":     (0.40, 0.4, stripes(32, color="#00000044"), 1.0, "WOOD_SOLID_MEDIUM"),
     "bridge_steel":   (0.20, 1.0, [], 2.0, "METAL_SOLID_MEDIUM"),
@@ -169,14 +170,20 @@ for seed, mat in enumerate(sorted({m for o in objs + prop_parts for m in o.data.
     tex_name = "osrp_" + mat.name.replace("osrp_", "")[:40]
     strength, blur, extra, tile, colname = recipe_for(mat.name)
     ndds = None
-    if "lamp_light" in mat.name:
+    if "clear_glass" in mat.name:
+        # v1.0.25: see-through glass (glass_pv shader, alpha texture) - hospital + terminal fronts, sliding doors
+        dds = os.path.join(TEX, tex_name + ".dds")
+        subprocess.run(["convert", "-size", "64x64", f"xc:rgba({rgb[0]},{rgb[1]},{rgb[2]},0.30)",
+                        "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=4", dds], check=True)
+        tile = 2.0
+    elif "lamp_light" in mat.name:
         dds = os.path.join(TEX, tex_name + ".dds")
         subprocess.run(["convert", "-size", "16x16", "xc:" + hexcol, "-define", "dds:compression=dxt1", dds], check=True)
     else:
         dds, ndds, tile = osrp_textures.build(tex_name, rgb, seed + 7, TEX)
     img = bpy.data.images.load(dds)
     img.name = tex_name
-    shader = "emissive.sps" if "lamp_light" in mat.name else ("normal.sps" if ndds else "default.sps")
+    shader = "glass_pv.sps" if "clear_glass" in mat.name else ("emissive.sps" if "lamp_light" in mat.name else ("normal.sps" if ndds else "default.sps"))
     sm = create_shader(shader)
     sm.name = "sz_" + mat.name
     node = find_node(sm, "DiffuseSampler") or find_sampler(sm)
