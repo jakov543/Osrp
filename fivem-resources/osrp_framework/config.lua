@@ -36,13 +36,15 @@ Config.AmbulanceModel = 'ambulance'
 
 -- ---------- v1.0.16: characters + spawn ----------
 Config.MaxCharacters = 3          -- characters per player (multicharacter)
+-- character menu: you stand on the Tvrđa square facing the camera, cathedral + fountain behind you (x, y, ground z, heading)
+Config.MenuPreview = vector4(5705.0, -1470.0, 8.14, 180.0)
 -- spawn choices after picking a character (world coords). 'arrival' = fly in with the plane (osrp_osijek cutscene)
 Config.SpawnPoints = {
     { id = 'last',     label = 'Zadnja lokacija',             icon = '📍', desc = 'Tamo gdje si zadnji put bio.' },
-    { id = 'arrival',  label = 'Zračna luka (dolazak avionom)', icon = '✈️', desc = 'Sletiš u Osijek s avionom.', coords = vector4(5710.0, -1953.0, 9.0, 0.0) },
-    { id = 'avenija',  label = 'Europska avenija',            icon = '🏙️', desc = 'Centar grada.', coords = vector4(5675.0, -1511.0, 9.0, 90.0) },
-    { id = 'tvrdja',   label = 'Tvrđa',                       icon = '⛪', desc = 'Stari grad i konkatedrala.', coords = vector4(5725.0, -1462.0, 9.0, 180.0) },
-    { id = 'bolnica',  label = 'KBC Osijek',                  icon = '🏥', desc = 'Ispred bolnice.', coords = vector4(5170.0, -1873.5, 9.0, 0.0) },
+    { id = 'arrival',  label = 'Zračna luka (dolazak avionom)', icon = '✈️', desc = 'Sletiš u Osijek s avionom.', coords = vector4(5710.0, -1953.0, 9.3, 0.0) },
+    { id = 'avenija',  label = 'Europska avenija',            icon = '🏙️', desc = 'Centar grada.', coords = vector4(5675.0, -1511.0, 9.3, 90.0) },
+    { id = 'tvrdja',   label = 'Tvrđa',                       icon = '⛪', desc = 'Stari grad i konkatedrala.', coords = vector4(5740.0, -1478.0, 9.3, 0.0) },
+    { id = 'bolnica',  label = 'KBC Osijek',                  icon = '🏥', desc = 'Ispred bolnice.', coords = vector4(5170.0, -1873.5, 9.3, 0.0) },
 }
 Config.Nationalities = { 'Hrvatska', 'Bosna i Hercegovina', 'Srbija', 'Slovenija', 'Crna Gora', 'Mađarska', 'Austrija', 'Njemačka', 'Italija', 'Ostalo' }
 

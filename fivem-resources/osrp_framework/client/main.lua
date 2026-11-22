@@ -28,6 +28,39 @@ end
 
 local function osijek() return GetResourceState('osrp_osijek') == 'started' end
 
+-- wait (here, in this resource) until osrp_osijek has the city around x, y loaded
+local function waitArea(x, y, radius, timeout)
+    if not osijek() then return end
+    local t = GetGameTimer()
+    while GetGameTimer() - t < (timeout or 20000) do
+        local ok, loaded, total = pcall(function() return exports.osrp_osijek:AreaProgress(x, y, radius) end)
+        if not ok or not total then return end
+        SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = total > 0 and loaded / total or 1 })
+        if loaded >= total then Wait(300) return end
+        Wait(100)
+    end
+end
+
+local function playArrival()
+    if not osijek() then return end
+    local done = false
+    local h = AddEventHandler('osrp_osijek:arrivalDone', function() done = true end)
+    TriggerEvent('osrp_osijek:playArrival')
+    local t = GetGameTimer()
+    while not done and GetGameTimer() - t < 60000 do Wait(100) end
+    RemoveEventHandler(h)
+end
+
+local function groundZ(x, y, z)
+    RequestCollisionAtCoord(x, y, z)
+    for _ = 1, 40 do
+        local ok, gz = GetGroundZFor_3dCoord(x, y, z + 3.0, false)
+        if ok then return gz end
+        Wait(50)
+    end
+    return z
+end
+
 -- freemode model + face, skin, hair, outfit from the character
 function OSRP.ApplyLook(data)
     local sex = data and data.sex or 'm'
@@ -46,9 +79,6 @@ function OSRP.ApplyLook(data)
     for comp, v in pairs(outfit or {}) do SetPedComponentVariation(ped, comp, v[1], v[2] or 0, 0) end
 end
 
-AddEventHandler('osrp:mapLoading', function(loaded, total)
-    SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = total > 0 and loaded / total or 1 })
-end)
 
 -- Spawns the local player. opts.arrival = fly in with the plane first (osrp_osijek)
 function OSRP.SpawnAt(x, y, z, h, data, opts)
@@ -72,7 +102,7 @@ function OSRP.SpawnAt(x, y, z, h, data, opts)
     SetEntityVisible(ped, false, false)
 
     -- load the city around the spawn first (no falling through the map)
-    if osijek() then pcall(function() exports.osrp_osijek:LoadArea(x, y, 420.0, 25000) end) end
+    waitArea(x, y, 420.0, 25000)
     local t = GetGameTimer()
     while GetGameTimer() - t < 15000 do
         local found = GetGroundZFor_3dCoord(x, y, z + 5.0, false)
@@ -84,8 +114,7 @@ function OSRP.SpawnAt(x, y, z, h, data, opts)
     ShutdownLoadingScreenNui()
 
     if opts.arrival and osijek() then
-        local ok = pcall(function() exports.osrp_osijek:PlayArrival() end)
-        if not ok then Wait(0) end
+        playArrival()
         SetEntityCoordsNoOffset(ped, x, y, z, false, false, false)
         SetEntityHeading(ped, h)
     end
@@ -100,7 +129,7 @@ end
 
 -- ---------- join: character selection (multicharacter) ----------
 local menuCam = nil
-local PREVIEW = vector4(5725.0, -1475.0, 8.3, 0.0)     -- Tvrđa square, in front of the cathedral
+local PREVIEW = Config.MenuPreview        -- where your character stands in the character menu
 
 local function startJoin()
     OSRP.Spawned = false
@@ -125,16 +154,23 @@ end)
 
 local function menuScene()
     SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = 0 })
-    if osijek() then pcall(function() exports.osrp_osijek:LoadArea(PREVIEW.x, PREVIEW.y, 300.0, 20000) end) end
-    SendNUIMessage({ action = 'loading', show = false })
+    waitArea(PREVIEW.x, PREVIEW.y, 300.0, 20000)
     local ped = PlayerPedId()
-    RequestCollisionAtCoord(PREVIEW.x, PREVIEW.y, PREVIEW.z)
-    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, PREVIEW.z, false, false, false)
+    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, PREVIEW.z + 2.0, false, false, false)
+    local gz = groundZ(PREVIEW.x, PREVIEW.y, PREVIEW.z)
+    OSRP.PreviewZ = gz + 1.0                     -- ped position is ~1 m above the feet
+    SendNUIMessage({ action = 'loading', show = false })
+    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, OSRP.PreviewZ, false, false, false)
     SetEntityHeading(ped, PREVIEW.w)
     FreezeEntityPosition(ped, true)
     if not menuCam then
-        menuCam = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', PREVIEW.x - 0.9, PREVIEW.y + 3.4, PREVIEW.z + 0.75, 0.0, 0.0, 0.0, 42.0, false, 0)
-        PointCamAtCoord(menuCam, PREVIEW.x - 0.9, PREVIEW.y, PREVIEW.z + 0.25)
+        -- camera in front of the character, a bit to the left so the menu does not cover them
+        local r = math.rad(PREVIEW.w)
+        local fx, fy = -math.sin(r), math.cos(r)          -- where the character looks
+        local rx, ry = fy, -fx                             -- character's right
+        local cx, cy = PREVIEW.x + fx * 3.6 + rx * 0.9, PREVIEW.y + fy * 3.6 + ry * 0.9
+        menuCam = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', cx, cy, gz + 1.55, 0.0, 0.0, 0.0, 42.0, false, 0)
+        PointCamAtCoord(menuCam, PREVIEW.x + rx * 0.9, PREVIEW.y + ry * 0.9, gz + 1.0)
     end
     SetCamActive(menuCam, true)
     RenderScriptCams(true, false, 0, true, true)
@@ -168,8 +204,8 @@ RegisterNUICallback('preview', function(d, cb)
     end
     OSRP.ApplyLook({ sex = d.sex == 'f' and 'f' or 'm', appearance = d.appearance })
     local ped = PlayerPedId()
-    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, PREVIEW.z, false, false, false)
-    SetEntityHeading(ped, (d.rot or 0) + 0.0)
+    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, OSRP.PreviewZ or (PREVIEW.z + 1.0), false, false, false)
+    SetEntityHeading(ped, (PREVIEW.w + (d.rot or 0)) % 360.0)
     FreezeEntityPosition(ped, true)
     SetEntityVisible(ped, true, false)
 end)

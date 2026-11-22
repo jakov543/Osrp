@@ -1,5 +1,5 @@
 -- OSRP Osijek - arrival cutscene: you fly in over the sea and land at Zračna luka Osijek (runway 09)
--- exports.osrp_osijek:PlayArrival()  -> blocks ~25 s (ENTER skips), the screen is black before and after.
+-- TriggerEvent('osrp_osijek:playArrival') -> ~25 s (ENTER skips), then 'osrp_osijek:arrivalDone'. Screen is black before and after.
 -- Used by osrp_framework for new characters (and the "Zračna luka (dolazak avionom)" spawn).
 
 local RW_Y = -665.0          -- runway centre line (city coordinates, see map/blender/osijek_starter.py)
@@ -128,7 +128,14 @@ function PlayArrival()
     TriggerEvent('osrp:cutscene', false)
     return true
 end
-exports('PlayArrival', PlayArrival)
+-- started with an event (an export cannot wait); osrp_osijek:arrivalDone fires when it is over
+AddEventHandler('osrp_osijek:playArrival', function()
+    CreateThread(function()
+        local ok, err = pcall(PlayArrival)
+        if not ok then print('[osrp_osijek] arrival: ' .. tostring(err)) DisplayRadar(true) TriggerEvent('osrp:cutscene', false) end
+        TriggerEvent('osrp_osijek:arrivalDone')
+    end)
+end)
 
 -- where you stand after the flight: arrivals hall in the terminal (world coords + heading)
 exports('GetArrivalSpot', function()

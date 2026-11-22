@@ -71,7 +71,12 @@ function LoadArea(x, y, radius, timeout)
     end
     return false
 end
-exports('LoadArea', LoadArea)
+-- exports must not wait (FiveM cannot yield across resources): osrp_framework polls this instead
+exports('AreaProgress', function(x, y, radius)
+    local loaded, total = streamPass(x, y, radius or 350.0)
+    if loaded >= total then RequestCollisionAtCoord(x, y, Config.Origin.z) end
+    return loaded, total
+end)
 
 CreateThread(function()
     while true do
