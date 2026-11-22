@@ -8,6 +8,7 @@ local cutscene = false
 AddEventHandler('osrp:cutscene', function(on) cutscene = on end)
 local lastRect, lastWp, lastRoute = '', nil, ''
 local inside = false
+local nextStreet = 0
 
 local function useNui() return (Config.MapMode or 'nui') == 'nui' end
 
@@ -59,12 +60,17 @@ CreateThread(function()
                 end
                 local lx, ly = toLocal(p)
                 local maxHp = GetEntityMaxHealth(ped) - 100
+                local street
+                if GetGameTimer() > (nextStreet or 0) and OsijekLocation then
+                    nextStreet = GetGameTimer() + 500
+                    street = OsijekLocation(p.x, p.y)
+                end
                 SendNUIMessage({
                     t = 'pos', x = lx, y = ly,
                     cam = GetGameplayCamRot(2).z, ped = GetEntityHeading(ped),
                     speed = GetEntitySpeed(ped),
                     hp = maxHp > 0 and (GetEntityHealth(ped) - 100) / maxHp * 100 or 0,
-                    ar = GetPedArmour(ped), players = others,
+                    ar = GetPedArmour(ped), players = others, street = street,
                 })
             elseif bigOpen then
                 wait = 100

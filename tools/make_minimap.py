@@ -10,12 +10,12 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
-PPM = 2.0                                # pixels per metre
+PPM = 3.0                                # pixels per metre (v1.0.35: sharper)
 X0, X1, Y0, Y1 = -590.0, 590.0, -800.0, 380.0
 
-COLORS = {                               # GTA radar style
-    "sea": (52, 96, 128), "land": (70, 76, 82), "water": (58, 108, 142), "park": (66, 96, 64),
-    "square": (98, 104, 110), "walk": (104, 110, 116), "road": (156, 162, 168), "bld": (118, 124, 132), "bike": (150, 72, 62),
+COLORS = {                               # v1.0.35: modern dark map style
+    "sea": (22, 52, 78), "land": (40, 45, 52), "water": (30, 78, 112), "park": (44, 78, 52),
+    "square": (66, 70, 78), "walk": (74, 79, 88), "road": (96, 102, 112), "bld": (70, 78, 92), "bike": (150, 66, 58),
 }
 ORDER = ["land", "water", "park", "square", "walk", "road", "bike", "bld"]
 
@@ -23,7 +23,7 @@ ROWS = [(0, "Europska avenija"), (-180, "Kapucinska ulica"), (-350, "Vukovarska 
         (164, "Promenada uz Dravu")]
 COLS = [(-450, "Ulica svetog Roka"), (-300, "Šamačka ulica"), (-150, "Radićeva ulica"), (0, "Županijska ulica"),
         (150, "Ulica Hrvatske Republike"), (300, "Ulica Franje Kuhača"), (450, "Divaltova ulica")]
-AREAS = [(-330, -440, "KBC OSIJEK"), (200, -520, "ZRAČNA LUKA OSIJEK"), (225, 75, "TVRĐA"), (-222, 64, "GRADSKI PARK"),
+AREAS = [(-330, -440, "KBC OSIJEK"), (200, -520, "ZRAČNA LUKA OSIJEK"), (225, 75, "TVRĐA"), (-222, 36, "GRADSKI PARK"),
          (0, 220, "DRAVA"), (-300, 300, "COPACABANA"), (-430, -90, "GORNJI GRAD"), (420, -90, "DONJI GRAD")]
 
 
@@ -61,33 +61,69 @@ def draw_map(life, names):
             a = px(cx - rw / 2, cy + rh / 2)
             b = px(cx + rw / 2, cy - rh / 2)
             if kind == "bld":
-                d.rectangle([a, b], fill=COLORS["bld"], outline=(96, 102, 110), width=2)
+                d.rectangle([(a[0] + 4, a[1] + 4), (b[0] + 4, b[1] + 4)], fill=(26, 30, 36))          # soft shadow
+                d.rectangle([a, b], fill=COLORS["bld"], outline=(104, 114, 130), width=2)
+                d.line([a, (b[0], a[1])], fill=(120, 130, 148), width=2)                               # lit roof edge
+            elif kind == "road":
+                d.rectangle([(a[0] - 2, a[1] - 2), (b[0] + 2, b[1] + 2)], fill=(52, 56, 64))
+            elif kind == "water":
+                d.rectangle([a, b], fill=COLORS["water"])
+                d.line([a, (b[0], a[1])], fill=(70, 120, 150), width=3)
+                d.line([(a[0], b[1]), b], fill=(70, 120, 150), width=3)
             else:
                 d.rectangle([a, b], fill=COLORS.get(kind, COLORS["land"]))
+    roads = [r for r in rects if r[0] == "road"]
+    for _, cx, cy, rw, rh in roads:                       # road fill over all edges (clean crossings)
+        d.rectangle([px(cx - rw / 2, cy + rh / 2), px(cx + rw / 2, cy - rh / 2)], fill=COLORS["road"])
+    for _, cx, cy, rw, rh in roads:                       # dashed centre lines on long roads
+        if max(rw, rh) < 40 or min(rw, rh) < 7 or min(rw, rh) > 16:
+            continue
+        horiz = rw > rh
+        L = rw if horiz else rh
+        k = -L / 2 + 6
+        while k < L / 2 - 6:
+            if horiz:
+                q = [px(cx + k, cy + 0.25), px(cx + k + 3, cy - 0.25)]
+            else:
+                q = [px(cx - 0.25, cy + k + 3), px(cx + 0.25, cy + k)]
+            d.rectangle(q, fill=(150, 156, 166))
+            k += 7
+    for kind in ("bike", "bld"):                          # keep these on top of the road fill
+        for r in rects:
+            if r[0] != kind:
+                continue
+            _, cx, cy, rw, rh = r
+            a, b = px(cx - rw / 2, cy + rh / 2), px(cx + rw / 2, cy - rh / 2)
+            if kind == "bld":
+                d.rectangle([a, b], fill=COLORS["bld"], outline=(104, 114, 130), width=2)
+                d.line([a, (b[0], a[1])], fill=(120, 130, 148), width=2)
+            else:
+                d.rectangle([a, b], fill=COLORS["bike"])
     trees = os.path.join(SRC, "osijek_trees.json")
     if os.path.exists(trees):
         for t in json.load(open(trees)):
             x, y = px(t["x"], t["y"])
             r = 3.2 * PPM
-            d.ellipse([x - r, y - r, x + r, y + r], fill=(56, 88, 52))
+            d.ellipse([x - r + 2, y - r + 2, x + r + 2, y + r + 2], fill=(30, 50, 34))
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(58, 104, 62))
     # runway centre line + threshold
     for k in range(-8, 9):
         a, b = px(k * 50 - 14, -665 + 0.6), px(k * 50 + 14, -665 - 0.6)
         d.rectangle([a, b], fill=(235, 235, 235))
     if names:
-        f = font(15)
+        f = font(21)
         for y, name in ROWS:
             for x in (-375, 75, 375):
                 tx, ty = px(x, y)
                 d.text((tx, ty), name, font=f, fill=(250, 250, 250), anchor="mm", stroke_width=3, stroke_fill=(40, 44, 48))
         for x, name in COLS:
-            txt = Image.new("RGBA", (420, 40), (0, 0, 0, 0))
-            ImageDraw.Draw(txt).text((210, 20), name, font=f, fill=(250, 250, 250, 255), anchor="mm", stroke_width=3, stroke_fill=(40, 44, 48, 255))
+            txt = Image.new("RGBA", (600, 56), (0, 0, 0, 0))
+            ImageDraw.Draw(txt).text((300, 28), name, font=f, fill=(250, 250, 250, 255), anchor="mm", stroke_width=3, stroke_fill=(40, 44, 48, 255))
             txt = txt.rotate(90, expand=True)
             for y in (-265, -95, 65):
                 tx, ty = px(x, y)
                 img.paste(txt, (int(tx - txt.width / 2), int(ty - txt.height / 2)), txt)
-        fa = font(26)
+        fa = font(36)
         for x, y, name in AREAS:
             tx, ty = px(x, y)
             d.text((tx, ty), name, font=fa, fill=(255, 226, 150), anchor="mm", stroke_width=4, stroke_fill=(30, 34, 38))

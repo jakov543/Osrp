@@ -676,35 +676,78 @@ def build_props(h):
 
     # ---------------- v1.0.33 BULET e-scooter (rental) - front = +Y, wheels on the ground at z 0
     M.update({"bulet_green": material("osrp_paint_bulet_green", (0.07, 0.55, 0.28)), "deck": material("osrp_screen_deck", (0.05, 0.05, 0.05))})
-    p = "escooter"; names.append(p)
-    for y in (-0.48, 0.48):                      # wheels (as 12-sided discs standing up)
-        vs, fs = [], []
-        for side in (-0.03, 0.03):
-            for i in range(12):
-                a = i * math.pi / 6
-                vs.append((side, y + math.cos(a) * 0.11, 0.11 + math.sin(a) * 0.11))
-        fs = [tuple(range(12)), tuple(range(23, 11, -1))] + [(i, (i + 1) % 12, 12 + (i + 1) % 12, 12 + i) for i in range(12)]
-        _mesh_obj(pcol, f"osrpprop_{p}__kotac_{y}", vs, fs, M["rubber"])
-    B(p, "deck", (0, -0.02, 0.1), (0.16, 0.78, 0.06), "deck")
-    B(p, "deck_bok", (0, -0.02, 0.08), (0.17, 0.8, 0.03), "bulet_green")
-    B(p, "baterija", (0, -0.02, 0.06), (0.12, 0.6, 0.04), "black")
-    B(p, "blatobran", (0, -0.5, 0.2), (0.08, 0.24, 0.03), "bulet_green")
-    vs = []                                     # stem leaning back a little
-    for (x, y, z) in ((-0.03, 0.42, 0.16), (0.03, 0.42, 0.16), (0.03, 0.48, 0.16), (-0.03, 0.48, 0.16),
-                      (-0.03, 0.36, 1.08), (0.03, 0.36, 1.08), (0.03, 0.42, 1.08), (-0.03, 0.42, 1.08)):
-        vs.append((x, y, z))
-    _mesh_obj(pcol, f"osrpprop_{p}__stup", vs, [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)], M["bulet_green"])
-    B(p, "volan", (0, 0.39, 1.06), (0.5, 0.04, 0.04), "black")
-    for sx in (-0.22, 0.22):
-        B(p, f"rucka_{sx}", (sx, 0.39, 1.055), (0.1, 0.05, 0.05), "rubber")
-    B(p, "ekran", (0, 0.36, 1.1), (0.08, 0.06, 0.03), "screen_on")
-    B(p, "svjetlo", (0, 0.47, 0.95), (0.07, 0.03, 0.05), "panel_light")
-    # name plates on the stem, front and back (v1.0.34: readable BULET)
-    B(p, "ploca_nosac", (0, 0.415, 0.62), (0.32, 0.08, 0.14), "bulet_green")     # plate box around the stem
-    face("prop_" + p, "ploca_p", [(-0.15, 0.63), (0.15, 0.63), (0.15, 0.75), (-0.15, 0.75)], 0.457, signtex("bulet_plate"))
-    face("prop_" + p, "ploca_z", [(-0.15, 0.63), (0.15, 0.63), (0.15, 0.75), (-0.15, 0.75)], 0.373, signtex("bulet_plate"))
-    B(p, "deck_gumica", (0, -0.02, 0.16), (0.14, 0.7, 0.008), "rubber")
-    B(p, "stop_svjetlo", (0, -0.62, 0.2), (0.06, 0.02, 0.03), "red")
+    p = "escooter"; names.append(p)             # v1.0.35: modelled after real shared e-scooters (round stem, fork, hub motor, fenders)
+    M.update({"hub": material("osrp_metal_hub_grey", (0.55, 0.57, 0.6), metal=1.0), "lens": material("osrp_lamp_light_head", (1.0, 0.98, 0.9), emit=8.0)})
+
+    def tube(part, p0, p1, r, m, n=10):
+        """cylinder from point p0 to p1 (any direction)"""
+        ax = [p1[i] - p0[i] for i in range(3)]
+        L = math.sqrt(sum(c * c for c in ax)) or 1e-6
+        ax = [c / L for c in ax]
+        ref = (0, 0, 1) if abs(ax[2]) < 0.9 else (1, 0, 0)
+        u = [ax[1] * ref[2] - ax[2] * ref[1], ax[2] * ref[0] - ax[0] * ref[2], ax[0] * ref[1] - ax[1] * ref[0]]
+        ul = math.sqrt(sum(c * c for c in u)); u = [c / ul for c in u]
+        v = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]
+        vs = []
+        for base in (p0, p1):
+            for i in range(n):
+                t = i * 2 * math.pi / n
+                vs.append(tuple(base[k] + r * (math.cos(t) * u[k] + math.sin(t) * v[k]) for k in range(3)))
+        fs = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+        return _mesh_obj(pcol, f"osrpprop_{p}__{part}", vs, fs, M[m])
+
+    R = 0.125                                    # 10 inch wheels
+    for y, tag in ((-0.5, "z"), (0.5, "p")):
+        tube(f"guma_{tag}", (-0.035, y, R), (0.035, y, R), R, "rubber", 16)
+        tube(f"glavcina_{tag}", (-0.04, y, R), (0.04, y, R), 0.07, "hub", 12)
+    # deck: wide, rounded ends, grip tape, green side trims, battery box underneath, rear foot step
+    B(p, "deck", (0, -0.02, 0.12), (0.19, 0.8, 0.07), "deck")
+    tube("deck_prednji", (-0.095, 0.38, 0.155), (0.095, 0.38, 0.155), 0.035, "deck", 10)
+    tube("deck_zadnji", (-0.095, -0.42, 0.155), (0.095, -0.42, 0.155), 0.035, "deck", 10)
+    B(p, "gumica", (0, -0.02, 0.19), (0.17, 0.74, 0.006), "rubber")
+    for sx in (-0.098, 0.098):
+        B(p, f"traka_{sx}", (sx, -0.02, 0.12), (0.006, 0.8, 0.07), "bulet_green")
+    B(p, "baterija", (0, -0.02, 0.07), (0.15, 0.62, 0.05), "black")
+    # rear: fender over the wheel with brake light, stand
+    def arc(part, cy, cz, r, a0, a1, w, t, m, n=10):
+        """curved fender band around a wheel axle at (cy, cz); angles from +Y, counter-clockwise towards +Z"""
+        vs = []
+        for i in range(n + 1):
+            a = math.radians(a0 + (a1 - a0) * i / n)
+            for rr in (r, r + t):
+                for x in (-w / 2, w / 2):
+                    vs.append((x, cy + rr * math.cos(a), cz + rr * math.sin(a)))
+        fs = []
+        for i in range(n):
+            q = i * 4
+            fs += [(q, q + 1, q + 5, q + 4), (q + 2, q + 6, q + 7, q + 3), (q, q + 4, q + 6, q + 2), (q + 1, q + 3, q + 7, q + 5)]
+        fs += [(0, 2, 3, 1), (n * 4, n * 4 + 1, n * 4 + 3, n * 4 + 2)]
+        return _mesh_obj(pcol, f"osrpprop_{p}__{part}", vs, fs, M[m])
+
+    arc("blatobran_z", -0.5, R, R + 0.03, 40, 175, 0.085, 0.012, "bulet_green")
+    B(p, "stop_svjetlo", (0, -0.665, 0.165), (0.06, 0.015, 0.03), "red")
+    tube("nogar", (0.07, -0.25, 0.09), (0.16, -0.33, 0.005), 0.012, "steel", 6)
+    # front: fork, fender, stem (round, leaning back), headlight, display, bars with grips, levers, throttle, phone holder
+    tube("vilica_l", (-0.045, 0.5, R), (-0.035, 0.44, 0.42), 0.016, "steel", 8)
+    tube("vilica_d", (0.045, 0.5, R), (0.035, 0.44, 0.42), 0.016, "steel", 8)
+    arc("blatobran_p", 0.5, R, R + 0.03, 15, 150, 0.075, 0.012, "bulet_green")
+    tube("zglob", (0, 0.43, 0.38), (0, 0.42, 0.46), 0.04, "black", 10)
+    tube("stup", (0, 0.42, 0.44), (0, 0.33, 1.1), 0.032, "bulet_green", 12)
+    tube("svjetlo_kucište", (0, 0.405, 0.98), (0, 0.45, 0.98), 0.045, "black", 12)
+    tube("svjetlo", (0, 0.45, 0.98), (0, 0.455, 0.98), 0.04, "lens", 12)
+    tube("volan", (-0.27, 0.33, 1.1), (0.27, 0.33, 1.1), 0.014, "black", 8)
+    for sx in (-1, 1):
+        tube(f"rucka_{sx}", (sx * 0.18, 0.33, 1.1), (sx * 0.29, 0.33, 1.1), 0.02, "rubber", 8)
+        tube(f"kocnica_{sx}", (sx * 0.1, 0.35, 1.11), (sx * 0.2, 0.39, 1.09), 0.006, "steel", 6)
+    B(p, "gas", (0.15, 0.31, 1.085), (0.03, 0.04, 0.02), "black")
+    B(p, "ekran", (0, 0.33, 1.115), (0.11, 0.08, 0.03), "black")
+    B(p, "ekran_svjetli", (0, 0.335, 1.131), (0.09, 0.06, 0.002), "screen_on")
+    B(p, "mobitel_nosac", (0, 0.29, 1.13), (0.09, 0.03, 0.14), "black")
+    # name plates on the stem, front and back
+    B(p, "ploca_nosac", (0, 0.385, 0.66), (0.32, 0.08, 0.14), "bulet_green")
+    face("prop_" + p, "ploca_p", [(-0.15, 0.67), (0.15, 0.67), (0.15, 0.79), (-0.15, 0.79)], 0.427, signtex("bulet_plate"))
+    face("prop_" + p, "ploca_z", [(-0.15, 0.67), (0.15, 0.67), (0.15, 0.79), (-0.15, 0.79)], 0.343, signtex("bulet_plate"))
+
     p = "bulet_stand"; names.append(p)          # station pole with sign
     C(p, "stup", (0, -0.05, 0), 0.05, 2.6, "steel", 8)
     face("prop_" + p, "lice", [(-0.45, 1.7), (0.45, 1.7), (0.45, 2.6), (-0.45, 2.6)], 0.02, signtex("bulet_stand"))

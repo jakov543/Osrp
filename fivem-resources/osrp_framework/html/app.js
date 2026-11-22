@@ -191,6 +191,8 @@ function setStatus(d) {
   $('stHp').closest('.st').style.setProperty('--v', clamp(d.hp));
   $('stAr').closest('.st').style.setProperty('--v', clamp(d.ar));
   $('stSp').closest('.st').style.setProperty('--v', clamp(d.st));
+  [['stHp', d.hp], ['stAr', d.ar], ['stSp', d.st]].forEach(([id, v]) => { $(id).closest('.st').dataset.v = Math.round(clamp(v)); });
+  $('stHp').closest('.st').classList.toggle('low', d.hp < 25);
   $('stMic').classList.toggle('on', !!d.talk);
   $('hId').textContent = 'ID ' + d.id;
   $('hOnline').textContent = (d.online || 1) + ' online';
@@ -273,7 +275,7 @@ function setLoc(d) {
   if (sb) {
     sb.style.display = d.show ? 'flex' : 'none';
     sb.style.left = `calc(${(d.left * 100).toFixed(3)}vw + 14px)`;
-    sb.style.top = `calc(${(d.bottom * 100).toFixed(3)}vh - 112px)`;
+    sb.style.top = `calc(${(d.bottom * 100).toFixed(3)}vh - 96px)`;
   }
 }
 
