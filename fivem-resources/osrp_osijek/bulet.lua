@@ -113,15 +113,15 @@ local function startRide(pos, heading)
     -- v1.0.36 animated parts: two spinning wheels and a handlebar that turns with A/D
     local parts = {}
     if wh and sh then
-        for _, y in ipairs({ 0.5, -0.5 }) do
+        for _, y in ipairs({ 0.43, -0.43 }) do
             local w = CreateObject(wh, pos.x, pos.y, pos.z, true, true, false)
             SetEntityCollision(w, false, false)
-            AttachEntityToEntity(w, prop, 0, 0.0, y, 0.14, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+            AttachEntityToEntity(w, prop, 0, 0.0, y, 0.127, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
             parts[#parts + 1] = { obj = w, kind = 'wheel', y = y }
         end
         local st = CreateObject(sh, pos.x, pos.y, pos.z, true, true, false)
         SetEntityCollision(st, false, false)
-        AttachEntityToEntity(st, prop, 0, 0.0, 0.42, 0.40, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+        AttachEntityToEntity(st, prop, 0, 0.0, 0.36, 0.38, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
         parts[#parts + 1] = { obj = st, kind = 'steer' }
         SetModelAsNoLongerNeeded(wh) SetModelAsNoLongerNeeded(sh)
     end
@@ -189,23 +189,23 @@ CreateThread(function()
                 local bump = math.sin(r.bob * 6.0) * 0.006 * math.min(1.0, real / 3.0)
                 AttachEntityToEntity(ped, r.veh, 0, 0.0, -0.1, B.PedZ - crouch + bump, r.pitch, r.roll, 0.0, false, false, false, false, 2, true)
                 AttachEntityToEntity(r.prop, r.veh, 0, 0.0, 0.0, B.PropZ, r.pitch * 0.3, r.roll * 0.6, 0.0, false, false, false, false, 2, true)
-                -- wheels roll with the real speed (r = 0.14 m), the bar turns into the corner
-                r.spin = (r.spin - math.deg(real * dt / 0.14)) % 360.0
+                -- wheels roll with the real speed (r = 0.127 m), the bar turns into the corner
+                r.spin = (r.spin - math.deg(real * dt / 0.127)) % 360.0
                 r.steer = r.steer + ((((left and 1 or 0) - (right and 1 or 0)) * 22.0) - r.steer) * math.min(1.0, dt * 8.0)
                 for _, pt in ipairs(r.parts) do
                     if DoesEntityExist(pt.obj) then
                         if pt.kind == 'wheel' then
-                            AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, pt.y, 0.14, r.spin, 0.0, 0.0, false, false, false, false, 2, true)
+                            AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, pt.y, 0.127, r.spin, 0.0, 0.0, false, false, false, false, 2, true)
                         else
-                            AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, 0.42, 0.40, 0.0, 0.0, r.steer, false, false, false, false, 2, true)
+                            AttachEntityToEntity(pt.obj, r.prop, 0, 0.0, 0.36, 0.38, 0.0, 0.0, r.steer, false, false, false, false, 2, true)
                         end
                     end
                 end
                 -- v1.0.37 custom rider animation on top of the stand pose:
                 --  * both hands locked on the grips (arm IK, follows the turning bar)
                 --  * head looks where you steer, knees bend more when you brake, push-off dip when starting slow
-                local steerObj, gx, gy, gz = r.prop, 0.25, 0.3, 1.13
-                for _, pt in ipairs(r.parts) do if pt.kind == 'steer' then steerObj, gy, gz = pt.obj, -0.12, 0.73 end end
+                local steerObj, gx, gy, gz = r.prop, 0.2, 0.25, 1.12
+                for _, pt in ipairs(r.parts) do if pt.kind == 'steer' then steerObj, gy, gz = pt.obj, -0.11, 0.74 end end
                 if B.HandIK ~= false and DoesEntityExist(steerObj) then
                     SetIkTarget(ped, 3, steerObj, 0, -gx, gy, gz, 0, 120, 120)     -- left hand
                     SetIkTarget(ped, 4, steerObj, 0, gx, gy, gz, 0, 120, 120)      -- right hand

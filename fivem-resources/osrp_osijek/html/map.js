@@ -8,7 +8,7 @@ let META = { x0: -590, y1: 380, ppm: 3, w: 3540, h: 3540, landmarks: [] };
 const ICONS = [
   ['Bolnica', '🏥', '#ef4444'], ['Policija', '🚓', '#3b82f6'], ['Oružarnica', '🔫', '#f97316'], ['Zračna', '✈️', '#38bdf8'],
   ['Konkatedrala', '⛪', '#f4b740'], ['Trojstva', '⛲', '#f4b740'], ['park', '🌳', '#22c55e'], ['Copacabana', '🏖️', '#facc15'],
-  ['most', '🌉', '#a78bfa'], ['STIL', '👕', '#ec4899'], ['VOLT', '📱', '#38bdf8'], ['Promenada', '🚶', '#1fd6b6'], ['avenija', '🛣️', '#94a3b8'],
+  ['most', '🌉', '#a78bfa'], ['STIL', '👕', '#ec4899'], ['VOLT', '📱', '#38bdf8'], ['Hangar', '🛩️', '#94a3b8'], ['Promenada', '🚶', '#1fd6b6'], ['avenija', '🛣️', '#94a3b8'],
 ];
 const st = { x: 0, y: 0, cam: 0, ped: 0, speed: 0, scale: 0.7, wp: null, wpName: null, route: [], players: [], street: '' };
 

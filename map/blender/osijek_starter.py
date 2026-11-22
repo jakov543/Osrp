@@ -617,7 +617,7 @@ for i, x in enumerate(CROSS_X):
 mh = 0
 for x in range(-520, 521, 45):
     if clear_of_cross_early(x, 14):
-        cylinder(col, f"osrp_sahta_av_{mh}", (x, 2.0 if mh % 2 else -2.0, 0.1), 0.36, 0.025, M_IRON, verts=12); mh += 1
+        cylinder(col, f"osrp_sahta_av_{mh}", (x, 6.0 if mh % 2 else -6.0, 0.1), 0.36, 0.025, M_IRON, verts=12); mh += 1
 for yc in (-350, -180, 125):
     for x in range(-505, 506, 60):
         if clear_of_cross_early(x, 12):
@@ -628,6 +628,13 @@ for x in range(-530, 531, 24):
         for side in (-1, 1):
             box(col, f"osrp_slivnik_{dr}_{side}", (x, side * (ROAD_W / 2 - 0.18), 0.1), (0.9, 0.36, 0.024), M_IRON)
         dr += 1
+
+# v1.0.38: Osijek tram line on Europska avenija - two tracks (1 m gauge) in the middle lanes, stops with shelters
+M_RAIL = material("osrp_metal_rail_tram", (0.5, 0.5, 0.52), rough=0.3, metal=1.0)
+for ty in (-2.0, 2.0):
+    for ry in (-0.5, 0.5):
+        box(col, f"osrp_tram_tracnica_{ty}_{ry}", (0, ty + ry, 0.1), (MAP_W - 20, 0.08, 0.014), M_RAIL)
+        box(col, f"osrp_tram_utor_{ty}_{ry}", (0, ty + ry - 0.07, 0.1), (MAP_W - 20, 0.05, 0.006), M_IRON)
 
 # Street lights: avenue both sides every 30 m, promenade every 25 m
 li = 0
@@ -958,7 +965,7 @@ for bx in range(len(CROSS_X) - 1):
 
 # Pedestrian bridge over the Drava (Pješački most) - deck level with the banks, you can walk on it
 BR_X = -80
-M_BRIDGE = material("osrp_bridge_steel_white", (0.86, 0.87, 0.88), rough=0.4, metal=0.6)   # v1.0.37: white like the real bridge
+M_BRIDGE = material("osrp_bridge_steel_white", (0.86, 0.87, 0.88), rough=0.4, metal=0.6)   # v1.0.38: white like the real bridge
 DECK_TOP = 0.25
 box(col, "osrp_most_paluba", (BR_X, RIVER_Y, DECK_TOP - 0.6), (5, RIVER_W + 8, 0.6), M_BRIDGE)
 box(col, "osrp_most_hodnik", (BR_X, RIVER_Y, DECK_TOP - 0.02), (4.2, RIVER_W + 8, 0.04), M_FLOOR)
@@ -979,7 +986,7 @@ for side in (-1, 1):
         yy = RIVER_Y - RIVER_W / 2 + 5 + t * (RIVER_W - 10)
         box(col, f"osrp_most_kabel_{side}_{k}", (BR_X + side * 2.6, yy, 22.5 - 18 * math.sin(t * math.pi) - 0.15), (0.25, (RIVER_W - 10) / 48 * 1.9, 0.3), M_BRIDGE)
 
-# v1.0.37: LED light strips (purple handrails, red pylons) - in-game coloured lights at night come from client.lua (Life.BRIDGE)
+# v1.0.38: LED light strips (purple handrails, red pylons) - in-game coloured lights at night come from client.lua (Life.BRIDGE)
 M_LED_PURPLE = material("osrp_lamp_light_led_purple", (0.65, 0.2, 1.0), emit=6.0)
 M_LED_RED = material("osrp_lamp_light_led_red", (1.0, 0.12, 0.2), emit=6.0)
 for side in (-1, 1):
@@ -1414,12 +1421,72 @@ cylinder(col, "osrp_toranj_stup", (390, -470, 0), 3.6, 30, M_TERM, verts=14)
 cylinder(col, "osrp_toranj_kabina", (390, -470, 30), 6.2, 4.5, M_GLASS, verts=14)
 cylinder(col, "osrp_toranj_krov", (390, -470, 34.5), 6.8, 0.7, M_STEEL, verts=14)
 cylinder(col, "osrp_toranj_antena", (390, -470, 35.2), 0.12, 7, M_POLE, verts=6)
+# v1.0.38: both hangars can be entered - big door half open, aircraft inside, workshop, office, roof trusses, skylights
+M_HFLOOR_EPOXY = material("osrp_hangar_floor_epoxy", (0.42, 0.45, 0.48), rough=0.3)
+M_HANGAR_IN = material("osrp_hangar_wall_inside", (0.78, 0.8, 0.82))
+M_HLINE = material("osrp_hangar_line_yellow", (0.9, 0.7, 0.05))
+M_TOOLRED = material("osrp_hangar_toolbox_red", (0.65, 0.07, 0.06))
+HANGARS = []
 for k, hx in enumerate((-300, -170)):
-    box(col, f"osrp_hangar_{k}", (hx, -540, 0), (100, 56, 13), M_HANGAR)
-    gable_roof(col, f"osrp_hangar_krov_{k}", hx, -540, 13, 100, 56, 6, M_HANGAR)
-    box(col, f"osrp_hangar_vrata_{k}", (hx, -568.1, 0.1), (84, 0.3, 11.5), M_CANOPY)
-    plane(col, f"osrp_hangar_platforma_{k}", (hx, (-568 + TW_Y + 9) / 2, 0.1), (100, -568 - TW_Y - 9), M_APRON)
-SPECIAL += [(-300, -578, None, 180.0, "cuban800", 0), (-170, -578, None, 180.0, "velum2", 0)]
+    hy, HW, HD, HH = -540.0, 100.0, 56.0, 13.0
+    front = hy - HD / 2
+    box(col, f"osrp_hangar_pod_{k}", (hx, hy, 0.0), (HW, HD, 0.12), M_HFLOOR_EPOXY)
+    box(col, f"osrp_hangar_zid_s_{k}", (hx, hy + HD / 2 - 0.2, 0), (HW, 0.4, HH), M_HANGAR)
+    for sx in (-1, 1):
+        box(col, f"osrp_hangar_zid_{k}_{sx}", (hx + sx * (HW / 2 - 0.2), hy, 0), (0.4, HD, HH), M_HANGAR)
+        box(col, f"osrp_hangar_front_{k}_{sx}", (hx + sx * 46, front + 0.2, 0), (8, 0.4, HH), M_HANGAR)
+        # door panels slid to the sides (stacked in front of the side walls) -> 63 m opening
+        for j in range(2):
+            box(col, f"osrp_hangar_vrata_{k}_{sx}_{j}", (hx + sx * 36.75, front - 0.25 - j * 0.35, 0.1), (10.5, 0.3, 11.4), M_CANOPY)
+    box(col, f"osrp_hangar_nadvrata_{k}", (hx, front + 0.2, 11.5), (HW, 0.4, HH - 11.5), M_HANGAR)
+    box(col, f"osrp_hangar_tracnica_{k}", (hx, front - 0.4, 11.5), (HW - 4, 0.5, 0.3), M_STEEL)
+    gable_roof(col, f"osrp_hangar_krov_{k}", hx, hy, HH, HW, HD, 6, M_HANGAR)
+    for j in range(-4, 5):                                  # roof trusses + skylight strips
+        box(col, f"osrp_hangar_resetka_{k}_{j}", (hx + j * 11, hy, HH - 0.9), (0.4, HD - 1, 0.6), M_STEEL)
+        box(col, f"osrp_hangar_kosnik_{k}_{j}", (hx + j * 11, hy, HH - 0.3), (0.25, HD - 1, 0.25), M_STEEL)
+    for sy in (-1, 1):
+        box(col, f"osrp_hangar_svjetlarnik_{k}_{sy}", (hx, hy + sy * 12, HH + 3.2), (HW - 10, 3.0, 0.08), M_CLEAR)
+    # floor markings: centre line + parking box
+    box(col, f"osrp_hangar_linija_{k}", (hx, hy - 4, 0.121), (0.3, 40, 0.005), M_HLINE)
+    for sx in (-1, 1):
+        box(col, f"osrp_hangar_okvir_l_{k}_{sx}", (hx + sx * 16, hy - 4, 0.121), (0.25, 36, 0.005), M_HLINE)
+    # workshop along the back wall: benches, red tool chests, shelves with crates, compressor
+    for j in range(5):
+        x = hx - 40 + j * 7
+        box(col, f"osrp_hangar_klupa_{k}_{j}", (x, hy + HD / 2 - 1.2, 0.12), (4.0, 1.2, 0.95), M_STEEL)
+        box(col, f"osrp_hangar_klupa_ploca_{k}_{j}", (x, hy + HD / 2 - 1.2, 1.07), (4.1, 1.3, 0.06), M_WOOD)
+        box(col, f"osrp_hangar_alat_{k}_{j}", (x + 2.7, hy + HD / 2 - 0.9, 0.12), (1.2, 0.7, 1.3), M_TOOLRED)
+        box(col, f"osrp_hangar_ploca_alat_{k}_{j}", (x, hy + HD / 2 - 0.42, 1.3), (3.6, 0.04, 1.4), M_WOOD)
+    for j in range(3):
+        x = hx + 18 + j * 8
+        box(col, f"osrp_hangar_polica_{k}_{j}", (x, hy + HD / 2 - 1.1, 0.12), (6.0, 1.6, 4.2), M_STEEL)
+        for z in (0.3, 1.7, 3.1):
+            box(col, f"osrp_hangar_sanduk_{k}_{j}_{z}", (x - 1.5, hy + HD / 2 - 1.1, 0.12 + z), (2.2, 1.2, 1.0), M_WOOD)
+            box(col, f"osrp_hangar_kutija_{k}_{j}_{z}", (x + 1.4, hy + HD / 2 - 1.1, 0.12 + z), (1.6, 1.1, 0.8), M_HOSP)
+    # office in the back corner (walk-in, window to the hall) with stairs up to the roof of the office (mezzanine)
+    ox, oy = hx + 40, hy + 18
+    box(col, f"osrp_hangar_ured_pod_{k}", (ox, oy, 0.12), (16, 16, 0.1), M_FLOOR)
+    box(col, f"osrp_hangar_ured_zid_z_{k}", (ox - 8, oy, 0.12), (0.2, 16, 3.4), M_HANGAR_IN)
+    box(col, f"osrp_hangar_ured_zid_j_a_{k}", (ox - 4, oy - 8, 0.12), (8, 0.2, 1.1), M_HANGAR_IN)
+    box(col, f"osrp_hangar_ured_staklo_{k}", (ox - 4, oy - 8, 1.22), (8, 0.1, 1.8), M_CLEAR)
+    box(col, f"osrp_hangar_ured_zid_j_b_{k}", (ox + 5.5, oy - 8, 0.12), (5, 0.2, 3.4), M_HANGAR_IN)
+    box(col, f"osrp_hangar_ured_nad_{k}", (ox, oy - 8, 3.02), (16, 0.2, 0.5), M_HANGAR_IN)
+    box(col, f"osrp_hangar_ured_strop_{k}", (ox, oy, 3.52), (16, 16, 0.25), M_STEEL)
+    for sx in (-1, 1):
+        box(col, f"osrp_hangar_galerija_ograda_{k}_{sx}", (ox + sx * 7.95, oy, 3.77), (0.08, 16, 1.0), M_STEEL)
+    box(col, f"osrp_hangar_galerija_ograda_j_{k}", (ox - 1.5, oy - 7.95, 3.77), (13, 0.08, 1.0), M_STEEL)
+    for st in range(12):                                     # stairs up to the gallery (along the office front, east end)
+        box(col, f"osrp_hangar_stube_{k}_{st}", (ox + 6.8, oy - 8.6 - (11 - st) * 0.3, 0.12 + st * 0.285), (2.2, 0.3, 0.285), M_STEEL)
+    box(col, f"osrp_hangar_ured_stol_{k}", (ox - 2, oy + 2, 0.22), (2.4, 1.2, 0.75), M_WOOD)
+    box(col, f"osrp_hangar_ured_ormar_{k}", (ox + 6.5, oy + 6, 0.22), (2.0, 0.6, 2.2), M_STEEL)
+    plane(col, f"osrp_hangar_platforma_{k}", (hx, (front + TW_Y + 9) / 2, 0.1), (HW, front - TW_Y - 9), M_APRON)
+    INTERIOR_LIGHTS.extend([(hx + dx, hy + dy, HH - 1.4, 18.0, 60.0) for dx in (-33, 0, 33) for dy in (-14, 8)])
+    INTERIOR_LIGHTS.append((ox, oy, 3.3, 7.0, 30.0))
+    HANGARS.append((hx, hy, HW, HD, HH))
+    STAFF.append(("s_m_y_xmech_01", hx - 33, hy + HD / 2 - 2.5, 0.0, "WORLD_HUMAN_WELDING"))
+    STAFF.append(("s_m_y_airworker", hx + 12, hy - 10, 90.0, "WORLD_HUMAN_CLIPBOARD"))
+SPECIAL += [(-300, -544, None, 180.0, "cuban800", 0), (-170, -544, None, 180.0, "velum2", 0)]       # parked inside
+SPECIAL += [(-300, -586, None, 180.0, "dodo", 0)]                                                     # waiting outside
 cylinder(col, "osrp_vjetrokaz_stup", (480, -625, 0), 0.1, 6, M_POLE, verts=6)
 box(col, "osrp_vjetrokaz", (481.4, -625, 5.2), (2.6, 0.7, 0.7), M_RED)
 PLACES["airport"] = (TX, TY - 30)
@@ -2035,8 +2102,9 @@ GUNSHOP = {"counter": [(GSX, GSY - 0.6)], "z": [FLOOR_Z]}
 PLACES["gunshop"] = (GSX, GFRONT + 3)
 MAPRECTS.append(("bld", GSX, GSY, GW, GD))
 LANDMARKS.append(("Oružarnica", GSX, GSY))
+LANDMARKS += [(f"Hangar {k + 1}", h[0], h[1]) for k, h in enumerate(HANGARS)]
 
-# ---------- v1.0.37 shops next to the gun shop: STIL (clothes, change your look) + VOLT (phone, radio, tablet ...) ----------
+# ---------- v1.0.38 shops next to the gun shop: STIL (clothes, change your look) + VOLT (phone, radio, tablet ...) ----------
 STORES = {}
 def shop_building(tag, cx, wall_rgb, sign, clerk, label):
     w, dpt, h = 18.0, 14.0, 4.6
@@ -2084,7 +2152,7 @@ for k in range(2):
 for k in range(3):
     cprop("tech_shelf", 55.0 + k * 3.0, GSY - 6.6, FLOOR_Z, 0.0)
 
-# ---------- v1.0.37 billboards (both sides) ----------
+# ---------- v1.0.38 billboards (both sides) ----------
 for model, x, y, hd in (("billboard_osijek", -540.0, 26.0, 0.0), ("billboard_kava", 540.0, -26.0, 0.0), ("billboard_bulet", -200.0, -372.0, 0.0),
                         ("billboard_volt", 172.0, -374.0, 90.0), ("billboard_stil", -540.0, -26.0, 0.0)):
     cprop(model, x, y, 0.05, hd, 300.0)
@@ -2099,14 +2167,14 @@ for x, y, hd in ((-520, -(ROAD_W / 2 + 1.3), 0.0), (520, ROAD_W / 2 + 1.3, 180.0
 
 # v1.0.28: places with a roof you can walk under - no rain inside (x, y, width, depth, roof height)
 INDOORS = [(HX, HY, 111, 45, LOB_H), (TX, TY, 200, 26, 12), (PSX, PSY, PW, PD, PG), (GSX, GSY, GW, GD, GH),
-           (GX, GY, 28, 32, 7), (PSX, PFRONT + 3.0, 12, 6, 3.6), (HX, HY + 26, 18, 8, 3.8)]
-INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]   # (v1.0.37 shops are "bld" too)
+           (GX, GY, 28, 32, 7), (PSX, PFRONT + 3.0, 12, 6, 3.6), (HX, HY + 26, 18, 8, 3.8)] + [(h[0], h[1], h[2], h[3], h[4]) for h in HANGARS]
+INDOORS += [(r[1], r[2], r[3] + 1, r[4], 25.0) for r in MAPRECTS if r[0] == "bld"]   # (v1.0.38 shops are "bld" too)
 
 # ---------- v1.0.30 entrances (stone step up to the floor) + curbs round the car parks ----------
 for k, (x, y, w) in enumerate(((HX, HY + 22.6, 7.0), (ERX, HY + 22.6, 4.0), (PSX, PFRONT + 0.6, 7.0), (GSX, GFRONT + 0.6, 4.0))):
     box(col, f"osrp_ulaz_stepenica_{k}", (x, y, 0.0), (w, 1.2, FLOOR_Z), M_WHITE_STONE)
     box(col, f"osrp_ulaz_otirac_{k}", (x, y - 0.1, FLOOR_Z), (w - 1.5, 0.9, 0.012), M_CANOPY)
-# v1.0.37: airport + police get the same dark door frame as the hospital entrance (+ airport step and mat)
+# v1.0.38: airport + police get the same dark door frame as the hospital entrance (+ airport step and mat)
 M_DOORDARK = material("osrp_door_frame_dark", (0.12, 0.13, 0.16), rough=0.4, metal=0.6)
 for tag, x, y in (("aerodrom", TX, TY + 12.8), ("policija", PSX, PFRONT - 0.15)):
     for sx in (-1, 1):
@@ -2156,4 +2224,4 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.37: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.38: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

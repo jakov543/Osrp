@@ -178,6 +178,13 @@ def draw(key):
         d.rectangle((0, 0, S, S), fill=(14, 20, 34))
         _center_text(d, "VOLT", S * 0.4, 170, (60, 200, 255))
         _center_text(d, "ELEKTRONIKA", S * 0.72, 56, WHITE, cond=True)
+    elif key == "tram_stop":                # v1.0.38 GPP tram stop sign (Osijek city transport)
+        d.rectangle((0, 0, S, S), fill=(250, 250, 248))
+        d.rectangle((0, 0, S, 150), fill=(0, 90, 170))
+        _center_text(d, "GPP", 75, 110, WHITE)
+        d.ellipse((156, 180, 356, 380), fill=(240, 190, 0))
+        _center_text(d, "T", 282, 150, (0, 60, 130))
+        _center_text(d, "TRAMVAJ 2", 440, 62, (0, 60, 130), cond=True)
     elif key.startswith("ad_"):             # v1.0.36 billboards (2 : 1, drawn wide, squeezed into the square texture)
         return _billboard(key[3:])
     return img
@@ -231,4 +238,4 @@ def _billboard(k):
     return im.resize((S, S))
 
 
-KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava"]
+KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava", "tram_stop"]
