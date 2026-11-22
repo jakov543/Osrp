@@ -15,7 +15,7 @@ local function useNui() return (Config.MapMode or 'nui') == 'nui' end
 local function toLocal(v) return v.x - Config.Origin.x, v.y - Config.Origin.y end
 
 local function inCity(p, extra)
-    return #(vec2(p.x, p.y) - vec2(Config.Origin.x, Config.Origin.y)) < Config.CityRadius + (extra or 0.0)
+    return #(vec2(p.x, p.y) - vec2(Config.Origin.x, Config.Origin.y)) < (Config.MapRadius or Config.CityRadius) + (extra or 0.0)
 end
 
 local function radarRect()

@@ -143,6 +143,7 @@ function zoomAt(mx, my, f) {
 }
 function openBig() {
   big.open = true;
+  if (!$('bigImg').getAttribute('src')) $('bigImg').src = 'map_big.png';      // v1.0.40: big picture loads on first F7 (saves memory)
   $('big').classList.remove('hidden');
   const v = $('view');
   if (!meBig) {

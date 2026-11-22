@@ -448,7 +448,24 @@ def flat(rng, n, base):
 
 
 # material-name key -> (recipe, texture size, tile size in metres, normal strength or 0)
+def flats(rng, n, base):
+    """v1.0.40: apartment block facade - one window per 3 x 3 m tile, plaster around, balcony slab under it"""
+    yy, xx = np.mgrid[0:n, 0:n] / n
+    pl = 1 + 0.03 * noise(rng, n, 0.8) - 0.05 * np.clip(fbm(rng, n, [n / 6, n / 16], [1, 0.5]), 0, None)
+    img = colorize(base, pl).astype(float)
+    win = (xx > 0.22) & (xx < 0.78) & (yy > 0.18) & (yy < 0.66)
+    frame = (xx > 0.19) & (xx < 0.81) & (yy > 0.15) & (yy < 0.69) & ~win
+    sill = (xx > 0.17) & (xx < 0.83) & (yy > 0.69) & (yy < 0.74)
+    glass = np.stack([0.16 + 0.10 * (1 - yy), 0.20 + 0.10 * (1 - yy), 0.26 + 0.12 * (1 - yy)], -1) * 255
+    img[win] = glass[win]
+    img[frame] = (235, 235, 230)
+    img[sill] = (150, 150, 148)
+    rough = np.where(win, 0.08, 0.8)
+    return np.clip(img, 0, 255).astype(np.uint8), rough
+
+
 TABLE = [
+    ("flats_",       lambda r, n, b: flats(r, n, b),           512, 3.0, 0.6),      # v1.0.40 apartment blocks
     ("plaster_interior", lambda r, n, b: plaster_smooth(r, n, b), 512, 3.0, 0.4),     # v1.0.27
     ("plaster_ceiling", lambda r, n, b: plaster_smooth(r, n, b),  512, 3.0, 0.3),
     ("rust_wreck",   lambda r, n, b: rust_hull(r, n, b),      1024, 3.0, 2.5),     # v1.0.26 sunken boat

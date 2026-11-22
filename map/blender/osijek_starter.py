@@ -80,7 +80,7 @@ def _mesh_obj(col, name, verts, faces, mat):
 _BOX_FACES = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
 
 
-GRID = 100.0   # must match CHUNK in osijek_export_gta.py
+GRID = 200.0   # must match CHUNK in osijek_export_gta.py (v1.0.40: 200 m chunks for Veliki Osijek)
 
 
 def _cuts(c, half):
@@ -2404,4 +2404,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import osrp_props  # noqa: E402
 PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 
-print(f"[OSRP] Osijek map v1.0.39: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+# v1.0.40: Veliki Osijek - new districts all around the old city (osrp_districts.py)
+import osrp_districts
+osrp_districts.build(globals())
+print(f"[OSRP] Osijek map v1.0.40: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

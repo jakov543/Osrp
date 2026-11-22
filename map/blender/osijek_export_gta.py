@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(argv[0] if argv else os.path.join(HERE, "export"))
 TEX = os.path.join(OUT, "_textures")
-CHUNK = 100.0
+CHUNK = 200.0
 LOD_DIST = 750.0
 os.makedirs(TEX, exist_ok=True)
 

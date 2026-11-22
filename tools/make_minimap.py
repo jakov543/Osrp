@@ -10,21 +10,23 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
-PPM = 3.0                                # pixels per metre (v1.0.35: sharper)
-X0, X1, Y0, Y1 = -590.0, 590.0, -800.0, 445.0
+PPM = 1.4                                # pixels per metre (v1.0.40: whole Veliki Osijek)
+X0, X1, Y0, Y1 = -1320.0, 2520.0, -1920.0, 1720.0
 
 COLORS = {                               # v1.0.35: modern dark map style
     "sea": (22, 52, 78), "land": (40, 45, 52), "water": (30, 78, 112), "park": (44, 78, 52),
-    "square": (66, 70, 78), "walk": (74, 79, 88), "road": (96, 102, 112), "bld": (70, 78, 92), "bike": (150, 66, 58),
+    "square": (66, 70, 78), "walk": (74, 79, 88), "road": (96, 102, 112), "bld": (70, 78, 92), "bike": (150, 66, 58), "field": (78, 70, 44), "yard": (58, 62, 68),
 }
-ORDER = ["land", "water", "park", "square", "walk", "road", "bike", "bld"]
+ORDER = ["land", "water", "field", "yard", "park", "square", "walk", "road", "bike", "bld"]
 
 ROWS = [(0, "Europska avenija"), (-180, "Kapucinska ulica"), (-350, "Vukovarska ulica"), (125, "Šetalište kardinala Šepera"),
         (164, "Promenada uz Dravu")]
 COLS = [(-450, "Ulica svetog Roka"), (-300, "Šamačka ulica"), (-150, "Radićeva ulica"), (0, "Županijska ulica"),
         (150, "Ulica Hrvatske Republike"), (300, "Ulica Franje Kuhača"), (450, "Divaltova ulica")]
 AREAS = [(-330, -440, "KBC OSIJEK"), (200, -520, "ZRAČNA LUKA OSIJEK"), (225, 75, "TVRĐA"), (-222, 36, "GRADSKI PARK"),
-         (0, 220, "DRAVA"), (-300, 300, "COPACABANA"), (360, 410, "VILA NA DRAVI"), (-472, -458, "DRAVA CENTAR"), (-430, -90, "GORNJI GRAD"), (420, -90, "DONJI GRAD")]
+         (0, 220, "DRAVA"), (-300, 300, "COPACABANA"), (360, 410, "VILA NA DRAVI"), (-472, -458, "DRAVA CENTAR"), (-430, -90, "GORNJI GRAD"), (420, -90, "DONJI GRAD"),
+         (-925, -420, "SJENJAK"), (1125, -420, "JUG 2"), (2075, -420, "INDUSTRIJSKA ZONA"), (1450, -1450, "JUŽNA INDUSTRIJSKA ZONA"),
+         (-450, -1450, "POLJA"), (-525, 1000, "RETFALA"), (950, 1000, "PODRAVLJE"), (2075, 1000, "ŠUMA"), (0, -1000, "JUŽNA OBILAZNICA")]
 
 
 def px(x, y):
