@@ -1,5 +1,5 @@
 """
-OSRP - Osijek starter map for Blender (V1.0.20)
+OSRP - Osijek starter map for Blender (V1.0.21)
 
 How to use:
   1. Open Blender (4.x), go to the "Scripting" tab.
@@ -653,45 +653,129 @@ def door_heading(facing):
     return 180.0 if facing == -1 else 0.0
 
 
+M_INTWALL = material("osrp_plaster_interior", (0.80, 0.76, 0.68))
+M_CEIL = material("osrp_plaster_ceiling", (0.90, 0.90, 0.88))
+M_TILES = material("osrp_tiles_floor", (0.78, 0.80, 0.82))
+HOUSE_LIGHTS = []    # (x, y, z, range, draw distance) - one light per room
+
+
 def house_enterable(name, cx, cy, w, d, h, mat, facing):
-    """ground floor you can walk into: walls, doorway, wooden floor, ceiling; upper floors solid"""
-    y_front = cy + facing * d / 2          # street face
-    y_back = cy - facing * d / 2
-    fy = y_front - facing * WALL_T / 2     # centre line of the front wall
-    by = y_back + facing * WALL_T / 2
-    # front wall with a doorway in the middle
+    """v1.0.21: ground-floor flat you can walk into - living room (street side), kitchen, bathroom, bedroom,
+    interior walls with doorways, tiled kitchen + bathroom, white ceiling, furnished with real GTA props"""
+    f = facing
+    y_front = cy + f * d / 2          # street face
+    y_back = cy - f * d / 2
+    fy = y_front - f * WALL_T / 2     # centre line of the front wall
+    by = y_back + f * WALL_T / 2
+    # ---- shell (same as before): front wall with the doorway, back + side walls, solid upper floors
     left_w = (w - DOOR_W) / 2
     box(col, f"{name}_zid_l", (cx - w / 2 + left_w / 2, fy, 0), (left_w, WALL_T, FLOOR_H), mat)
     box(col, f"{name}_zid_d", (cx + w / 2 - left_w / 2, fy, 0), (left_w, WALL_T, FLOOR_H), mat)
     box(col, f"{name}_nadvratnik", (cx, fy, DOOR_H), (DOOR_W, WALL_T, FLOOR_H - DOOR_H), mat)
-    # back + side walls
     box(col, f"{name}_zid_s", (cx, by, 0), (w, WALL_T, FLOOR_H), mat)
     for k, sx in enumerate((-1, 1)):
         box(col, f"{name}_zid_bok{k}", (cx + sx * (w / 2 - WALL_T / 2), cy, 0), (WALL_T, d - 2 * WALL_T, FLOOR_H), mat)
-    # upper floors (solid) - its underside is the ceiling of the room
     box(col, f"{name}_katovi", (cx, cy, FLOOR_H), (w, d, h - FLOOR_H), mat)
-    # wooden floor + entrance step + door frame
-    box(col, f"{name}_pod", (cx, cy, 0), (w - 2 * WALL_T, d - 2 * WALL_T, FLOOR_Z), M_FLOOR)
-    box(col, f"{name}_prag", (cx, fy, 0), (DOOR_W, WALL_T + 0.02, FLOOR_Z), M_WHITE_STONE)        # threshold in the doorway
+    box(col, f"{name}_prag", (cx, fy, 0), (DOOR_W, WALL_T + 0.02, FLOOR_Z), M_WHITE_STONE)
     for k, sx in enumerate((-1, 1)):
-        box(col, f"{name}_okvir{k}", (cx + sx * (DOOR_W / 2 + 0.06), y_front + facing * 0.04, 0), (0.12, 0.1, DOOR_H + 0.1), M_DOORFRAME)
-    box(col, f"{name}_okvir_gore", (cx, y_front + facing * 0.04, DOOR_H), (DOOR_W + 0.24, 0.1, 0.12), M_DOORFRAME)
-    box(col, f"{name}_nadstresnica", (cx, y_front + facing * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
-    # GTA door: hinge on the left edge of the doorway (seen from the street)
-    heading = door_heading(facing)
-    DOORS.append((round(cx - facing * DOOR_W / 2, 2), round(fy, 2), FLOOR_Z, heading))
-    # GTA furniture inside (room interior)
-    iy0, iy1 = sorted((fy - facing * WALL_T / 2, by + facing * WALL_T / 2))
-    ix0, ix1 = cx - w / 2 + WALL_T, cx + w / 2 - WALL_T
-    look_in = (heading + 180.0) % 360.0           # facing into the room
-    back_inner = by + facing * (WALL_T / 2 + 0.6)
-    FURNITURE.append(("sofa", round(cx, 2), round(back_inner, 2), FLOOR_Z, heading))   # back to the wall, facing the door
-    FURNITURE.append(("stol", round(cx, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 0.0))
-    FURNITURE.append(("stolica", round(cx - 1.2, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 90.0))
-    FURNITURE.append(("stolica", round(cx + 1.2, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 270.0))
-    FURNITURE.append(("tv", round(ix0 + 0.4, 2), round((iy0 + iy1) / 2, 2), FLOOR_Z, 270.0))
-    FURNITURE.append(("biljka", round(ix1 - 0.6, 2), round(back_inner, 2), FLOOR_Z, 0.0))
-    FURNITURE.append(("biljka", round(ix0 + 0.6, 2), round(fy - facing * (WALL_T / 2 + 0.6), 2), FLOOR_Z, 0.0))
+        box(col, f"{name}_okvir{k}", (cx + sx * (DOOR_W / 2 + 0.06), y_front + f * 0.04, 0), (0.12, 0.1, DOOR_H + 0.1), M_DOORFRAME)
+    box(col, f"{name}_okvir_gore", (cx, y_front + f * 0.04, DOOR_H), (DOOR_W + 0.24, 0.1, 0.12), M_DOORFRAME)
+    box(col, f"{name}_nadstresnica", (cx, y_front + f * 0.6, DOOR_H + 0.35), (DOOR_W + 1.0, 1.2, 0.08), M_CANOPY)
+    heading = door_heading(f)
+    DOORS.append((round(cx - f * DOOR_W / 2, 2), round(fy, 2), FLOOR_Z, heading))
+
+    # ---- interior frame: x = 0..W across the house, u = 0 (front wall) .. D (back wall)
+    W, D = w - 2 * WALL_T, d - 2 * WALL_T
+    x0, yfi = cx - W / 2, y_front - f * WALL_T
+
+    def P(xr, u):
+        return x0 + xr, yfi - f * u
+
+    def rbox(nm, xr0, xr1, u0, u1, z0, z1, m):
+        (ax, ay), (bx_, by_) = P(xr0, u0), P(xr1, u1)
+        box(col, nm, ((ax + bx_) / 2, (ay + by_) / 2, z0), (abs(bx_ - ax), abs(by_ - ay), z1 - z0), m)
+
+    T = 0.12                                  # interior wall thickness
+    L = round(D * 0.55, 2)                    # living room depth
+    xk, xb = round(W * 0.38, 2), round(W * 0.62, 2)
+    H_S, H_B = heading, (heading + 180.0) % 360.0          # look to the street / to the back
+    H_R, H_L = 270.0, 90.0                                  # look to +x / -x
+
+    # floors (wood in living room + bedroom, tiles in kitchen + bathroom), ceiling, plaster on the inside
+    rbox(f"{name}_pod_dnevni", 0, W, 0, L, 0, FLOOR_Z, M_FLOOR)
+    rbox(f"{name}_pod_kuhinja", 0, xk, L, D, 0, FLOOR_Z, M_TILES)
+    rbox(f"{name}_pod_kupaona", xk, xb, L, D, 0, FLOOR_Z, M_TILES)
+    rbox(f"{name}_pod_spavaca", xb, W, L, D, 0, FLOOR_Z, M_FLOOR)
+    rbox(f"{name}_strop", 0, W, 0, D, FLOOR_H - 0.03, FLOOR_H, M_CEIL)
+    rbox(f"{name}_obloga_s", 0, W, D - 0.02, D, FLOOR_Z, FLOOR_H - 0.03, M_INTWALL)
+    rbox(f"{name}_obloga_l", 0, 0.02, 0, D, FLOOR_Z, FLOOR_H - 0.03, M_INTWALL)
+    rbox(f"{name}_obloga_d", W - 0.02, W, 0, D, FLOOR_Z, FLOOR_H - 0.03, M_INTWALL)
+    rbox(f"{name}_obloga_p1", 0, W / 2 - DOOR_W / 2, 0, 0.02, FLOOR_Z, FLOOR_H - 0.03, M_INTWALL)
+    rbox(f"{name}_obloga_p2", W / 2 + DOOR_W / 2, W, 0, 0.02, FLOOR_Z, FLOOR_H - 0.03, M_INTWALL)
+
+    # interior walls: A (living room | back rooms) with 3 doorways, B + C between kitchen / bathroom / bedroom
+    DW, DH = 1.1, 2.4
+    doors = [xk / 2, (xk + xb) / 2, (xb + W) / 2]
+    cur = 0.0
+    for k, dx in enumerate(doors):
+        rbox(f"{name}_zidA_{k}", cur, dx - DW / 2, L, L + T, 0, FLOOR_H, M_INTWALL)
+        rbox(f"{name}_zidA_nad_{k}", dx - DW / 2, dx + DW / 2, L, L + T, FLOOR_Z + DH, FLOOR_H, M_INTWALL)
+        cur = dx + DW / 2
+    rbox(f"{name}_zidA_k", cur, W, L, L + T, 0, FLOOR_H, M_INTWALL)
+    rbox(f"{name}_zidB", xk - T / 2, xk + T / 2, L + T, D, 0, FLOOR_H, M_INTWALL)
+    rbox(f"{name}_zidC", xb - T / 2, xb + T / 2, L + T, D, 0, FLOOR_H, M_INTWALL)
+
+    def put(kind, xr, u, hd, z=0.0):
+        px, py = P(xr, u)
+        FURNITURE.append((kind, round(px, 2), round(py, 2), round(FLOOR_Z + z, 2), hd))
+
+    # living room
+    sx = W * 0.28
+    put("sofa", sx, L - 0.9, H_S)
+    put("tepih", sx, L / 2, H_S)
+    put("stolic", sx, L / 2, H_S)
+    put("tvstol", sx, 0.4, H_B)
+    put("tv", sx, 0.4, H_B, 0.55)
+    put("fotelja", max(0.8, sx - 2.4), L / 2, H_R)
+    put("lampa", 0.45, L - 0.45, H_S)
+    put("biljka", 0.5, 0.5, H_S)
+    put("biljka", W - 0.5, 0.5, H_S)
+    put("polica", W - 0.3, L * 0.35, H_L)
+    put("slika", sx, L - 0.08, H_S, 1.55)
+    dx_, du = W * 0.72, L / 2
+    put("stol", dx_, du, H_S)
+    put("stolica", dx_ - 0.85, du, H_R)
+    put("stolica", dx_ + 0.85, du, H_L)
+    put("stolica", dx_, du - 0.75, H_B)
+    put("stolica", dx_, du + 0.75, H_S)
+    # kitchen (along the back wall)
+    put("hladnjak", 0.45, D - 0.42, H_S)
+    put("stednjak", 1.35, D - 0.35, H_S)
+    put("sudoper", 2.25, D - 0.35, H_S)
+    if xk > 3.8:
+        put("ormaric", 3.15, D - 0.35, H_S)
+    put("kuh_stol", xk / 2, (L + D) / 2 - 0.3, H_S)
+    put("stolac", xk / 2 - 0.7, (L + D) / 2 - 0.3, H_R)
+    put("stolac", xk / 2 + 0.7, (L + D) / 2 - 0.3, H_L)
+    # bathroom
+    put("wc", xk + 0.5, D - 0.4, H_S)
+    put("umivaonik", (xk + xb) / 2, D - 0.3, H_S)
+    put("kada", xb - 0.5, L + T + 1.2, H_L)
+    put("rucnik", xk + 0.15, L + T + 0.9, H_R)
+    # bedroom
+    bc = (xb + W) / 2
+    put("krevet_d", bc, D - 1.15, H_S)
+    put("nocni", bc - 1.35, D - 0.3, H_S)
+    put("nocni", bc + 1.35, D - 0.3, H_S)
+    put("stolna_lampa", bc - 1.35, D - 0.3, H_S, 0.55)
+    put("stolna_lampa", bc + 1.35, D - 0.3, H_S, 0.55)
+    put("ormar", W - 0.35, L + T + 1.3, H_L)
+    put("komoda", xb + 0.4, L + T + 1.4, H_R)
+    put("tepih", bc, D - 3.0, H_S)
+    # one light per room
+    for (lx, lu) in ((W / 2, L / 2), (xk / 2, (L + D) / 2), ((xk + xb) / 2, (L + D) / 2), (bc, (L + D) / 2)):
+        px, py = P(lx, lu)
+        HOUSE_LIGHTS.append((round(px, 2), round(py, 2), FLOOR_H - 0.45, 6.5, 35.0))
 
 
 def fake_entrance(name, cx, y_front, facing):
@@ -944,7 +1028,7 @@ box(col, "osrp_kbc_recepcija_ploca", (HX, HY + 9, FLOOR_Z + 1.1), (9.4, 1.5, 0.0
 block_text("osrp_kbc_natpis_unutra", "HITNA", (HX + text_width("HITNA", 0.3) / 2, HY + 4.1, 2.6), 0.3, (-1, 0, 0), (0, 0, 1), M_SIGN_RED)
 for k in range(4):   # waiting benches
     box(col, f"osrp_kbc_klupa_unutra_{k}", (HX - 15 + k * 10, HY + 16, FLOOR_Z), (6, 0.7, 0.45), M_WOOD)
-INTERIOR_LIGHTS = [(HX + dx, HY + 13, LOB_H - 0.3) for dx in (-14, 0, 14)]
+INTERIOR_LIGHTS = HOUSE_LIGHTS + [(HX + dx, HY + 13, LOB_H - 0.3) for dx in (-14, 0, 14)]
 FURNITURE += [("automat", HX - 18.5, HY + 6, FLOOR_Z, 90.0), ("kava", HX - 18.5, HY + 8, FLOOR_Z, 90.0),
               ("biljka", HX + 18.5, HY + 20.5, FLOOR_Z, 0.0), ("biljka", HX - 18.5, HY + 20.5, FLOOR_Z, 0.0),
               ("tv", HX + 18.6, HY + 12, FLOOR_Z + 1.0, 270.0), ("krevet", HX + 15, HY + 6, FLOOR_Z, 0.0)]
@@ -1292,4 +1376,4 @@ ROUTES = [
     [(452.5, -182.5), (452.5, 4.0), (-452.5, 4.0), (-452.5, -182.5)],     # avenue west -> south street east
 ]
 
-print(f"[OSRP] Osijek map v1.0.20: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.21: {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

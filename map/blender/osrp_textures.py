@@ -355,6 +355,7 @@ TABLE = [
     ("road_line",    lambda r, n, b: road_line(r, n, b),       256, 2.0, 0.0),
     ("pavement",     lambda r, n, b: pavement(r, n, b),       1024, 2.0, 3.0),
     ("apron",        lambda r, n, b: pavement(r, n, b),       1024, 10.0, 2.0),
+    ("tiles_floor",  lambda r, n, b: pavement(r, n, b),        512, 1.2, 1.5),
     ("beach_sand",   lambda r, n, b: sand(r, n, b),            512, 3.0, 1.5),
     ("hangar_metal", lambda r, n, b: corrugated(r, n, b),      512, 3.0, 3.0),
     ("cobble",       lambda r, n, b: cobble(r, n, b),         1024, 2.0, 4.0),

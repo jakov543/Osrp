@@ -95,6 +95,7 @@ end)
 
 -- ---------- houses: GTA V doors, furniture, interior lights ----------
 local doorObjs, furnObjs, firstValid = {}, {}, {}
+OsijekFurniture = furnObjs     -- life.lua lets you sit / lie on these
 
 local function firstModel(key, list)
     if firstValid[key] == nil then
@@ -198,7 +199,10 @@ local function spawnFurniture(i, f)
     if not loadModel(hash) then return end
     local p = world(f)
     local obj = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
-    SetEntityHeading(obj, f.h)
+    -- GTA furniture models face -Y, the map stores where the piece should look -> turn it (Config.FurnitureTurn)
+    local turn = (Config.FurnitureTurn or {})[f.kind]
+    if turn == nil then turn = Config.FurnitureTurnDefault or 180.0 end
+    SetEntityHeading(obj, (f.h + turn) % 360.0)
     FreezeEntityPosition(obj, true)
     SetModelAsNoLongerNeeded(hash)
     furnObjs[i] = obj

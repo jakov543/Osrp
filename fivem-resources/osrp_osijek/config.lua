@@ -19,23 +19,55 @@ Config.TreeModels = {
 }
 
 -- Doors of the houses you can enter: first model that exists in your GTA is used
-Config.DoorModels = { 'v_ilev_fh_frontdoor', 'prop_ld_door_01', 'v_ilev_trevtraildr', 'prop_com_ls_door_01' }
+Config.DoorModels = { 'v_ilev_fh_frontdoor', 'v_ilev_trevtraildr', 'prop_com_ls_door_01' }
 Config.DoorsLocked = false            -- true = everyone needs a key (lock them from your own scripts)
 
 -- Furniture inside the houses (first existing model per type)
-Config.FurnitureModels = {
-    sofa    = { 'v_res_tre_sofa_s', 'prop_couch_01', 'v_ilev_m_sofa', 'prop_couch_lg_02' },
+Config.FurnitureModels = {      -- v1.0.21: all names checked against the full GTA V object list
+    -- living room
+    sofa    = { 'hei_heist_stn_sofa2seat_02', 'v_res_tre_sofa_s', 'prop_couch_01' },
+    fotelja = { 'v_res_m_armchair', 'v_res_d_armchair', 'prop_armchair_01' },
+    stolic  = { 'apa_mp_h_tab_coffee_07', 'apa_mp_h_tab_coffee_08', 'prop_table_04' },
+    tepih   = { 'apa_mp_h_acc_rugwoolm_01', 'apa_mp_h_acc_rugwooll_03' },
+    tvstol  = { 'apa_mp_h_str_avunitm_01', 'prop_tv_cabinet_03' },
+    tv      = { 'prop_tv_flat_01', 'prop_tv_flat_02', 'prop_tv_03' },
+    polica  = { 'apa_mp_h_str_shelffloorm_02', 'v_res_cabinet' },
+    slika   = { 'apa_mp_h_acc_artwalll_01', 'apa_mp_h_acc_artwallm_02' },
+    lampa   = { 'apa_mp_h_lit_floorlamp_01', 'apa_mp_h_floorlamp_a' },
+    stol    = { 'apa_mp_h_din_table_04', 'v_res_tre_table2', 'prop_table_03' },
+    stolica = { 'hei_heist_din_chair_01', 'apa_mp_h_din_chair_04', 'prop_chair_01a' },
+    biljka  = { 'apa_mp_h_acc_plant_tall_01', 'prop_plant_int_01a', 'prop_pot_plant_01a' },
+    -- kitchen
+    hladnjak = { 'prop_fridge_01', 'prop_fridge_03' },
+    stednjak = { 'v_res_ovenhobmod', 'prop_cooker_03' },
+    sudoper  = { 'v_res_m_sinkunit', 'prop_sink_06' },
+    ormaric  = { 'prop_cs_kitchen_cab_l', 'prop_cs_kitchen_cab_r' },
+    kuh_stol = { 'prop_table_03', 'prop_table_04' },
+    stolac   = { 'v_ilev_fh_kitchenstool', 'prop_chair_04a' },
+    -- bathroom
+    wc        = { 'prop_toilet_01', 'prop_toilet_02' },
+    umivaonik = { 'v_res_mbsink', 'prop_sink_02' },
+    kada      = { 'v_res_mbath', 'apa_mp_h_bathtub_01' },
+    rucnik    = { 'prop_towel_shelf_01' },
+    -- bedroom
+    krevet_d     = { 'apa_mp_h_bed_double_08', 'hei_heist_bed_double_08' },
+    nocni        = { 'hei_heist_bed_table_dble_04', 'apa_mp_h_bed_table_wide_12' },
+    stolna_lampa = { 'apa_mp_h_lit_lamptable_02', 'v_res_desklamp' },
+    ormar        = { 'v_res_tre_wardrobe' },
+    komoda       = { 'v_res_mbdresser', 'apa_mp_h_bed_chestdrawer_02' },
+    -- hospital / terminal
     automat = { 'prop_vend_snak_01', 'prop_vend_soda_01', 'prop_vend_soda_02' },
     kava    = { 'prop_vend_coffe_01', 'prop_vend_water_01' },
     krevet  = { 'v_med_bed1', 'v_med_emptybed', 'v_med_bed2' },
-    stol    = { 'prop_table_03', 'prop_table_04', 'v_res_tre_table2' },
-    stolica = { 'prop_chair_01a', 'prop_chair_04a', 'v_res_tre_chair' },
-    tv      = { 'prop_tv_flat_01', 'prop_tv_03', 'prop_tv_06' },
-    biljka  = { 'prop_plant_int_01a', 'prop_pot_plant_01a', 'prop_plant_01a' },
 }
+-- furniture models in GTA face backwards (-Y): every piece is turned by this many degrees.
+-- If one kind stands the wrong way round in your game, set it here, e.g. Config.FurnitureTurn = { tv = 0.0 }
+Config.FurnitureTurnDefault = 180.0
+Config.FurnitureTurn = { tepih = 0.0 }
 
-Config.InteriorDistance = 120.0       -- doors/furniture appear within this distance
-Config.InteriorLight = true           -- warm ceiling light in each house (always on)
+
+Config.InteriorDistance = 70.0        -- doors/furniture appear within this distance (each flat has ~40 pieces)
+Config.InteriorLight = false          -- (old single light) - v1.0.21 has a light in every room
 
 -- ===================== city life (v1.0.11) =====================
 Config.CityRadius = 1000.0          -- size of Osijek incl. hospital + airport (metres from the centre)

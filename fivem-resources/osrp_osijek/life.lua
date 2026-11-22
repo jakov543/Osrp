@@ -493,9 +493,9 @@ CreateThread(function()
         local near = false
         for _, l in ipairs(Life.INTERIOR_LIGHTS or {}) do
             local p = W(l[1], l[2], l[3])
-            if #(pos - p) < 80.0 then
+            if #(pos - p) < (l[5] or 80.0) then
                 near = true
-                DrawLightWithRange(p.x, p.y, p.z, 255, 244, 228, 22.0, 2.2)
+                DrawLightWithRange(p.x, p.y, p.z, 255, 236, 210, l[4] or 22.0, l[4] and 1.6 or 2.2)
             end
         end
         Wait(near and 0 or 1000)
@@ -601,6 +601,14 @@ CreateThread(function()
 end)
 
 local sitting = nil
+-- furniture you can use: scenario, height above the prop origin, reach, help text
+SEATS = {
+    sofa     = { 'PROP_HUMAN_SEAT_ARMCHAIR', 0.5, 1.6 },
+    fotelja  = { 'PROP_HUMAN_SEAT_ARMCHAIR', 0.5, 1.3 },
+    stolica  = { 'PROP_HUMAN_SEAT_CHAIR', 0.5, 1.0 },
+    stolac   = { 'PROP_HUMAN_SEAT_BAR', 0.75, 0.9 },
+    krevet_d = { 'WORLD_HUMAN_SUNBATHE_BACK', 0.75, 1.6, '~INPUT_CONTEXT~ Lezi' },
+}
 CreateThread(function()
     while true do
         local sleep = 400
@@ -618,6 +626,25 @@ CreateThread(function()
             end
         elseif not IsPedInAnyVehicle(ped, false) then
             local pos = GetEntityCoords(ped)
+            -- v1.0.21: sofas, armchairs, chairs, stools and beds in the flats
+            for i, obj in pairs(OsijekFurniture or {}) do
+                local f = Furniture[i]
+                local sc = f and SEATS[f.kind]
+                if sc and DoesEntityExist(obj) and #(GetEntityCoords(obj) - pos) < (sc[3] or 1.5) and not OsijekBenchUsed['f' .. i] then
+                    sleep = 0
+                    BeginTextCommandDisplayHelp('STRING')
+                    AddTextComponentSubstringPlayerName(sc[4] or '~INPUT_CONTEXT~ Sjedni')
+                    EndTextCommandDisplayHelp(0, false, false, -1)
+                    if IsControlJustReleased(0, 38) then
+                        local c = GetEntityCoords(obj)
+                        TaskStartScenarioAtPosition(ped, sc[1], c.x, c.y, c.z + sc[2], GetEntityHeading(obj) + 180.0, 0, true, true)
+                        OsijekBenchUsed['f' .. i] = ped
+                        sitting = 'f' .. i
+                        Wait(800)
+                    end
+                    goto done
+                end
+            end
             for i, obj in pairs(OsijekBenches) do
                 if DoesEntityExist(obj) and #(GetEntityCoords(obj) - pos) < 1.8 and not OsijekBenchUsed[i] then
                     sleep = 0
@@ -634,6 +661,7 @@ CreateThread(function()
                     break
                 end
             end
+            ::done::
         end
         Wait(sleep)
     end
