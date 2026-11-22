@@ -361,78 +361,152 @@ CreateThread(function()
     end
 end)
 
--- ===================================================================== traffic (cars with drivers driving loops)
+-- ===================================================================== v1.0.41 traffic on the whole road network
+-- Life.ROADNET = { nodes = { {x, y} }, edges = { {a, b, width, speed} } } (city coordinates, made by the map export)
+-- Cars drive in the right-hand lane, pick a new street at every crossing (no U-turns unless it is a dead end),
+-- slow down before crossings, keep a gap to the car in front, spawn out of sight and vanish far away.
 local cars = {}
+local NET = Life.ROADNET
+local adj = {}
+if NET and NET.nodes then
+    for ei, e in ipairs(NET.edges) do
+        local a, b = e[1] + 1, e[2] + 1
+        adj[a] = adj[a] or {}; adj[b] = adj[b] or {}
+        adj[a][#adj[a] + 1] = { e = ei, to = b }
+        adj[b][#adj[b] + 1] = { e = ei, to = a }
+    end
+end
 
-local function spawnCar(i)
-    local route = Life.ROUTES[(i % #Life.ROUTES) + 1]
-    local wpIndex = (i * 3) % #route + 1
-    local a, b = route[wpIndex], route[(wpIndex % #route) + 1]
-    local t = math.random() * 0.8 + 0.1
-    local x, y = a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t
-    local heading = (math.deg(math.atan(b[2] - a[2], b[1] - a[1])) - 90.0) % 360.0
-    local list = Config.TrafficModels
-    local vhash = firstModel({ list[(i % #list) + 1], list[1] })
-    local phash = pedModel(i + 7)
-    local wp = groundAt(x, y, 0.6)
-    if not wp then return end                                   -- road there not loaded yet, try again next round
-    local me = GetEntityCoords(PlayerPedId())
-    if #(me - wp) > 220.0 or #(me - wp) < 25.0 then return end  -- only near you, never on top of you
-    if not load(vhash) or not load(phash) then return end
-    local v = CreateVehicle(vhash, wp.x, wp.y, wp.z, heading, false, false)
-    settleVehicle(v)
-    SetVehicleEngineOn(v, true, true, false)
-    local d = CreatePedInsideVehicle(v, 4, phash, -1, false, true)
-    SetBlockingOfNonTemporaryEvents(d, true)
-    SetDriverAbility(d, 1.0)
-    SetDriverAggressiveness(d, 0.0)
-    SetModelAsNoLongerNeeded(vhash)
-    SetModelAsNoLongerNeeded(phash)
-    cars[i] = { veh = v, drv = d, route = route, nextWp = (wpIndex % #route) + 1, stuck = 0, last = GetEntityCoords(v) }
-    local n = W(b[1], b[2], 0.5)
-    TaskVehicleDriveToCoord(d, v, n.x, n.y, n.z, Config.TrafficSpeed, 0, vhash, Config.DrivingStyle, 4.0, true)
+local function lane(ei, from, to, t)
+    -- point on the right-hand lane of edge ei going from node 'from' to node 'to', t = metres from 'from'
+    local e = NET.edges[ei]
+    local A, B = NET.nodes[from], NET.nodes[to]
+    local dx, dy = B[1] - A[1], B[2] - A[2]
+    local L = math.sqrt(dx * dx + dy * dy)
+    dx, dy = dx / L, dy / L
+    local off = e[3] >= 16 and 4.0 or e[3] / 4.0              -- inner right lane
+    t = math.max(0.0, math.min(L, t))
+    return A[1] + dx * t + dy * off, A[2] + dy * t - dx * off, L, dx, dy
+end
+
+local function pickNext(at, cameFrom)
+    local opts = {}
+    for _, o in ipairs(adj[at] or {}) do
+        if o.to ~= cameFrom then opts[#opts + 1] = o end
+    end
+    if #opts == 0 then opts = adj[at] or {} end
+    return opts[math.random(#opts)]
+end
+
+local function driveTo(c)
+    -- target: 9 m before the end node (then the turn is planned), speed of this street
+    local x, y, L = lane(c.e, c.from, c.to, 0)
+    local tx, ty = lane(c.e, c.from, c.to, math.max(L - 9.0, L * 0.5))
+    local es = NET.edges[c.e][4]
+    local sp = (es >= 19.0 and es or math.min(es, Config.TrafficSpeed or 13.5)) * (c.mood or 1.0)   -- bypass keeps its 70 km/h
+    local p = W(tx, ty, 0.5)
+    TaskVehicleDriveToCoord(c.drv, c.veh, p.x, p.y, p.z, sp, 0, GetEntityModel(c.veh), Config.DrivingStyle, 3.0, true)
+    c.tx, c.ty, c.phase = tx, ty, 'edge'
+end
+
+local function turnTo(c)
+    -- through the crossing onto the next street (aim 12 m into it)
+    local o = pickNext(c.to, c.from)
+    if not o then return false end
+    c.from, c.to, c.e = c.to, o.to, o.e
+    local tx, ty = lane(c.e, c.from, c.to, 12.0)
+    local p = W(tx, ty, 0.5)
+    TaskVehicleDriveToCoord(c.drv, c.veh, p.x, p.y, p.z, 7.0, 0, GetEntityModel(c.veh), Config.DrivingStyle, 3.0, true)
+    c.tx, c.ty, c.phase = tx, ty, 'turn'
+    return true
+end
+
+local function spawnCar(i, me)
+    if not NET or not NET.edges or #NET.edges == 0 then return end
+    local mx, my = me.x - Config.Origin.x, me.y - Config.Origin.y
+    for _ = 1, 12 do                                              -- find a street piece 70-260 m away
+        local ei = math.random(#NET.edges)
+        local e = NET.edges[ei]
+        local from, to = e[1] + 1, e[2] + 1
+        if math.random() < 0.5 then from, to = to, from end
+        local x, y, L, dx, dy = lane(ei, from, to, 0)
+        local t = math.random() * math.max(1.0, L - 20.0) + 10.0
+        x, y = lane(ei, from, to, t)
+        local d = math.sqrt((x - mx) ^ 2 + (y - my) ^ 2)
+        if d > 70.0 and d < 260.0 and L > 25.0 then
+            local wp = groundAt(x, y, 0.6)
+            if not wp then return end
+            for _, o in pairs(cars) do
+                if o.veh and DoesEntityExist(o.veh) and #(GetEntityCoords(o.veh) - wp) < 14.0 then return end
+            end
+            local list = Config.TrafficModels
+            local vhash = firstModel({ list[math.random(#list)], list[1] })
+            local phash = pedModel(i + 7)
+            if not load(vhash) or not load(phash) then return end
+            local heading = (math.deg(math.atan(dy, dx)) - 90.0) % 360.0
+            local v = CreateVehicle(vhash, wp.x, wp.y, wp.z, heading, false, false)
+            settleVehicle(v)
+            SetVehicleEngineOn(v, true, true, false)
+            SetVehicleColours(v, math.random(0, 150), math.random(0, 150))
+            local drv = CreatePedInsideVehicle(v, 4, phash, -1, false, true)
+            SetBlockingOfNonTemporaryEvents(drv, true)
+            SetDriverAbility(drv, 1.0)
+            SetDriverAggressiveness(drv, 0.0)
+            SetModelAsNoLongerNeeded(vhash)
+            SetModelAsNoLongerNeeded(phash)
+            cars[i] = { veh = v, drv = drv, e = ei, from = from, to = to, stuck = 0, last = GetEntityCoords(v), mood = 0.85 + math.random() * 0.25 }
+            SetVehicleForwardSpeed(v, math.min(e[4], Config.TrafficSpeed or 13.5) * 0.7)
+            driveTo(cars[i])
+            return
+        end
+    end
+end
+
+local function removeCar(i, c)
+    if c.drv and DoesEntityExist(c.drv) then DeletePed(c.drv) end
+    if c.veh and DoesEntityExist(c.veh) and GetPedInVehicleSeat(c.veh, -1) ~= PlayerPedId() then DeleteVehicle(c.veh) end
+    cars[i] = nil
+end
+
+local function trafficArea(pos)
+    return #(vec2(pos.x, pos.y) - vec2(Config.Origin.x, Config.Origin.y)) < (Config.MapRadius or Config.CityRadius) + 200.0
 end
 
 CreateThread(function()
     while true do
-        local pos = GetEntityCoords(PlayerPedId())
-        if Config.Traffic and inCity(pos, 200.0) then
+        local me = GetEntityCoords(PlayerPedId())
+        if Config.Traffic and NET and trafficArea(me) then
+            local spawned = 0
             for i = 1, Config.TrafficCount do
                 local c = cars[i]
-                if not c or not DoesEntityExist(c.veh) or not DoesEntityExist(c.drv) or IsEntityDead(c.drv)
-                    or GetPedInVehicleSeat(c.veh, -1) ~= c.drv then
-                    if c then
-                        if c.drv and DoesEntityExist(c.drv) then SetPedAsNoLongerNeeded(c.drv) end
-                        if c.veh and DoesEntityExist(c.veh) and GetPedInVehicleSeat(c.veh, -1) ~= PlayerPedId() then SetVehicleAsNoLongerNeeded(c.veh) end
-                    end
+                if c and (not DoesEntityExist(c.veh) or not DoesEntityExist(c.drv) or IsEntityDead(c.drv)
+                          or GetPedInVehicleSeat(c.veh, -1) ~= c.drv) then
+                    if c.drv and DoesEntityExist(c.drv) then SetPedAsNoLongerNeeded(c.drv) end
+                    if c.veh and DoesEntityExist(c.veh) and GetPedInVehicleSeat(c.veh, -1) ~= PlayerPedId() then SetVehicleAsNoLongerNeeded(c.veh) end
                     cars[i] = nil
-                    spawnCar(i)
+                    c = nil
+                end
+                if not c then
+                    if spawned < 2 then spawnCar(i, me) spawned = spawned + 1 end       -- a couple per round, no pop-in wave
                 else
                     local vp = GetEntityCoords(c.veh)
-                    local wpt = c.route[c.nextWp]
-                    local target = W(wpt[1], wpt[2], 0.5)
-                    if #(vp - target) < 9.0 then
-                        c.nextWp = (c.nextWp % #c.route) + 1
-                        local n = c.route[c.nextWp]
-                        local nw = W(n[1], n[2], 0.5)
-                        TaskVehicleDriveToCoord(c.drv, c.veh, nw.x, nw.y, nw.z, Config.TrafficSpeed, 0, GetEntityModel(c.veh), Config.DrivingStyle, 4.0, true)
-                    end
-                    -- stuck for 20 s -> remove, a new car comes
-                    if #(vp - c.last) < 1.0 then c.stuck = c.stuck + 1 else c.stuck = 0 end
-                    c.last = vp
-                    if c.stuck > 10 then
-                        DeletePed(c.drv); DeleteVehicle(c.veh); cars[i] = nil
+                    if #(vp - me) > 380.0 then
+                        removeCar(i, c)
+                    else
+                        local t = W(c.tx, c.ty, 0.5)
+                        if #(vec2(vp.x, vp.y) - vec2(t.x, t.y)) < 7.0 then
+                            if c.phase == 'edge' then turnTo(c) else driveTo(c) end
+                        end
+                        if #(vp - c.last) < 0.8 then c.stuck = c.stuck + 1 else c.stuck = 0 end
+                        c.last = vp
+                        if c.stuck > 14 then removeCar(i, c) end                       -- stuck ~10 s: a new car comes
                     end
                 end
             end
         else
-            for i, c in pairs(cars) do
-                if c.drv and DoesEntityExist(c.drv) then DeletePed(c.drv) end
-                if c.veh and DoesEntityExist(c.veh) and GetPedInVehicleSeat(c.veh, -1) ~= PlayerPedId() then DeleteVehicle(c.veh) end
-                cars[i] = nil
-            end
+            for i, c in pairs(cars) do removeCar(i, c) end
         end
-        Wait(2000)
+        Wait(700)
     end
 end)
 

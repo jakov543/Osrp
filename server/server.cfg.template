@@ -21,6 +21,25 @@ ensure sessionmanager
 ensure hardcap
 ensure chat
 
+# ---------- OSRP settings (v1.0.41) - change here, no need to edit the scripts ----------
+# promet / traffic
+setr osrp_traffic_on true          # true = cars with drivers on the streets, false = off
+setr osrp_traffic 24               # how many traffic cars around each player (10-40)
+# jezik NPC-a: hr = hrvatski, en = English
+setr osrp_language hr
+# karta: nui = nacrtana karta Osijeka (minimapa + F7), blips = stara karta
+setr osrp_map nui
+# BULET e-romobili: cijena otključavanja i cijena po minuti ($)
+setr osrp_bulet_unlock 2
+setr osrp_bulet_minute 1
+# novi lik: početni novac
+setr osrp_start_cash 500
+setr osrp_start_bank 2000
+# smrt: sekunde do respawna
+setr osrp_respawn 60
+# radio (VOLT trgovina): kanal za pma-voice
+setr osrp_radio_channel 1
+
 # ---------- OSRP ----------
 ensure osrp_loading
 ensure osrp_core

@@ -4,7 +4,7 @@ game 'gta5'
 name 'osrp_loading'
 author 'Bandera'
 description 'OSRP V1 - custom loading screen'
-version '1.0.40'
+version '1.0.41'
 
 loadscreen 'index.html'
 loadscreen_cursor 'yes'

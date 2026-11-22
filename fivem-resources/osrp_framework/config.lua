@@ -97,3 +97,15 @@ Config.TechItems = {
     { id = 'flashlight', label = 'Baterijska lampa', icon = '🔦', price = 40,  desc = 'Svjetlo za noć (dobiješ je odmah u ruke).' },
 }
 Config.RadioChannel = 1          -- channel the radio item joins when pma-voice is running
+
+-- ===================================================================== v1.0.41: settings from server.cfg
+--   setr osrp_start_cash 500    setr osrp_start_bank 2000    setr osrp_respawn 60    setr osrp_radio_channel 1
+local function cv(name, def)
+    local v = GetConvar(name, '')
+    if v == nil or v == '' then return def end
+    return v
+end
+Config.StartCash = tonumber(cv('osrp_start_cash', Config.StartCash)) or Config.StartCash
+Config.StartBank = tonumber(cv('osrp_start_bank', Config.StartBank)) or Config.StartBank
+Config.RespawnSeconds = tonumber(cv('osrp_respawn', Config.RespawnSeconds)) or Config.RespawnSeconds
+Config.RadioChannel = tonumber(cv('osrp_radio_channel', Config.RadioChannel)) or Config.RadioChannel

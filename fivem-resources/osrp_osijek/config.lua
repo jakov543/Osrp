@@ -79,7 +79,7 @@ Config.InteriorLight = false          -- (old single light) - v1.0.21 has a ligh
 
 -- ===================== city life (v1.0.11) =====================
 Config.CityRadius = 1000.0          -- size of Osijek incl. hospital + airport (metres from the centre)
-Config.MapRadius = 3200.0           -- v1.0.40: Veliki Osijek (new districts) - the drawn minimap + F7 map cover this
+Config.MapRadius = 3200.0           -- v1.0.41: Veliki Osijek (new districts) - the drawn minimap + F7 map cover this
 Config.DrawMap = true               -- landmark blips (hospital, airport ...) on the pause map
 Config.MapMode = 'nui'              -- 'nui' = real drawn minimap + big map (F7) | 'blips' = old blip rectangles
 
@@ -131,9 +131,10 @@ Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_0
                      'a_m_m_tourist_01', 'a_m_y_hipster_01', 'a_f_y_hipster_01', 'a_m_m_farmer_01', 'a_f_m_fatwhite_01' }
 
 Config.Traffic = true
-Config.TrafficCount = 10            -- cars with drivers driving around the city
-Config.TrafficModels = { 'asea', 'premier', 'blista', 'ingot', 'stanier', 'tailgater', 'fugitive', 'primo', 'dilettante', 'emperor' }
-Config.TrafficSpeed = 11.0          -- m/s (about 40 km/h)
+Config.TrafficCount = 24            -- v1.0.41: cars around you (road network of the whole city)
+Config.TrafficModels = { 'asea', 'premier', 'blista', 'ingot', 'stanier', 'tailgater', 'fugitive', 'primo', 'dilettante', 'emperor',
+    'asterope', 'glendale', 'warrener', 'intruder', 'surge', 'issi2', 'panto', 'rhapsody', 'minivan', 'speedo', 'mule', 'benson' }
+Config.TrafficSpeed = 13.5          -- m/s top speed in town (about 50 km/h); bypass streets have their own
 Config.DrivingStyle = 786603        -- normal, careful driving
 
 -- ===================== v1.0.14: hospital, airport, random events =====================
@@ -209,6 +210,25 @@ Config.Bulet = {
     BaseVehicle = 'rcbandito',  -- hidden small car that does the physics under the scooter
     PropZ = -0.32, PedZ = 0.88,  -- height of the scooter model / of you on it (tune if it floats or sinks)
     AnimDict = 'anim@heists@box_carry@', AnimName = 'idle',   -- standing with hands forward on the handlebar
-    HandIK = true,                       -- v1.0.40: hands locked on the grips, head looks into turns
-    LeanDeg = 12.0, PitchDeg = 5.0,  -- v1.0.40 own riding animation: lean into turns / forward + back
+    HandIK = true,                       -- v1.0.41: hands locked on the grips, head looks into turns
+    LeanDeg = 12.0, PitchDeg = 5.0,  -- v1.0.41 own riding animation: lean into turns / forward + back
 }
+
+-- ===================================================================== v1.0.41: settings from server.cfg
+-- Every line above is the default. A server owner can change the most used ones in server.cfg without
+-- touching this file (setr = also sent to the players), for example:
+--   setr osrp_traffic 30            setr osrp_traffic_on true      setr osrp_language hr
+--   setr osrp_map nui               setr osrp_bulet_minute 1       setr osrp_bulet_unlock 2
+local function cv(name, def)
+    local v = GetConvar(name, '')
+    if v == nil or v == '' then return def end
+    return v
+end
+Config.Traffic = tostring(cv('osrp_traffic_on', Config.Traffic and 'true' or 'false')) == 'true'
+Config.TrafficCount = tonumber(cv('osrp_traffic', Config.TrafficCount)) or Config.TrafficCount
+Config.NpcLanguage = cv('osrp_language', Config.NpcLanguage)
+Config.MapMode = cv('osrp_map', Config.MapMode)
+if Config.Bulet then
+    Config.Bulet.PerMinute = tonumber(cv('osrp_bulet_minute', Config.Bulet.PerMinute)) or Config.Bulet.PerMinute
+    Config.Bulet.Unlock = tonumber(cv('osrp_bulet_unlock', Config.Bulet.Unlock)) or Config.Bulet.Unlock
+end

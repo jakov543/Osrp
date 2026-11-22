@@ -1006,9 +1006,9 @@ for side in (-1, 1):
     cx_ = BR_X + side * 3.2
     pts = [(cx_, y_a + k / 40 * (y_b - y_a), 22.5 - 18 * math.sin(k / 40 * math.pi) + 0.6) for k in range(41)]
     sweep_tube(f"osrp_most_kabel_{side}", pts, 0.22, M_BRIDGE)
-    for e, (yy, ya) in enumerate(((y_a, y_a - 22), (y_b, y_b + 22))):
+    for e, (yy, ya) in enumerate(((y_a, y_a - 9.5), (y_b, y_b + 9.5))):     # v1.0.41: anchors at the bridge ends (were on the bike lane)
         sweep_tube(f"osrp_most_zatega_{side}_{e}", [(cx_, yy, 23.1), (cx_, ya, 0.9)], 0.2, M_BRIDGE)
-        box(col, f"osrp_most_sidro_{side}_{e}", (cx_, ya, 0.0), (1.6, 2.4, 1.0), M_WHITE_STONE)
+        box(col, f"osrp_most_sidro_{side}_{e}", (cx_, ya, 0.0), (1.2, 1.6, 1.0), M_WHITE_STONE)
     for k in range(1, 20):
         t = k / 20
         yy = y_a + t * (y_b - y_a)
@@ -2407,4 +2407,4 @@ PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 # v1.0.40: Veliki Osijek - new districts all around the old city (osrp_districts.py)
 import osrp_districts
 osrp_districts.build(globals())
-print(f"[OSRP] Osijek map v1.0.40: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.41: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

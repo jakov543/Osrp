@@ -41,7 +41,7 @@ with open(os.path.join(OUT, "osijek_trees.json"), "w") as f:
 with open(os.path.join(OUT, "osijek_doors.json"), "w") as f:
     json.dump([{"x": d[0], "y": d[1], "z": d[2], "h": d[3]} for d in city["DOORS"]], f)
 with open(os.path.join(OUT, "osijek_life.json"), "w") as f:
-    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH", "AIRPORT", "POLICE", "GUNSHOP", "INDOORS", "BULET", "BRIDGE", "STORES")}
+    json.dump({k: city[k] for k in ("MAPRECTS", "LANDMARKS", "PARKING", "SIGNS", "WALKS", "ROUTES", "BENCHES", "SPECIAL", "STAFF", "INTERIOR_LIGHTS", "FOUNTAINS", "BOATS", "BIKEROUTES", "SLIDEDOORS", "BEACH", "AIRPORT", "POLICE", "GUNSHOP", "INDOORS", "BULET", "BRIDGE", "STORES", "ROADNET")}
               | {"PLACES": {k: list(v) for k, v in city["PLACES"].items()}}, f)
 with open(os.path.join(OUT, "osijek_furniture.json"), "w") as f:
     json.dump([{"kind": m[0], "x": m[1], "y": m[2], "z": m[3], "h": m[4], "r": (m[5] if len(m) > 5 else 0.0)} for m in city["FURNITURE"]], f)
@@ -185,6 +185,10 @@ for seed, mat in enumerate(sorted({m for o in objs + prop_parts for m in o.data.
         subprocess.run(["convert", "-size", "64x64", f"xc:rgba({rgb[0]},{rgb[1]},{rgb[2]},0.30)",
                         "-define", "dds:compression=dxt5", "-define", "dds:mipmaps=4", dds], check=True)
         tile = 2.0
+    elif "nightwin" in mat.name:            # v1.0.41: windows lit only at night (emissivenight_geomnightonly)
+        dds = os.path.join(TEX, tex_name + ".dds")
+        subprocess.run(["convert", "-size", "16x16", "xc:" + hexcol, "-define", "dds:compression=dxt1", dds], check=True)
+        ndds, tile = None, -1.0
     elif "lamp_light" in mat.name:
         dds = os.path.join(TEX, tex_name + ".dds")
         subprocess.run(["convert", "-size", "16x16", "xc:" + hexcol, "-define", "dds:compression=dxt1", dds], check=True)
@@ -193,7 +197,13 @@ for seed, mat in enumerate(sorted({m for o in objs + prop_parts for m in o.data.
     img = bpy.data.images.load(dds)
     img.name = tex_name
     shader = "glass_pv.sps" if "clear_glass" in mat.name else ("emissive.sps" if "lamp_light" in mat.name else ("normal.sps" if ndds else "default.sps"))
+    if "nightwin" in mat.name:
+        shader = "emissivenight_geomnightonly.sps"
     sm = create_shader(shader)
+    if "nightwin" in mat.name:
+        em = sm.node_tree.nodes.get("emissiveMultiplier")
+        if em is not None and hasattr(em, "set_float"):
+            em.set_float(2.5)
     sm.name = "sz_" + mat.name
     node = find_node(sm, "DiffuseSampler") or find_sampler(sm)
     node.image = img

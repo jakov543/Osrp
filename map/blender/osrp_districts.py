@@ -63,6 +63,15 @@ class Tiles:
         vs.extend([(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z)])
         fs.append((b, b + 1, b + 2, b + 3))
 
+    def vquad(self, mat, pts):
+        """any 4-point face (pts in order, normal by right-hand rule)"""
+        cx = sum(p[0] for p in pts) / 4
+        cy = sum(p[1] for p in pts) / 4
+        vs, fs, _ = self._bucket(cx, cy, mat)
+        b = len(vs)
+        vs.extend(pts)
+        fs.append((b, b + 1, b + 2, b + 3))
+
     def roof(self, mat, cx, cy, z, w, d, h, along_x=True):
         """gable roof, ridge along x (or y)"""
         vs, fs, _ = self._bucket(cx, cy, mat)
@@ -123,6 +132,32 @@ def build(g):
     FLATS = [mat(f"osrp_flats_{k}", c) for k, c in enumerate(((0.86, 0.82, 0.70), (0.80, 0.84, 0.86), (0.88, 0.76, 0.62), (0.74, 0.80, 0.72), (0.90, 0.88, 0.84)))]
     HOUSE = [mat(f"osrp_plaster_kuca_okrug_{k}", c) for k, c in enumerate(((0.92, 0.88, 0.78), (0.86, 0.80, 0.66), (0.94, 0.94, 0.90), (0.80, 0.70, 0.58)))]
     MAPRECTS, TREES, SIGNS, LANDMARKS = g["MAPRECTS"], g["TREES"], g["SIGNS"], g["LANDMARKS"]
+    NW = [mat("osrp_nightwin_warm", (1.0, 0.74, 0.38)), mat("osrp_nightwin_soft", (1.0, 0.86, 0.6)), mat("osrp_nightwin_cool", (0.78, 0.86, 1.0))]
+
+    def lit(cx, cy, w, d, floors, p=0.35, fh=3.0):
+        """v1.0.41: windows that light up at night (only drawn at night in GTA), on all 4 facades"""
+        for side in range(4):
+            L = w if side < 2 else d
+            for k in range(int(L // 3)):
+                for f in range(floors):
+                    if rnd.random() > p:
+                        continue
+                    m = NW[0] if rnd.random() < 0.6 else rnd.choice(NW)
+                    a, b = -L / 2 + k * 3 + 0.75, -L / 2 + k * 3 + 2.25
+                    z0, z1 = f * fh + 0.75, f * fh + 2.1
+                    if side == 0:      # -Y facade
+                        y = cy - d / 2 - 0.04
+                        T.vquad(m, [(cx + a, y, z0), (cx + b, y, z0), (cx + b, y, z1), (cx + a, y, z1)])
+                    elif side == 1:    # +Y
+                        y = cy + d / 2 + 0.04
+                        T.vquad(m, [(cx + b, y, z0), (cx + a, y, z0), (cx + a, y, z1), (cx + b, y, z1)])
+                    elif side == 2:    # +X
+                        x = cx + w / 2 + 0.04
+                        T.vquad(m, [(x, cy + a, z0), (x, cy + b, z0), (x, cy + b, z1), (x, cy + a, z1)])
+                    else:              # -X
+                        x = cx - w / 2 - 0.04
+                        T.vquad(m, [(x, cy + b, z0), (x, cy + a, z0), (x, cy + a, z1), (x, cy + b, z1)])
+
     BED_Z = g.get("BED_Z", -20.0)
 
     def tree(x, y, s=1.0):
@@ -309,6 +344,7 @@ def build(g):
                     fl = rnd.randint(10, 14)
                     m = rnd.choice(FLATS)
                     T.box(m, x, y, 0.0, 18, 18, fl * 3.0)
+                    lit(x, y, 18, 18, fl, 0.32)
                     T.box(M_FLATROOF, x, y, fl * 3.0, 18.6, 18.6, 0.5)
                     T.box(M_FLATROOF, x + 4, y - 3, fl * 3.0 + 0.5, 4, 4, 2.5)          # lift room on the roof
                     MAPRECTS.append(("bld", x, y, 18, 18))
@@ -332,6 +368,7 @@ def build(g):
                     fl = rnd.randint(5, 8)
                     m = rnd.choice(FLATS)
                     T.box(m, x + w / 2, y, 0.0, w, 13, fl * 3.0)
+                    lit(x + w / 2, y, w, 13, fl, 0.32)
                     T.box(M_FLATROOF, x + w / 2, y, fl * 3.0, w + 0.6, 13.6, 0.45)
                     for k in range(int(w // 16)):                              # stair cores sticking out of the roof
                         T.box(M_FLATROOF, x + 8 + k * 16, y, fl * 3.0 + 0.45, 3.5, 5, 2.4)
@@ -358,6 +395,7 @@ def build(g):
                 fl = rnd.choice((1, 1, 2))
                 hy = edge - s_ * (3 + 5 + d / 2)          # 3 m sidewalk + 5 m front yard
                 T.box(rnd.choice(HOUSE), x + w / 2, hy, 0.0, w, d, fl * 3.0)
+                lit(x + w / 2, hy, w, d, fl, 0.4)
                 T.roof(M_ROOFTILE, x + w / 2, hy, fl * 3.0, w, d, rnd.uniform(2.2, 3.0), along_x=True)
                 T.box(M_FENCE, x + w / 2 - 1.5, edge - s_ * 3.6, 0.0, w + 4, 0.1, 1.0)          # street fence, gate gap at the drive
                 T.quad(M_CONC, x + w + 0.6, min(edge - s_ * 3, hy), x + w + 3.6, max(edge - s_ * 3, hy), 0.03)
@@ -389,6 +427,7 @@ def build(g):
                     h = rnd.choice((8, 10, 12))
                     m = rnd.choice((M_SHED, M_SHED, M_SHED_B))
                     T.box(m, x + w / 2, y + d / 2, 0.0, w, d, h)
+                    lit(x + w / 2, y + d / 2, w, d, 1, 0.12, fh=4.0)
                     T.roof(M_SHED, x + w / 2, y + d / 2, h, w, d, 2.0, along_x=w >= d)
                     for k in range(int(w // 14)):                       # loading doors
                         T.box(M_FLATROOF, x + 6 + k * 14, y - 0.05, 0.0, 4.5, 0.2, 5.0)
@@ -462,5 +501,83 @@ def build(g):
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         LANDMARKS.append((name.title() if name.isupper() else name, cx, cy))
     g["DISTRICTS"] = [(n, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2) for n, r, _ in REGIONS]
+
+    # ------------------------------------------------------------ v1.0.41 bike lanes along both Drava banks, joined to the old ones
+    M_BIKE = g.get("M_BIKE", M_ROAD)
+    BS, BN = g.get("BIKE_S", 157.5), g.get("BIKE_N", 308.25)
+    BIKE_S2, BIKE_N2 = RIV0 - 10.0, RIV1 + 7.0
+    for (a, b) in ((XW + 60, -556.0), (556.0, XE - 60)):
+        for yy in (BIKE_S2, BIKE_N2):
+            for k in range(int(math.ceil((b - a) / 100))):
+                x0_, x1_ = a + k * 100, min(b, a + (k + 1) * 100)
+                T.box(M_BIKE, (x0_ + x1_) / 2, yy, 0.0, x1_ - x0_, 2.6, 0.14)
+                for j in range(int((x1_ - x0_) // 5)):
+                    T.quad(M_LINE, x0_ + j * 5 + 1, yy - 0.06, x0_ + j * 5 + 3, yy + 0.06, 0.145)
+            g["BIKEROUTES"].append((a, yy, b, yy))
+            MAPRECTS.append(("bike", (a + b) / 2, yy, b - a, 2.6))
+    for sx in (-1, 1):                                     # connectors from the old lanes
+        T.box(M_BIKE, sx * 552.0, BS, 0.0, 8.0, 2.6, 0.14)
+        T.box(M_BIKE, sx * 554.7, (BS + BIKE_S2) / 2, 0.0, 2.6, abs(BIKE_S2 - BS) + 2.6, 0.14)
+        T.box(M_BIKE, sx * 552.0, BN, 0.0, 8.0, 2.6, 0.14)
+        T.box(M_BIKE, sx * 554.7, (BN + BIKE_N2) / 2, 0.0, 2.6, abs(BN - BIKE_N2) + 2.6, 0.14)
+
+    # ------------------------------------------------------------ v1.0.41 lit windows in the old city at night (on the window glass)
+    glass = g.get("M_GLASS")
+    if glass is not None:
+        nlit = 0
+        for o in list(g["col"].objects):
+            if o.type != "MESH" or not any(m == glass for m in o.data.materials):
+                continue
+            mw = o.matrix_world
+            for poly in o.data.polygons:
+                if o.data.materials[poly.material_index] != glass or len(poly.vertices) != 4:
+                    continue
+                n = (mw.to_3x3() @ poly.normal).normalized()
+                if abs(n.z) > 0.2 or poly.area < 0.5 or rnd.random() > 0.38:
+                    continue
+                pts = [mw @ o.data.vertices[i].co for i in poly.vertices]
+                c = sum(pts, pts[0] * 0) / 4
+                pts = [tuple(c + (p - c) * 0.9 + n * 0.035) for p in pts]
+                T.vquad(NW[0] if rnd.random() < 0.6 else rnd.choice(NW), pts)
+                nlit += 1
+        print(f"[OSRP] night windows in the old city: {nlit}")
+
+    # ------------------------------------------------------------ v1.0.41 road network for the traffic (nodes = crossings, edges = street pieces)
+    H, V = [], []                                          # (y, x0, x1, w) / (x, y0, y1, w)
+    for y, w in ((-350, 10), (-180, 10), (0, 16), (125, 10)):
+        H.append((y, -550.0, 550.0, w))
+    for x in (-450, -300, -150, 0, 150, 300, 450):
+        V.append((x, -350.0, 125.0, 10))
+    for (x0, y0, x1, y1, w) in ROADS:
+        if (y1 - y0) < 1:
+            H.append((y0, x0, x1, w))
+        else:
+            V.append((x0, y0, x1 if False else y1, w))
+    nodes, index, edges = [], {}, []
+
+    def nid(x, y):
+        k = (round(x * 2) / 2, round(y * 2) / 2)
+        if k not in index:
+            index[k] = len(nodes)
+            nodes.append([k[0], k[1]])
+        return index[k]
+
+    def speed(w):
+        return 19.0 if w >= 20 else (13.5 if w >= 16 else 11.0)
+
+    for (y, x0, x1, w) in H:
+        xs_ = {x0, x1} | {v[0] for v in V if x0 - 1 <= v[0] <= x1 + 1 and v[1] - 1 <= y <= v[2] + 1}
+        xs_ = sorted(xs_)
+        for a, b in zip(xs_, xs_[1:]):
+            if b - a > 2:
+                edges.append([nid(a, y), nid(b, y), w, speed(w)])
+    for (x, y0, y1, w) in V:
+        ys_ = {y0, y1} | {h[0] for h in H if y0 - 1 <= h[0] <= y1 + 1 and h[1] - 1 <= x <= h[2] + 1}
+        ys_ = sorted(ys_)
+        for a, b in zip(ys_, ys_[1:]):
+            if b - a > 2:
+                edges.append([nid(x, a), nid(x, b), w, speed(w)])
+    g["ROADNET"] = {"nodes": nodes, "edges": edges}
+    print(f"[OSRP] road network: {len(nodes)} crossings, {len(edges)} street pieces")
     meshes = T.emit(g)
     print(f"[OSRP] Veliki Osijek: {nb} new blocks, {len(ROADS)} roads, {meshes} district meshes")
