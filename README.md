@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.15 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.16 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.15
-git push origin v1.0.15
+git tag v1.0.16
+git push origin v1.0.16
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -208,6 +208,19 @@ v1.0.15 – **map, doors, sea, airport**:
 - **sea no longer washes over the city**: the city sits 8 m above the sea (`Config.Origin` z = 8) and the ocean around Osijek is calmed (`SetDeepOceanScaler`)
 - **airport**: runway numbers 09/27, approach and threshold lights, blue taxiway lights, 3 jet bridges, 5 floodlight masts, OSIJEK signs (lit), terminal entrance canopy, cargo terminal, fuel tanks, airside fence, GTA airport props (stairs, baggage loaders, carts, cargo, radar)
 - **KBC Osijek**: lit KBC OSIJEK name, emergency entrance HITNA with an ambulance canopy, ambulance garage with 3 doors and 2 more ambulances
+
+v1.0.16 – **characters, arrival, interiors, HUD**:
+- **multicharacter** (`Config.MaxCharacters = 3`): pick, create or delete characters on the Tvrđa square; your old character is moved into slot 1 automatically. `/odjava` goes back to the selection.
+- **new identity creator**: name, date of birth, nationality, sex, height, face, skin, hair, hair colour, 4 outfits (`Config.Outfits`), live preview of the character and an ID card
+- **spawn selection**: last location, airport (fly in), Europska avenija, Tvrđa, KBC Osijek (`Config.SpawnPoints`)
+- **arrival cutscene**: new characters fly in over the sea and land at Zračna luka Osijek (3 cameras, letterbox, ENTER skips), then stand in the arrivals hall (`osrp_osijek/arrival.lua`)
+- **map loads before you appear**: nearest chunks first, all models requested in parallel, loading screen with progress (`exports.osrp_osijek:LoadArea`)
+- **enter KBC Osijek and the airport terminal**: hospital lobby (reception = treatment, benches, vending machines, staff) and the terminal hall (check-in desks, seats, departures board, staff), lit inside
+- **drive the parked ambulances, fly the planes and the air ambulance**: press F next to one (`Config.TakeVehicles`)
+- roads: driveways from Vukovarska into the hospital lot and the ambulance garage, service road from the airport car park to the apron
+- **NPCs**: 44 around you, 25 models, many stand and do things (phone, coffee, smoking, map); they greet you in English when you walk up and you can talk to them with E (`Config.NpcGreetings`, `Config.NpcChat`)
+- **street props**: benches, bins, hydrants, news stands, bike racks, phone booths, planters along the streets; trees sit on the real ground
+- **HUD**: custom notifications (colour codes work, success/error/warning), weapon HUD (name, clip / ammo), status row in the money card (health, armour, stamina, voice), server ID, players online and clock
 
 ![map](map/blender/preview_minimap.png)
 

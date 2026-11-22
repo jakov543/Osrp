@@ -4,6 +4,8 @@
 --  * big map: F7 or /karta - drag, zoom, click to set a waypoint (GPS), right click to remove it
 
 local bigOpen = false
+local cutscene = false
+AddEventHandler('osrp:cutscene', function(on) cutscene = on end)
 local lastRect, lastWp, lastRoute = '', nil, ''
 local inside = false
 
@@ -30,7 +32,7 @@ CreateThread(function()
         if useNui() then
             local ped = PlayerPedId()
             local p = GetEntityCoords(ped)
-            local now = inCity(p, 150.0) and not IsPauseMenuActive()
+            local now = inCity(p, 150.0) and not IsPauseMenuActive() and not cutscene and not IsScreenFadedOut()
             if now ~= inside then
                 inside = now
                 SendNUIMessage({ t = 'radar', show = now })

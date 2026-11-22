@@ -7,6 +7,11 @@
   "news": [
     {
       "tag": "NOVO",
+      "title": "Dolazak avionom i više likova",
+      "text": "v1.0.16: novi lik sleti u Osijek avionom, do 3 lika po igraču, nova osobna iskaznica, odabir mjesta za spawn, ulaz u bolnicu i aerodrom, vožnja hitne i letenje avionima, NPC-ovi pričaju, novi HUD, obavijesti i HUD oružja."
+    },
+    {
+      "tag": "NOVO",
       "title": "Nova karta Osijeka (F7)",
       "text": "v1.0.15: prava nacrtana minimapa i velika karta (F7) s GPS-om, ulaz u sve kuće popravljen, more više ne prelazi preko grada, veća zračna luka (svjetla, rukavci, natpisi), ulaz hitne i garaža u KBC Osijek."
     },

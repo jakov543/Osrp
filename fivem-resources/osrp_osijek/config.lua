@@ -25,6 +25,9 @@ Config.DoorsLocked = false            -- true = everyone needs a key (lock them 
 -- Furniture inside the houses (first existing model per type)
 Config.FurnitureModels = {
     sofa    = { 'v_res_tre_sofa_s', 'prop_couch_01', 'v_ilev_m_sofa', 'prop_couch_lg_02' },
+    automat = { 'prop_vend_snak_01', 'prop_vend_soda_01', 'prop_vend_soda_02' },
+    kava    = { 'prop_vend_coffe_01', 'prop_vend_water_01' },
+    krevet  = { 'v_med_bed1', 'v_med_emptybed', 'v_med_bed2' },
     stol    = { 'prop_table_03', 'prop_table_04', 'v_res_tre_table2' },
     stolica = { 'prop_chair_01a', 'prop_chair_04a', 'v_res_tre_chair' },
     tv      = { 'prop_tv_flat_01', 'prop_tv_03', 'prop_tv_06' },
@@ -53,12 +56,23 @@ Config.SignModels = {
     air_cargo     = { 'prop_air_cargo_01a', 'prop_air_cargo_02a', 'prop_air_cargo_04a' },
     air_radar     = { 'prop_air_bigradar' },
     air_cone      = { 'prop_air_conelight', 'prop_roadcone01a' },
+    -- v1.0.16 street furniture
+    klupa   = { 'prop_bench_01a', 'prop_bench_05', 'prop_bench_09' },
+    kanta   = { 'prop_bin_05a', 'prop_bin_01a', 'prop_bin_07a' },
+    hidrant = { 'prop_fire_hydrant_1', 'prop_fire_hydrant_2' },
+    kiosk   = { 'prop_news_disp_02a', 'prop_news_disp_01a', 'prop_news_disp_03a' },
+    bicikl  = { 'prop_bikerack_1a', 'prop_bikerack_2' },
+    telefon = { 'prop_phonebox_04', 'prop_phonebox_01a' },
+    posuda  = { 'prop_pot_plant_03a', 'prop_plant_int_03a', 'prop_pot_plant_05a' },
 }
 
 Config.Pedestrians = true
-Config.PedCount = 26                -- NPCs walking / sitting around you
+Config.PedCount = 44                -- NPCs walking, sitting, standing around you (phone, coffee, smoking ...)
 Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_01', 'a_f_y_hipster_01', 'a_m_y_hipster_01',
-                     'a_f_m_bevhills_01', 'a_m_y_vinewood_01', 'a_f_y_tourist_01', 'a_m_m_skater_01', 'a_f_y_eastsa_01' }
+                     'a_f_m_bevhills_01', 'a_m_y_vinewood_01', 'a_f_y_tourist_01', 'a_m_m_skater_01', 'a_f_y_eastsa_01',
+                     'a_m_y_bevhills_01', 'a_f_y_bevhills_02', 'a_m_m_eastsa_02', 'a_f_m_tourist_01', 'a_m_y_runner_01',
+                     'a_f_y_runner_01', 'a_m_o_genstreet_01', 'a_f_o_genstreet_01', 'a_m_y_genstreet_01', 'a_f_y_genhot_01',
+                     'a_m_m_tourist_01', 'a_m_y_student_01', 'a_f_y_student_01', 'a_m_m_farmer_01', 'a_f_m_fatwhite_01' }
 
 Config.Traffic = true
 Config.TrafficCount = 10            -- cars with drivers driving around the city
@@ -86,4 +100,28 @@ Config.Events = {
         thief = 2,
         hit_and_run = 1,
     },
+}
+
+-- ===================== v1.0.16 =====================
+Config.TakeVehicles = true          -- press F next to a parked ambulance / plane / heli to drive or fly it
+Config.TakenRespawnMinutes = 15     -- a taken one comes back after this time
+Config.ArrivalCutscene = true       -- new characters fly into Osijek airport (cutscene)
+Config.ArrivalPlane = { 'luxor', 'shamal', 'nimbus', 'velum2' }
+
+Config.NpcTalk = true               -- NPCs greet you when you walk up, press E to talk (English)
+Config.NpcGreetings = {
+    'Hey there!', 'Hi! Nice day, isn\'t it?', 'Hello, welcome to Osijek!', 'Good morning!', 'Oh, hi! How are you?',
+    'Hey, nice to see a new face.', 'Hello! Lovely weather today.', 'Hi, can I help you?',
+}
+Config.NpcChat = {
+    'Have you seen the cathedral? The tower is almost 100 metres tall!',
+    'I am on my way to work, the traffic on Europska avenija is crazy.',
+    'If you get hurt, KBC Osijek is on Vukovarska street.',
+    'The promenade by the Drava is the best place for a walk.',
+    'I just flew in, the airport is south of the city.',
+    'Did you hear? There was an accident near the park this morning.',
+    'Try the beach at Copacabana in the summer!',
+    'Sorry, I am in a hurry. See you around!',
+    'The old town, Tvrđa, has the best cafés in Osijek.',
+    'Be careful, there are pickpockets around here.',
 }

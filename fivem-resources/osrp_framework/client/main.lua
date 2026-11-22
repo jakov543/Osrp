@@ -2,12 +2,17 @@
 
 OSRP = { Data = nil, Spawned = false }
 
-local function notify(msg)
-    BeginTextCommandThefeedPost('STRING')
-    AddTextComponentSubstringPlayerName(msg)
-    EndTextCommandThefeedPostTicker(false, true)
+-- v1.0.16: custom notifications (NUI). GTA colour codes (~r~ ~g~ ~y~ ...) still work.
+local function notify(msg, kind, time)
+    msg = tostring(msg or '')
+    if not kind then
+        if msg:find('~r~') then kind = 'error' elseif msg:find('~g~') then kind = 'success'
+        elseif msg:find('~y~') or msg:find('~o~') then kind = 'warning' else kind = 'info' end
+    end
+    SendNUIMessage({ action = 'notify', text = msg, kind = kind, time = time or 5500 })
 end
 OSRP.Notify = notify
+exports('Notify', notify)
 
 local function loadModel(model)
     local hash = type(model) == 'number' and model or joaat(model)
@@ -21,109 +26,236 @@ local function loadModel(model)
     return hash
 end
 
--- Spawns the local player at a position with the right freemode model
-function OSRP.SpawnAt(x, y, z, h, sex)
-    DoScreenFadeOut(300)
-    while not IsScreenFadedOut() do Wait(0) end
+local function osijek() return GetResourceState('osrp_osijek') == 'started' end
 
+-- freemode model + face, skin, hair, outfit from the character
+function OSRP.ApplyLook(data)
+    local sex = data and data.sex or 'm'
     local model = loadModel(sex == 'f' and 'mp_f_freemode_01' or 'mp_m_freemode_01')
     if model and GetEntityModel(PlayerPedId()) ~= model then
         SetPlayerModel(PlayerId(), model)
-        SetPedDefaultComponentVariation(PlayerPedId())
         SetModelAsNoLongerNeeded(model)
     end
+    local ped = PlayerPedId()
+    SetPedDefaultComponentVariation(ped)
+    local a = data and data.appearance or {}
+    SetPedHeadBlendData(ped, a.face or 0, a.face or 0, 0, a.skin or 0, a.skin or 0, 0, 0.5, 0.5, 0.0, false)
+    SetPedComponentVariation(ped, 2, a.hair or 0, 0, 0)
+    SetPedHairColor(ped, a.hairColor or 0, a.hairColor or 0)
+    local outfit = (Config.Outfits[sex] or {})[a.outfit or 1]
+    for comp, v in pairs(outfit or {}) do SetPedComponentVariation(ped, comp, v[1], v[2] or 0, 0) end
+end
 
+AddEventHandler('osrp:mapLoading', function(loaded, total)
+    SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = total > 0 and loaded / total or 1 })
+end)
+
+-- Spawns the local player. opts.arrival = fly in with the plane first (osrp_osijek)
+function OSRP.SpawnAt(x, y, z, h, data, opts)
+    opts = opts or {}
+    if type(data) ~= 'table' then data = { sex = data } end
+    DoScreenFadeOut(300)
+    while not IsScreenFadedOut() do Wait(0) end
+    SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = 0 })
+    OSRP.ApplyLook(data)
+
+    local ped = PlayerPedId()
     RequestCollisionAtCoord(x, y, z)
     NetworkResurrectLocalPlayer(x, y, z, h, true, true)
-    local ped = PlayerPedId()
+    ped = PlayerPedId()
     SetEntityCoordsNoOffset(ped, x, y, z, false, false, false)
     SetEntityHeading(ped, h)
     ClearPedTasksImmediately(ped)
     ClearPlayerWantedLevel(PlayerId())
     SetEntityHealth(ped, GetEntityMaxHealth(ped))
-
-    -- hold the player until there is ground under them (Osijek is streamed in by osrp_osijek)
     FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, false, false)
+
+    -- load the city around the spawn first (no falling through the map)
+    if osijek() then pcall(function() exports.osrp_osijek:LoadArea(x, y, 420.0, 25000) end) end
     local t = GetGameTimer()
     while GetGameTimer() - t < 15000 do
         local found = GetGroundZFor_3dCoord(x, y, z + 5.0, false)
         if found and HasCollisionLoadedAroundEntity(ped) then break end
         Wait(250)
     end
+    SendNUIMessage({ action = 'loading', show = false })
+    ShutdownLoadingScreen()
+    ShutdownLoadingScreenNui()
+
+    if opts.arrival and osijek() then
+        local ok = pcall(function() exports.osrp_osijek:PlayArrival() end)
+        if not ok then Wait(0) end
+        SetEntityCoordsNoOffset(ped, x, y, z, false, false, false)
+        SetEntityHeading(ped, h)
+    end
 
     FreezeEntityPosition(ped, false)
     SetEntityVisible(ped, true, false)
     SetPlayerInvincible(PlayerId(), false)
-    ShutdownLoadingScreen()
-    ShutdownLoadingScreenNui()
-    DoScreenFadeIn(600)
+    DoScreenFadeIn(800)
     OSRP.Spawned = true
     TriggerEvent('osrp:playerSpawned')
 end
 
--- ---------- join ----------
-CreateThread(function()
-    while not NetworkIsPlayerActive(PlayerId()) do Wait(100) end
+-- ---------- join: character selection (multicharacter) ----------
+local menuCam = nil
+local PREVIEW = vector4(5725.0, -1475.0, 8.3, 0.0)     -- Tvrđa square, in front of the cathedral
+
+local function startJoin()
+    OSRP.Spawned = false
     DoScreenFadeOut(0)
     local ped = PlayerPedId()
     FreezeEntityPosition(ped, true)
     SetEntityVisible(ped, false, false)
+    SendNUIMessage({ action = 'hideHud' })
     TriggerServerEvent('osrp:ready')
+end
+
+CreateThread(function()
+    while not NetworkIsPlayerActive(PlayerId()) do Wait(100) end
+    startJoin()
 end)
 
-RegisterNetEvent('osrp:spawn', function(data)
-    OSRP.Data = data
-    OSRP.Job = data.job
-    SetNuiFocus(false, false)
-    SendNUIMessage({ action = 'closeCreator' })
-    local p = data.pos
-    local s = Config.Spawn
-    if p and p.x and #(vector3(p.x, p.y, p.z) - vector3(s.x, s.y, s.z)) > (Config.CityRadius or 900.0) then
-        p = nil   -- last position was outside Osijek (e.g. Los Santos) -> spawn in the city
-    end
-    if p and p.x then
-        OSRP.SpawnAt(p.x, p.y, p.z, p.h or 0.0, data.sex)
-        notify(('Dobrodošao natrag, ~g~%s %s~s~!'):format(data.firstname, data.lastname))
-    else
-        OSRP.SpawnAt(s.x, s.y, s.z, s.w, data.sex)
-        notify(('Dobrodošao na ~g~OSRP~s~, %s!'):format(data.firstname))
-    end
+RegisterNetEvent('osrp:backToMenu', function()
+    DoScreenFadeOut(500)
+    while not IsScreenFadedOut() do Wait(0) end
+    startJoin()
 end)
 
--- ---------- character creator ----------
-RegisterNetEvent('osrp:createCharacter', function()
+local function menuScene()
+    SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = 0 })
+    if osijek() then pcall(function() exports.osrp_osijek:LoadArea(PREVIEW.x, PREVIEW.y, 300.0, 20000) end) end
+    SendNUIMessage({ action = 'loading', show = false })
+    local ped = PlayerPedId()
+    RequestCollisionAtCoord(PREVIEW.x, PREVIEW.y, PREVIEW.z)
+    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, PREVIEW.z, false, false, false)
+    SetEntityHeading(ped, PREVIEW.w)
+    FreezeEntityPosition(ped, true)
+    if not menuCam then
+        menuCam = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', PREVIEW.x - 0.9, PREVIEW.y + 3.4, PREVIEW.z + 0.75, 0.0, 0.0, 0.0, 42.0, false, 0)
+        PointCamAtCoord(menuCam, PREVIEW.x - 0.9, PREVIEW.y, PREVIEW.z + 0.25)
+    end
+    SetCamActive(menuCam, true)
+    RenderScriptCams(true, false, 0, true, true)
     ShutdownLoadingScreen()
     ShutdownLoadingScreenNui()
-    -- nice camera over the city while creating
-    local cam = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', -1300.0, -1700.0, 120.0, -15.0, 0.0, -30.0, 60.0, false, 0)
-    SetCamActive(cam, true)
-    RenderScriptCams(true, false, 0, true, true)
-    OSRP.CreatorCam = cam
     DoScreenFadeIn(800)
+end
+
+local function endMenu()
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeMenu' })
+    if menuCam then
+        RenderScriptCams(false, false, 0, true, true)
+        DestroyCam(menuCam, false)
+        menuCam = nil
+    end
+end
+
+RegisterNetEvent('osrp:chars', function(list, max)
+    if not menuCam then menuScene() end
+    SetEntityVisible(PlayerPedId(), false, false)
     SetNuiFocus(true, true)
-    SendNUIMessage({ action = 'openCreator' })
+    SendNUIMessage({ action = 'openMenu', chars = list, max = max, nations = Config.Nationalities })
+end)
+
+RegisterNUICallback('preview', function(d, cb)
+    cb({})
+    if type(d) ~= 'table' or not d.sex then
+        SetEntityVisible(PlayerPedId(), false, false)
+        return
+    end
+    OSRP.ApplyLook({ sex = d.sex == 'f' and 'f' or 'm', appearance = d.appearance })
+    local ped = PlayerPedId()
+    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, PREVIEW.z, false, false, false)
+    SetEntityHeading(ped, (d.rot or 0) + 0.0)
+    FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, true, false)
+end)
+
+RegisterNUICallback('selectChar', function(d, cb) cb({}) TriggerServerEvent('osrp:selectChar', tonumber(d.cid)) end)
+RegisterNUICallback('deleteChar', function(d, cb) cb({}) TriggerServerEvent('osrp:deleteChar', tonumber(d.cid)) end)
+RegisterNUICallback('createChar', function(d, cb)
+    cb({})
+    TriggerServerEvent('osrp:createChar', {
+        firstname = tostring(d.firstname or ''), lastname = tostring(d.lastname or ''), dob = tostring(d.dob or ''),
+        sex = d.sex == 'f' and 'f' or 'm', height = tonumber(d.height), nationality = tostring(d.nationality or ''),
+        appearance = d.appearance,
+    })
 end)
 
 RegisterNetEvent('osrp:characterError', function(msg)
     SendNUIMessage({ action = 'creatorError', message = msg })
 end)
 
-RegisterNUICallback('submitCharacter', function(data, cb)
-    cb({ ok = true })
-    TriggerServerEvent('osrp:submitCharacter', {
-        firstname = tostring(data.firstname or ''),
-        lastname = tostring(data.lastname or ''),
-        dob = tostring(data.dob or ''),
-        sex = data.sex == 'f' and 'f' or 'm'
-    })
+-- spawn selection after picking a character
+RegisterNetEvent('osrp:spawnSelect', function(data)
+    OSRP.Data = data
+    OSRP.Job = data.job
+    local points = {}
+    for _, p in ipairs(Config.SpawnPoints) do
+        points[#points + 1] = { id = p.id, label = p.label, icon = p.icon, desc = p.desc, disabled = (p.id == 'last' and not data.pos) }
+    end
+    SendNUIMessage({ action = 'openSpawn', points = points, name = data.firstname .. ' ' .. data.lastname })
+end)
+
+RegisterNUICallback('previewSpawn', function(d, cb)
+    cb({})
+    local c
+    for _, p in ipairs(Config.SpawnPoints) do if p.id == d.id then c = p.coords end end
+    if d.id == 'last' and OSRP.Data and OSRP.Data.pos then c = vector4(OSRP.Data.pos.x, OSRP.Data.pos.y, OSRP.Data.pos.z, 0.0) end
+    if c and menuCam then
+        local cam2 = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', c.x - 70.0, c.y - 70.0, c.z + 55.0, 0.0, 0.0, 0.0, 50.0, false, 0)
+        PointCamAtCoord(cam2, c.x, c.y, c.z)
+        SetCamActiveWithInterp(cam2, menuCam, 1400, 1, 1)
+        Wait(1500)
+        DestroyCam(menuCam, false)
+        menuCam = cam2
+        SetEntityVisible(PlayerPedId(), false, false)
+    end
+end)
+
+local function welcome(data, back)
+    if back then notify(('Dobrodošao natrag, ~g~%s %s~s~!'):format(data.firstname, data.lastname), 'success')
+    else notify(('Dobrodošao u ~g~Osijek~s~, %s!'):format(data.firstname), 'success') end
+end
+
+RegisterNUICallback('chooseSpawn', function(d, cb)
+    cb({})
+    local data = OSRP.Data
+    if not data then return end
+    endMenu()
+    if d.id == 'last' and data.pos then
+        local p, s = data.pos, Config.Spawn
+        if #(vector3(p.x, p.y, p.z) - vector3(s.x, s.y, s.z)) <= (Config.CityRadius or 1100.0) then
+            OSRP.SpawnAt(p.x, p.y, p.z, p.h or 0.0, data)
+            return welcome(data, true)
+        end
+    end
+    for _, p in ipairs(Config.SpawnPoints) do
+        if p.id == d.id and p.coords then
+            OSRP.SpawnAt(p.coords.x, p.coords.y, p.coords.z, p.coords.w, data, { arrival = p.id == 'arrival' })
+            return welcome(data, true)
+        end
+    end
+    local s = Config.Spawn
+    OSRP.SpawnAt(s.x, s.y, s.z, s.w, data)
+end)
+
+-- new character: straight into the plane
+RegisterNetEvent('osrp:spawn', function(data, opts)
+    OSRP.Data = data
+    OSRP.Job = data.job
+    endMenu()
+    local a
+    for _, p in ipairs(Config.SpawnPoints) do if p.id == 'arrival' then a = p.coords end end
+    a = a or Config.Spawn
+    OSRP.SpawnAt(a.x, a.y, a.z, a.w, data, { arrival = opts and opts.arrival })
+    welcome(data, false)
 end)
 
 AddEventHandler('osrp:playerSpawned', function()
-    if OSRP.CreatorCam then
-        RenderScriptCams(false, false, 0, true, true)
-        DestroyCam(OSRP.CreatorCam, false)
-        OSRP.CreatorCam = nil
-    end
     SendNUIMessage({ action = 'showHud' })
 end)
 
@@ -132,7 +264,7 @@ RegisterNetEvent('osrp:hud', function(h)
     SendNUIMessage({ action = 'hud', name = h.name, cash = h.cash, bank = h.bank, job = h.job })
 end)
 
-RegisterNetEvent('osrp:notify', function(msg) notify(msg) end)
+RegisterNetEvent('osrp:notify', function(msg, kind, time) notify(msg, kind, time) end)
 
 -- ---------- save position every 60 s ----------
 CreateThread(function()

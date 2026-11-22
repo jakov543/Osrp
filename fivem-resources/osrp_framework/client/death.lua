@@ -117,7 +117,7 @@ CreateThread(function()
                         local h = Config.Hospital
                         deadSince = nil
                         called = nil
-                        OSRP.SpawnAt(h.x, h.y, h.z, h.w, OSRP.Data and OSRP.Data.sex)
+                        OSRP.SpawnAt(h.x, h.y, h.z, h.w, OSRP.Data)
                         OSRP.Notify('Probudio si se u ~b~KBC Osijek~s~.')
                     end
                 end

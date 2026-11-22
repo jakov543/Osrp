@@ -11,6 +11,9 @@ local active = 0
 local lastRun = {}
 
 local function notify(msg)
+    if GetResourceState('osrp_framework') == 'started' then
+        return TriggerEvent('osrp:notify', msg)        -- OSRP custom notification
+    end
     BeginTextCommandThefeedPost('STRING')
     AddTextComponentSubstringPlayerName(msg)
     EndTextCommandThefeedPostTicker(false, true)

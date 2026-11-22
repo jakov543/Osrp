@@ -5,22 +5,83 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Character creator -->
-  <div id="creator" class="creator hidden">
-    <div class="panel">
+  <!-- v1.0.16: loading -->
+  <div id="loading" class="loading hidden">
+    <img src="emblem.png" alt="" />
+    <div class="ld-text" id="ldText">Učitavanje Osijeka</div>
+    <div class="ld-bar"><span id="ldBar"></span></div>
+  </div>
+
+  <!-- v1.0.16: character selection (multicharacter) + identity creator + spawn selection -->
+  <div id="menu" class="menu hidden">
+    <div class="m-side">
       <div class="brand"><img class="emb" src="emblem.png" alt="" /><div><b>OSRP</b><small>OSIJEK ROLEPLAY</small></div></div>
-      <h1>Novi lik</h1>
-      <p class="muted">Napravi svog lika za Osijek Roleplay.</p>
-      <label>Ime<input id="firstname" maxlength="20" placeholder="npr. Marko" /></label>
-      <label>Prezime<input id="lastname" maxlength="20" placeholder="npr. Horvat" /></label>
-      <label>Datum rođenja<input id="dob" type="date" min="1940-01-01" max="2008-12-31" value="2000-01-01" /></label>
-      <div class="sex">
-        <button class="on" data-sex="m">Muško</button>
-        <button data-sex="f">Žensko</button>
-      </div>
-      <div class="err" id="err"></div>
-      <button class="go" id="go">Uđi u Osijek</button>
+
+      <section id="pChars">
+        <h1>Tvoji likovi</h1>
+        <p class="muted">Odaberi lika ili napravi novog.</p>
+        <div id="charList" class="char-list"></div>
+      </section>
+
+      <section id="pCreate" class="hidden">
+        <h1>Osobna iskaznica</h1>
+        <p class="muted">Napravi novog građanina Osijeka.</p>
+        <div class="grid2">
+          <label>Ime<input id="cFirst" maxlength="20" placeholder="Marko" /></label>
+          <label>Prezime<input id="cLast" maxlength="20" placeholder="Horvat" /></label>
+        </div>
+        <div class="grid2">
+          <label>Datum rođenja<input id="cDob" type="date" min="1940-01-01" max="2008-12-31" value="2000-01-01" /></label>
+          <label>Državljanstvo<select id="cNation"></select></label>
+        </div>
+        <div class="sex">
+          <button class="on" data-sex="m">♂ Muško</button>
+          <button data-sex="f">♀ Žensko</button>
+        </div>
+        <label class="rng">Visina <em id="vHeight">180 cm</em><input id="cHeight" type="range" min="150" max="210" value="180" /></label>
+        <label class="rng">Lice <em id="vFace">1</em><input id="cFace" type="range" min="0" max="45" value="0" /></label>
+        <label class="rng">Boja kože <em id="vSkin">1</em><input id="cSkin" type="range" min="0" max="45" value="0" /></label>
+        <label class="rng">Frizura <em id="vHair">1</em><input id="cHair" type="range" min="0" max="36" value="0" /></label>
+        <label class="rng">Boja kose <em id="vHairC">1</em><input id="cHairC" type="range" min="0" max="63" value="0" /></label>
+        <div class="outfits" id="cOutfits"></div>
+        <div class="rot"><button id="rotL">⟲</button><span>Okreni lika</span><button id="rotR">⟳</button></div>
+        <div class="err" id="err"></div>
+        <div class="grid2">
+          <button class="ghost" id="cBack">Natrag</button>
+          <button class="go" id="go">✈ Sleti u Osijek</button>
+        </div>
+      </section>
+
+      <section id="pSpawn" class="hidden">
+        <h1>Gdje želiš početi?</h1>
+        <p class="muted" id="spawnWho">—</p>
+        <div id="spawnList" class="spawn-list"></div>
+        <button class="go" id="spawnGo" disabled>Igraj</button>
+      </section>
     </div>
+
+    <div id="idCard" class="id-card hidden">
+      <div class="idc-top"><span>REPUBLIKA HRVATSKA</span><b>OSOBNA ISKAZNICA</b></div>
+      <div class="idc-body">
+        <div class="idc-photo"><img src="emblem.png" alt="" /></div>
+        <div class="idc-rows">
+          <div><small>Prezime</small><b id="iLast">—</b></div>
+          <div><small>Ime</small><b id="iFirst">—</b></div>
+          <div class="two"><div><small>Spol</small><b id="iSex">M</b></div><div><small>Visina</small><b id="iHeight">180 cm</b></div></div>
+          <div class="two"><div><small>Datum rođenja</small><b id="iDob">—</b></div><div><small>Državljanstvo</small><b id="iNation">—</b></div></div>
+        </div>
+      </div>
+      <div class="idc-mrz">IDHRV&lt;&lt;OSIJEK&lt;&lt;OSRP&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
+    </div>
+  </div>
+
+  <!-- v1.0.16: notifications -->
+  <div id="notes" class="notes"></div>
+
+  <!-- v1.0.16: weapon HUD -->
+  <div id="weapon" class="weapon hidden">
+    <div class="w-icon"><svg viewBox="0 0 24 24"><path d="M2 8h15l1-2h3v4h-2v2h-5l-1 2h-2l-1 4H6l1-5-5-1z"/></svg></div>
+    <div class="w-info"><div class="w-name" id="wName">Pištolj</div><div class="w-ammo"><b id="wClip">12</b><span id="wTotal">/ 48</span></div></div>
   </div>
 
   <!-- HUD (GTA health/armour + minimap stay; we replace cash, street name and vehicle info) -->
@@ -40,6 +101,13 @@
         <svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg></i>
         <span>Banka</span><b id="hBank">$0</b></div>
     </div>
+    <div class="h-status">
+      <div class="st hp" title="Zdravlje"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.5 12 21 12 21z"/></svg><i><span id="stHp"></span></i></div>
+      <div class="st ar" title="Pancir"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5z"/></svg><i><span id="stAr"></span></i></div>
+      <div class="st sta" title="Izdržljivost"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><i><span id="stSp"></span></i></div>
+      <div class="st mic" id="stMic" title="Glas"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+    </div>
+    <div class="h-foot"><span id="hId">ID 0</span><span id="hOnline">0 online</span><span id="hClock">00:00</span></div>
     <div id="hDelta" class="h-delta"></div>
   </div>
 

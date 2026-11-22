@@ -99,8 +99,8 @@ RegisterCommand('resetlik', function(src, args)  -- deletes a character so the p
     if not t then return reply(src, 'Koristi: /resetlik [id]') end
     local p = OSRP.GetPlayer(t)
     if p then
-        DeleteResourceKvp('osrp:player:' .. p.license)
+        OSRP.DeleteCharacter(p.license, p.cid)
         OSRP.Players[t] = nil
-        DropPlayer(t, 'OSRP: tvoj lik je resetiran. Uđi ponovno i napravi novog.')
+        DropPlayer(t, 'OSRP: tvoj lik je obrisan. Uđi ponovno i napravi novog.')
     end
 end, false)

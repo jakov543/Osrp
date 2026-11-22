@@ -34,12 +34,20 @@ local function location(c)
 end
 
 AddEventHandler('osrp:playerSpawned', function() HUD_ON = true end)
+RegisterNetEvent('osrp:backToMenu', function() HUD_ON = false end)
+local cutscene = false
+AddEventHandler('osrp:cutscene', function(on)
+    cutscene = on
+    SendNUIMessage({ action = on and 'hideHud' or 'showHud' })
+end)
+local online = 1
+RegisterNetEvent('osrp:online', function(n) online = n end)
 
 -- hide the GTA parts we draw ourselves (cash, street/area name, vehicle name/class)
 CreateThread(function()
     while true do
         if HUD_ON then
-            for _, id in ipairs({ 3, 4, 6, 7, 8, 9, 13 }) do HideHudComponentThisFrame(id) end
+            for _, id in ipairs({ 2, 3, 4, 6, 7, 8, 9, 13, 20 }) do HideHudComponentThisFrame(id) end
             Wait(0)
         else
             Wait(500)
@@ -55,7 +63,7 @@ CreateThread(function()
             local c = GetEntityCoords(ped)
             local street, zone = location(c)
             local mx, my, mr, mb = minimapAnchor()
-            local radar = not IsPauseMenuActive()      -- osrp_osijek replaces the radar with its own drawn map in the city
+            local radar = not IsPauseMenuActive() and not cutscene      -- osrp_osijek replaces the radar with its own drawn map in the city
             local data = {
                 street = street, zone = zone or '',
                 dir = direction(GetGameplayCamRot(0).z % 360),
@@ -93,5 +101,75 @@ CreateThread(function()
             if last.inVeh then send('veh', { show = false }) last.inVeh = false end
             Wait(400)
         end
+    end
+end)
+
+
+-- ---------- v1.0.16: weapon HUD ----------
+local WEAPONS = {
+    WEAPON_PISTOL = 'Pištolj', WEAPON_PISTOL_MK2 = 'Pištolj Mk II', WEAPON_COMBATPISTOL = 'Borbeni pištolj', WEAPON_APPISTOL = 'AP pištolj',
+    WEAPON_PISTOL50 = 'Pištolj .50', WEAPON_SNSPISTOL = 'SNS pištolj', WEAPON_HEAVYPISTOL = 'Teški pištolj', WEAPON_VINTAGEPISTOL = 'Stari pištolj',
+    WEAPON_REVOLVER = 'Revolver', WEAPON_STUNGUN = 'Taser', WEAPON_FLAREGUN = 'Raketni pištolj',
+    WEAPON_MICROSMG = 'Micro SMG', WEAPON_SMG = 'SMG', WEAPON_ASSAULTSMG = 'Jurišni SMG', WEAPON_COMBATPDW = 'Borbeni PDW', WEAPON_MINISMG = 'Mini SMG',
+    WEAPON_ASSAULTRIFLE = 'Jurišna puška', WEAPON_CARBINERIFLE = 'Karabin', WEAPON_ADVANCEDRIFLE = 'Napredna puška',
+    WEAPON_SPECIALCARBINE = 'Specijalni karabin', WEAPON_BULLPUPRIFLE = 'Bullpup puška', WEAPON_COMPACTRIFLE = 'Kompaktna puška',
+    WEAPON_PUMPSHOTGUN = 'Sačmarica', WEAPON_SAWNOFFSHOTGUN = 'Skraćena sačmarica', WEAPON_ASSAULTSHOTGUN = 'Jurišna sačmarica',
+    WEAPON_BULLPUPSHOTGUN = 'Bullpup sačmarica', WEAPON_HEAVYSHOTGUN = 'Teška sačmarica', WEAPON_SNIPERRIFLE = 'Snajper',
+    WEAPON_HEAVYSNIPER = 'Teški snajper', WEAPON_MARKSMANRIFLE = 'Precizna puška', WEAPON_MG = 'Strojnica', WEAPON_COMBATMG = 'Borbena strojnica',
+    WEAPON_GUSENBERG = 'Gusenberg', WEAPON_RPG = 'RPG', WEAPON_GRENADELAUNCHER = 'Bacač granata', WEAPON_MINIGUN = 'Minigun',
+    WEAPON_GRENADE = 'Granata', WEAPON_MOLOTOV = 'Molotov', WEAPON_SMOKEGRENADE = 'Dimna bomba', WEAPON_BZGAS = 'Suzavac',
+    WEAPON_STICKYBOMB = 'Ljepljiva bomba', WEAPON_PETROLCAN = 'Kanister', WEAPON_FIREEXTINGUISHER = 'Aparat za gašenje',
+    WEAPON_KNIFE = 'Nož', WEAPON_BAT = 'Palica', WEAPON_CROWBAR = 'Pajser', WEAPON_GOLFCLUB = 'Palica za golf', WEAPON_HAMMER = 'Čekić',
+    WEAPON_NIGHTSTICK = 'Pendrek', WEAPON_FLASHLIGHT = 'Svjetiljka', WEAPON_KNUCKLE = 'Bokser', WEAPON_MACHETE = 'Mačeta',
+    WEAPON_SWITCHBLADE = 'Skakavac', WEAPON_WRENCH = 'Ključ', WEAPON_HATCHET = 'Sjekira', WEAPON_BOTTLE = 'Boca', WEAPON_DAGGER = 'Bodež',
+}
+local NAMES = {}
+for k, v in pairs(WEAPONS) do NAMES[joaat(k)] = v end
+
+CreateThread(function()
+    local last = ''
+    while true do
+        local wait = 400
+        if HUD_ON and not cutscene then
+            local ped = PlayerPedId()
+            local ok, hash = GetCurrentPedWeapon(ped, true)
+            local data
+            if ok and hash ~= joaat('WEAPON_UNARMED') then
+                wait = 120
+                local melee = GetWeaponDamageType(hash) == 2 or GetWeaponClipSize(hash) <= 0
+                local _, clip = GetAmmoInClip(ped, hash)
+                data = { action = 'weapon', show = true, name = NAMES[hash] or 'Oružje', melee = melee,
+                         clip = clip or 0, total = GetAmmoInPedWeapon(ped, hash), clipMax = GetMaxAmmoInClip(ped, hash, true) }
+            else
+                data = { action = 'weapon', show = false }
+            end
+            local key = json.encode(data)
+            if key ~= last then last = key SendNUIMessage(data) end
+        elseif last ~= '' then
+            last = ''
+            SendNUIMessage({ action = 'weapon', show = false })
+        end
+        Wait(wait)
+    end
+end)
+
+-- ---------- v1.0.16: status (health, armour, stamina, voice, id, online, clock) ----------
+CreateThread(function()
+    while true do
+        if HUD_ON then
+            local ped = PlayerPedId()
+            local maxHp = GetEntityMaxHealth(ped) - 100
+            SendNUIMessage({
+                action = 'status',
+                hp = maxHp > 0 and (GetEntityHealth(ped) - 100) / maxHp * 100 or 0,
+                ar = GetPedArmour(ped),
+                st = 100 - GetPlayerSprintStaminaRemaining(PlayerId()),
+                talk = NetworkIsPlayerTalking(PlayerId()),
+                id = GetPlayerServerId(PlayerId()),
+                online = online,
+                time = ('%02d:%02d'):format(GetClockHours(), GetClockMinutes()),
+            })
+        end
+        Wait(300)
     end
 end)

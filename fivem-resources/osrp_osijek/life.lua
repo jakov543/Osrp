@@ -121,6 +121,9 @@ CreateThread(function()
         if Config.SpecialVehicles and Life.SPECIAL then
             for i, sv in ipairs(Life.SPECIAL) do
                 local key = 'sp' .. i
+                if OsijekTaken and OsijekTaken[key] and GetGameTimer() - OsijekTaken[key] < (Config.TakenRespawnMinutes or 15) * 60000 then
+                    goto continue
+                end
                 local roofZ = sv[3]
                 local wp = W(sv[1], sv[2], roofZ or 0.4)
                 local d = #(pos - wp)
@@ -148,6 +151,7 @@ CreateThread(function()
                     if DoesEntityExist(parked[key]) then DeleteVehicle(parked[key]) end
                     parked[key] = nil
                 end
+                ::continue::
             end
         end
         for i, s in ipairs(Life.SIGNS) do
@@ -177,7 +181,7 @@ local peds = {}
 
 local function pedModel(i)
     local list = Config.PedModels
-    return firstModel({ list[(i % #list) + 1], list[1], list[2] })
+    return firstModel({ list[math.random(#list)], list[(i % #list) + 1], list[1] })
 end
 
 local function newWalker(i)
@@ -197,6 +201,23 @@ local function newWalker(i)
     local tx, ty = goEnd and w[3] or w[1], goEnd and w[4] or w[2]
     local tw = W(tx, ty, 0.3)
     TaskGoStraightToCoord(p, tw.x, tw.y, tw.z, 1.0, -1, 0.0, 0.5)
+end
+
+local SCENARIOS = { 'WORLD_HUMAN_SMOKING', 'WORLD_HUMAN_STAND_MOBILE', 'WORLD_HUMAN_AA_COFFEE', 'WORLD_HUMAN_TOURIST_MAP',
+                    'WORLD_HUMAN_HANG_OUT_STREET', 'WORLD_HUMAN_DRINKING', 'WORLD_HUMAN_MOBILE_FILM_SHOCKING', 'WORLD_HUMAN_STAND_IMPATIENT' }
+
+local function newStander(i)
+    local w = Life.WALKS[math.random(#Life.WALKS)]
+    local t = math.random()
+    local x, y = w[1] + (w[3] - w[1]) * t, w[2] + (w[4] - w[2]) * t
+    local wp = groundAt(x, y, 0.05)
+    if not wp then return end
+    local hash = pedModel(i + 11)
+    if not load(hash) then return end
+    local p = CreatePed(4, hash, wp.x, wp.y, wp.z, math.random(0, 359) + 0.0, false, true)
+    SetModelAsNoLongerNeeded(hash)
+    TaskStartScenarioInPlace(p, SCENARIOS[math.random(#SCENARIOS)], 0, true)
+    peds[i] = { ped = p, sitting = true }
 end
 
 local function newSitter(i)
@@ -219,7 +240,9 @@ CreateThread(function()
                 local e = peds[i]
                 if not e or not DoesEntityExist(e.ped) or IsEntityDead(e.ped) then
                     if e and e.ped and DoesEntityExist(e.ped) then SetPedAsNoLongerNeeded(e.ped) end
-                    if i % 5 == 0 and #Life.BENCHES > 0 then newSitter(i) else newWalker(i) end
+                    if i % 5 == 0 and #Life.BENCHES > 0 then newSitter(i)
+                    elseif i % 3 == 0 then newStander(i)
+                    else newWalker(i) end
                 elseif not e.sitting then
                     -- turn around at the end of the sidewalk
                     local w = e.walk
@@ -343,5 +366,161 @@ AddEventHandler('onResourceStop', function(res)
     for _, c in pairs(cars) do
         if c.drv and DoesEntityExist(c.drv) then DeletePed(c.drv) end
         if c.veh and DoesEntityExist(c.veh) then DeleteVehicle(c.veh) end
+    end
+end)
+
+
+-- ===================================================================== v1.0.16: take the parked ambulances / planes / heli
+-- Parked ones are local decoration; press F next to one and it becomes a real (networked) vehicle you can drive or fly.
+OsijekTaken = {}
+CreateThread(function()
+    while true do
+        local sleep = 500
+        if Config.TakeVehicles and Life.SPECIAL then
+            local ped = PlayerPedId()
+            if not IsPedInAnyVehicle(ped, false) then
+                local pos = GetEntityCoords(ped)
+                for i, sv in ipairs(Life.SPECIAL) do
+                    local key = 'sp' .. i
+                    local v = parked[key]
+                    if v and DoesEntityExist(v) and #(GetEntityCoords(v) - pos) < 6.0 then
+                        sleep = 0
+                        BeginTextCommandDisplayHelp('STRING')
+                        AddTextComponentSubstringPlayerName('~INPUT_ENTER~ Uđi u vozilo')
+                        EndTextCommandDisplayHelp(0, false, false, -1)
+                        if IsControlJustPressed(0, 23) then
+                            local c, h, model = GetEntityCoords(v), GetEntityHeading(v), GetEntityModel(v)
+                            DeleteVehicle(v)
+                            parked[key] = nil
+                            OsijekTaken[key] = GetGameTimer()
+                            RequestModel(model)
+                            while not HasModelLoaded(model) do Wait(0) end
+                            local nv = CreateVehicle(model, c.x, c.y, c.z + 0.2, h, true, false)
+                            if sv[6] and sv[6] > 0 then SetVehicleLivery(nv, sv[6]) end
+                            SetVehicleNumberPlateText(nv, sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK')
+                            SetVehicleOnGroundProperly(nv)
+                            SetPedIntoVehicle(ped, nv, -1)
+                            SetEntityAsNoLongerNeeded(nv)
+                            SetModelAsNoLongerNeeded(model)
+                        end
+                        break
+                    end
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+-- ===================================================================== staff (hospital reception, doctor, airport check-in, security, pilot)
+local staff = {}
+CreateThread(function()
+    while true do
+        local pos = GetEntityCoords(PlayerPedId())
+        for i, st in ipairs(Life.STAFF or {}) do
+            local wp = W(st[2], st[3], 0.3)
+            local d = #(pos - wp)
+            if d < 120.0 and not (staff[i] and DoesEntityExist(staff[i])) then
+                local g = groundAt(st[2], st[3], 0.0)
+                local hash = g and firstModel({ st[1] })
+                if hash and load(hash) then
+                    local p = CreatePed(4, hash, g.x, g.y, g.z, st[4], false, true)
+                    SetEntityInvincible(p, true)
+                    SetBlockingOfNonTemporaryEvents(p, true)
+                    FreezeEntityPosition(p, true)
+                    TaskStartScenarioInPlace(p, st[5], 0, true)
+                    SetModelAsNoLongerNeeded(hash)
+                    staff[i] = p
+                end
+            elseif d > 150.0 and staff[i] then
+                if DoesEntityExist(staff[i]) then DeletePed(staff[i]) end
+                staff[i] = nil
+            end
+        end
+        Wait(2000)
+    end
+end)
+
+-- ===================================================================== lights inside the hospital lobby and the terminal hall
+CreateThread(function()
+    while true do
+        local pos = GetEntityCoords(PlayerPedId())
+        local near = false
+        for _, l in ipairs(Life.INTERIOR_LIGHTS or {}) do
+            local p = W(l[1], l[2], l[3])
+            if #(pos - p) < 80.0 then
+                near = true
+                DrawLightWithRange(p.x, p.y, p.z, 255, 244, 228, 22.0, 2.2)
+            end
+        end
+        Wait(near and 0 or 1000)
+    end
+end)
+
+-- ===================================================================== NPCs talk to you (English)
+local talked = {}
+local function bubble(ped, text)
+    local untilT = GetGameTimer() + 4500
+    CreateThread(function()
+        while GetGameTimer() < untilT and DoesEntityExist(ped) do
+            local c = GetPedBoneCoords(ped, 31086, 0.0, 0.0, 0.0) + vector3(0.0, 0.0, 0.45)
+            local on, sx, sy = World3dToScreen2d(c.x, c.y, c.z)
+            if on then
+                SetTextScale(0.0, 0.34)
+                SetTextFont(4)
+                SetTextColour(255, 255, 255, 235)
+                SetTextCentre(true)
+                SetTextOutline()
+                BeginTextCommandDisplayText('STRING')
+                AddTextComponentSubstringPlayerName(text)
+                EndTextCommandDisplayText(sx, sy)
+            end
+            Wait(0)
+        end
+    end)
+end
+
+local function npcSay(ped, lines, speech)
+    if not ped or not DoesEntityExist(ped) or IsPedDeadOrDying(ped, true) then return end
+    TaskTurnPedToFaceEntity(ped, PlayerPedId(), 1500)
+    PlayPedAmbientSpeechNative(ped, speech or 'GENERIC_HI', 'SPEECH_PARAMS_FORCE_NORMAL')
+    bubble(ped, lines[math.random(#lines)])
+end
+
+local function allTalkers()
+    local list = {}
+    for _, e in pairs(peds) do if e.ped then list[#list + 1] = e.ped end end
+    for _, p in pairs(staff) do list[#list + 1] = p end
+    return list
+end
+
+CreateThread(function()
+    while true do
+        local sleep = 500
+        local me = PlayerPedId()
+        if Config.NpcTalk and not IsPedInAnyVehicle(me, false) then
+            local pos = GetEntityCoords(me)
+            for _, p in ipairs(allTalkers()) do
+                if DoesEntityExist(p) then
+                    local d = #(GetEntityCoords(p) - pos)
+                    if d < 2.6 then
+                        sleep = 0
+                        if not talked[p] or GetGameTimer() - talked[p] > 60000 then
+                            talked[p] = GetGameTimer()
+                            npcSay(p, Config.NpcGreetings)
+                        end
+                        BeginTextCommandDisplayHelp('STRING')
+                        AddTextComponentSubstringPlayerName('~INPUT_CONTEXT~ Talk')
+                        EndTextCommandDisplayHelp(0, false, false, -1)
+                        if IsControlJustReleased(0, 38) then
+                            talked[p] = GetGameTimer()
+                            npcSay(p, Config.NpcChat, 'GENERIC_HOWS_IT_GOING')
+                        end
+                        break
+                    end
+                end
+            end
+        end
+        Wait(sleep)
     end
 end)

@@ -7,21 +7,10 @@ local function chunkPos(c)
     return vector3(Config.Origin.x + c.x, Config.Origin.y + c.y, Config.Origin.z + c.z)
 end
 
-local function spawnChunk(c)
-    local hash = joaat(c.name)
-    if not IsModelInCdimage(hash) then
-        if not missingWarned then
-            missingWarned = true
-            print('^3[OSRP Osijek]^7 Modeli nisu u stream/ mapi - pogledaj OSIJEK-MAPA-UPUTE.txt')
-        end
-        return
-    end
-    RequestModel(hash)
-    local t = GetGameTimer()
-    while not HasModelLoaded(hash) do
-        if GetGameTimer() - t > 10000 then return end
-        Wait(0)
-    end
+-- v1.0.16: nearest chunks first, all models requested in parallel (faster, no falling through the map)
+local requested = {}
+
+local function createChunk(c, hash)
     local p = chunkPos(c)
     local obj = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
     SetEntityHeading(obj, 0.0)
@@ -29,22 +18,73 @@ local function spawnChunk(c)
     SetEntityLodDist(obj, 1000)
     SetModelAsNoLongerNeeded(hash)
     spawned[c.name] = obj
+    requested[c.name] = nil
 end
+
+-- one streaming pass: request + create chunks within radius of (x, y), nearest first. returns loaded, total
+local function streamPass(x, y, radius)
+    local list = {}
+    for _, c in ipairs(Layout) do
+        local p = chunkPos(c)
+        local d = #(vec2(p.x, p.y) - vec2(x, y))
+        if d < radius then list[#list + 1] = { c = c, d = d } end
+    end
+    table.sort(list, function(a, b) return a.d < b.d end)
+    local loaded = 0
+    for _, e in ipairs(list) do
+        local c = e.c
+        local obj = spawned[c.name]
+        if obj and DoesEntityExist(obj) then
+            loaded = loaded + 1
+        else
+            local hash = joaat(c.name)
+            if not IsModelInCdimage(hash) then
+                if not missingWarned then
+                    missingWarned = true
+                    print('^3[OSRP Osijek]^7 Modeli nisu u stream/ mapi - pogledaj OSIJEK-MAPA-UPUTE.txt')
+                end
+            elseif HasModelLoaded(hash) then
+                createChunk(c, hash)
+                loaded = loaded + 1
+            elseif not requested[c.name] or GetGameTimer() - requested[c.name] > 8000 then
+                RequestModel(hash)
+                requested[c.name] = GetGameTimer()
+            end
+        end
+    end
+    return loaded, #list
+end
+
+-- blocks until the city around (x, y) is loaded (used by osrp_framework while the screen is black)
+function LoadArea(x, y, radius, timeout)
+    local t = GetGameTimer()
+    radius = radius or 350.0
+    while GetGameTimer() - t < (timeout or 20000) do
+        local loaded, total = streamPass(x, y, radius)
+        TriggerEvent('osrp:mapLoading', loaded, total)
+        if loaded >= total then
+            RequestCollisionAtCoord(x, y, Config.Origin.z)
+            Wait(300)
+            return true
+        end
+        Wait(50)
+    end
+    return false
+end
+exports('LoadArea', LoadArea)
 
 CreateThread(function()
     while true do
         local pos = GetEntityCoords(PlayerPedId())
+        streamPass(pos.x, pos.y, Config.StreamDistance)
         for _, c in ipairs(Layout) do
-            local d = #(pos - chunkPos(c))
             local obj = spawned[c.name]
-            if d < Config.StreamDistance then
-                if not obj or not DoesEntityExist(obj) then spawnChunk(c) end
-            elseif obj and d > Config.StreamDistance + 100.0 then
-                DeleteObject(obj)
+            if obj and #(pos - chunkPos(c)) > Config.StreamDistance + 100.0 then
+                if DoesEntityExist(obj) then DeleteObject(obj) end
                 spawned[c.name] = nil
             end
         end
-        Wait(1500)
+        Wait(250)
     end
 end)
 
@@ -245,6 +285,7 @@ CreateThread(function()
                         if HasModelLoaded(hash) then
                             local o = CreateObjectNoOffset(hash, p.x, p.y, p.z, false, false, false)
                             SetEntityHeading(o, (i * 47) % 360 + 0.0)
+                            PlaceObjectOnGroundProperly(o)     -- v1.0.16: sit on the real ground (sidewalk / grass)
                             FreezeEntityPosition(o, true)
                             SetModelAsNoLongerNeeded(hash)
                             treeObjs[i] = o
