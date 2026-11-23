@@ -217,24 +217,32 @@ def build_props(h):
         names.append("h_" + kind)
         return "h_" + kind
 
-    p = H("sofa")                               # 2.1 m three-seater, seat 0.45
-    B(p, "baza", (0, 0, 0.08), (2.1, 0.9, 0.35), "sofa")
-    B(p, "naslon", (0, -0.35, 0.08), (2.1, 0.2, 0.85), "sofa")
-    for x in (-0.97, 0.97):
-        B(p, f"rukohvat_{x}", (x, 0, 0.08), (0.16, 0.9, 0.6), "sofa")
-    for x in (-0.6, 0, 0.6):
-        B(p, f"jastuk_{x}", (x, 0.08, 0.43), (0.58, 0.62, 0.1), "sofa")
-    B(p, "ukrasni", (-0.65, -0.2, 0.53), (0.4, 0.12, 0.35), "cushion")
-    for x in (-0.95, 0.95):
+    p = H("sofa")                               # v1.0.47: 3-seater with seat + back cushions, piped arms, wooden feet
+    B(p, "baza", (0, 0, 0.1), (2.2, 0.92, 0.28), "sofa")
+    B(p, "naslon", (0, -0.36, 0.1), (2.2, 0.2, 0.74), "sofa")
+    for x in (-1.02, 1.02):
+        B(p, f"rukohvat_{x}", (x, 0.0, 0.1), (0.18, 0.92, 0.5), "sofa")
+        B(p, f"rukohvat_top_{x}", (x, 0.0, 0.6), (0.22, 0.92, 0.06), "sofa")
+    for x in (-0.62, 0, 0.62):
+        B(p, f"jastuk_{x}", (x, 0.08, 0.38), (0.6, 0.7, 0.13), "sofa")
+        B(p, f"naslon_jastuk_{x}", (x, -0.22, 0.48), (0.58, 0.16, 0.44), "sofa")
+    B(p, "ukrasni_1", (-0.78, -0.08, 0.53), (0.4, 0.13, 0.36), "cushion")
+    B(p, "ukrasni_2", (0.8, -0.08, 0.53), (0.38, 0.13, 0.34), "blanket")
+    B(p, "deka", (0.55, 0.12, 0.51), (0.5, 0.6, 0.03), "rug")
+    for x in (-1.0, 1.0):
         for y in (-0.38, 0.38):
-            B(p, f"noga_{x}_{y}", (x, y, 0), (0.06, 0.06, 0.08), "dark")
+            C(p, f"noga_{x}_{y}", (x, y, 0), 0.03, 0.1, "oak", 8)
 
-    p = H("fotelja")
-    B(p, "baza", (0, 0, 0.08), (0.85, 0.85, 0.35), "sofa")
-    B(p, "naslon", (0, -0.33, 0.08), (0.85, 0.2, 0.85), "sofa")
-    for x in (-0.36, 0.36):
-        B(p, f"rukohvat_{x}", (x, 0, 0.08), (0.14, 0.85, 0.6), "sofa")
-    B(p, "jastuk", (0, 0.06, 0.43), (0.58, 0.6, 0.1), "cushion")
+    p = H("fotelja")                            # armchair
+    B(p, "baza", (0, 0, 0.1), (0.9, 0.88, 0.28), "sofa")
+    B(p, "naslon", (0, -0.34, 0.1), (0.9, 0.2, 0.8), "sofa")
+    for x in (-0.38, 0.38):
+        B(p, f"rukohvat_{x}", (x, 0, 0.1), (0.15, 0.88, 0.5), "sofa")
+    B(p, "jastuk", (0, 0.07, 0.38), (0.6, 0.68, 0.13), "cushion")
+    B(p, "naslon_jastuk", (0, -0.2, 0.5), (0.58, 0.15, 0.42), "cushion")
+    for x in (-0.38, 0.38):
+        for y in (-0.36, 0.36):
+            C(p, f"noga_{x}_{y}", (x, y, 0), 0.03, 0.1, "oak", 8)
 
     p = H("stolic")                             # coffee table
     B(p, "ploca", (0, 0, 0.38), (1.1, 0.6, 0.05), "oak")
@@ -365,15 +373,19 @@ def build_props(h):
         B(p, f"nosac_{x}", (x, 0, 0), (0.03, 0.08, 1.2), "steel")
     B(p, "rucnik", (0, 0.03, 0.55), (0.55, 0.04, 0.6), "towel")
 
-    p = H("krevet_d")                           # double bed 1.6 x 2.1, head at -Y
-    B(p, "okvir", (0, 0, 0.1), (1.7, 2.1, 0.28), "dark")
-    B(p, "madrac", (0, 0.03, 0.38), (1.6, 2.0, 0.2), "mattress")
-    B(p, "deka", (0, 0.35, 0.58), (1.64, 1.35, 0.04), "blanket")
+    p = H("krevet_d")                           # v1.0.47: double bed 1.6 x 2.0 with padded headboard, duvet, 4 pillows, runner
+    B(p, "okvir", (0, 0.02, 0.1), (1.78, 2.12, 0.26), "dark")
+    B(p, "madrac", (0, 0.04, 0.36), (1.62, 2.02, 0.22), "mattress")
+    B(p, "deka", (0, 0.32, 0.56), (1.7, 1.48, 0.07), "blanket")
+    B(p, "deka_rub", (0, 1.06, 0.2), (1.7, 0.04, 0.43), "blanket")
+    B(p, "prekrivac", (0, 0.78, 0.63), (1.72, 0.45, 0.02), "rug")
     for x in (-0.4, 0.4):
-        B(p, f"jastuk_{x}", (x, -0.75, 0.58), (0.65, 0.4, 0.13), "white")
-    B(p, "uzglavlje", (0, -1.07, 0), (1.75, 0.08, 1.1), "dark")
-    for x in (-0.8, 0.8):
-        for y in (-1.0, 1.0):
+        B(p, f"jastuk_{x}", (x, -0.78, 0.58), (0.68, 0.42, 0.15), "white")
+        B(p, f"jastuk_mali_{x}", (x * 0.9, -0.55, 0.6), (0.42, 0.14, 0.3), "cushion")
+    B(p, "uzglavlje", (0, -1.1, 0), (1.86, 0.1, 1.25), "dark")
+    B(p, "uzglavlje_jastuk", (0, -1.03, 0.6), (1.7, 0.08, 0.58), "sofa")
+    for x in (-0.82, 0.82):
+        for y in (-1.0, 1.04):
             B(p, f"noga_{x}_{y}", (x, y, 0), (0.07, 0.07, 0.1), "dark")
 
     p = H("nocni")                              # night stand
@@ -976,5 +988,119 @@ def build_props(h):
     face("prop_" + p, "lice", [(-0.45, 1.7), (0.45, 1.7), (0.45, 2.6), (-0.45, 2.6)], 0.02, signtex("bulet_stand"))
     B(p, "ploca", (0, 0.0, 1.68), (0.94, 0.03, 0.94), "steel")
     B(p, "punjac", (0, 0, 0), (2.6, 0.25, 0.08), "bulet_green")
+
+    # ---------------- v1.0.47 house door (exact fit for the 1.5 m doorways): origin = hinge, door goes along +X
+    M.update({"door": material("osrp_wood_door_walnut", (0.30, 0.19, 0.11)), "brass": material("osrp_metal_brass", (0.78, 0.62, 0.28), rough=0.3, metal=0.8),
+              "toolred": material("osrp_paint_toolchest_red", (0.62, 0.06, 0.05), rough=0.35, metal=0.4),
+              "graysteel": material("osrp_paint_shelf_gray", (0.32, 0.35, 0.38), rough=0.5, metal=0.5),
+              "box": material("osrp_cardboard_box", (0.62, 0.48, 0.30)), "screen": material("osrp_screen_monitor_on", (0.25, 0.45, 0.7), emit=1.5)})
+    p = "door_house"; names.append(p)
+    W_, H_, T_ = 1.46, 2.62, 0.055
+    B(p, "krilo", (W_ / 2 + 0.02, 0, 0), (W_ - 0.02, T_, H_), "door")
+    for side in (-1, 1):
+        for (zx0, zx1) in ((0.18, 1.05), (1.25, 2.35)):            # raised panels both sides
+            B(p, f"panel_{side}_{zx0}", (W_ / 2 + 0.02, side * (T_ / 2 + 0.006), zx0), (W_ - 0.34, 0.012, zx1 - zx0), "dark")
+        B(p, f"staklo_{side}", (W_ / 2 + 0.02, side * (T_ / 2 + 0.008), 1.62), (0.5, 0.01, 0.55), "glass")
+        B(p, f"kvaka_{side}", (W_ - 0.12, side * 0.07, 1.02), (0.16, 0.025, 0.025), "brass")
+        B(p, f"rozeta_{side}", (W_ - 0.07, side * 0.035, 0.96), (0.05, 0.015, 0.2), "brass")
+    for z in (0.3, 2.2):
+        C(p, f"sarka_{z}", (0.02, 0, z), 0.018, 0.12, "brass", 8)
+
+    # ---------------- v1.0.47 more furniture (villa, garages, hangars, offices)
+    p = H("otok")                               # kitchen island 2.2 x 0.95 with stone top + overhang for bar stools
+    B(p, "tijelo", (0, -0.1, 0.05), (2.1, 0.75, 0.85), "kitchen")
+    B(p, "postolje", (0, -0.1, 0), (2.0, 0.65, 0.05), "black")
+    B(p, "ploca", (0, 0, 0.9), (2.3, 1.0, 0.05), "worktop")
+    for x in (-0.7, 0, 0.7):
+        B(p, f"ladica_{x}", (x, -0.476, 0.62), (0.62, 0.01, 0.2), "steel")
+    B(p, "zdjela", (0.6, 0.1, 0.95), (0.3, 0.3, 0.08), "pot")
+
+    p = H("barstolac")                          # bar stool for the island
+    C(p, "sjedalo", (0, 0, 0.72), 0.2, 0.07, "cushion", 14)
+    C(p, "stup", (0, 0, 0.03), 0.025, 0.69, "steel", 8)
+    C(p, "baza", (0, 0, 0), 0.22, 0.03, "steel", 14)
+    C(p, "oslonac", (0, 0, 0.3), 0.17, 0.02, "steel", 14)
+
+    p = H("radni_stol")                         # workbench 2.0 x 0.8 with pegboard
+    B(p, "ploca", (0, 0, 0.88), (2.0, 0.8, 0.06), "wood")
+    B(p, "polica", (0, 0, 0.18), (1.9, 0.7, 0.03), "wood")
+    for x in (-0.95, 0.95):
+        for y in (-0.36, 0.36):
+            B(p, f"noga_{x}_{y}", (x, y, 0), (0.06, 0.06, 0.88), "graysteel")
+    B(p, "ploca_alat", (0, -0.38, 0.94), (1.9, 0.03, 0.9), "wood")
+    for k, x in enumerate((-0.7, -0.4, -0.1, 0.25, 0.55)):
+        B(p, f"alat_{k}", (x, -0.355, 1.2 + (k % 2) * 0.25), (0.04, 0.02, 0.3), "steel")
+    B(p, "skripac", (0.8, 0.25, 0.94), (0.2, 0.12, 0.12), "graysteel")
+    B(p, "kutija", (-0.6, 0.1, 0.94), (0.4, 0.25, 0.15), "toolred")
+
+    p = H("alatnica")                           # red rolling tool chest with drawers
+    B(p, "donji", (0, 0, 0.1), (0.9, 0.5, 0.75), "toolred")
+    B(p, "gornji", (0, -0.02, 0.86), (0.86, 0.44, 0.38), "toolred")
+    for k in range(5):
+        B(p, f"ladica_{k}", (0, 0.251, 0.16 + k * 0.13), (0.82, 0.01, 0.1), "steel")
+    for k in range(2):
+        B(p, f"ladica_g_{k}", (0, 0.201, 0.92 + k * 0.14), (0.8, 0.01, 0.1), "steel")
+    for x in (-0.38, 0.38):
+        for y in (-0.2, 0.2):
+            C(p, f"kotac_{x}_{y}", (x, y, 0), 0.05, 0.1, "rubber", 8)
+
+    p = H("regal")                              # steel shelving 2.4 x 0.6 x 2.2 with boxes
+    for x in (-1.18, 1.18):
+        for y in (-0.28, 0.28):
+            B(p, f"stup_{x}_{y}", (x, y, 0), (0.05, 0.05, 2.2), "graysteel")
+    for k, z in enumerate((0.12, 0.8, 1.48, 2.12)):
+        B(p, f"polica_{k}", (0, 0, z), (2.4, 0.6, 0.04), "graysteel")
+        if k < 3:
+            for j, (x, w_, h_) in enumerate(((-0.75, 0.6, 0.4), (0.0, 0.5, 0.5), (0.7, 0.7, 0.35))):
+                B(p, f"kutija_{k}_{j}", (x + (k % 2) * 0.1, 0, z + 0.04), (w_, 0.45, h_), "box")
+
+    p = H("pisaci")                             # desk with monitor, keyboard, lamp
+    B(p, "ploca", (0, 0, 0.73), (1.5, 0.75, 0.04), "oak")
+    for x in (-0.7, 0.7):
+        B(p, f"bok_{x}", (x, 0, 0), (0.05, 0.7, 0.73), "graysteel")
+    B(p, "ladice", (0.45, 0, 0.3), (0.4, 0.65, 0.42), "graysteel")
+    B(p, "monitor_noga", (0, -0.22, 0.77), (0.2, 0.15, 0.02), "black")
+    B(p, "monitor_vrat", (0, -0.24, 0.79), (0.04, 0.03, 0.2), "black")
+    B(p, "monitor", (0, -0.24, 0.95), (0.62, 0.03, 0.38), "black")
+    B(p, "ekran", (0, -0.224, 0.97), (0.58, 0.005, 0.34), "screen")
+    B(p, "tipkovnica", (0, 0.06, 0.77), (0.45, 0.15, 0.02), "black")
+    B(p, "mis", (0.32, 0.08, 0.77), (0.06, 0.1, 0.02), "black")
+
+    p = H("uredska")                            # office chair
+    C(p, "baza", (0, 0, 0.05), 0.3, 0.03, "black", 5)
+    C(p, "stup", (0, 0, 0.08), 0.03, 0.36, "steel", 8)
+    B(p, "sjedalo", (0, 0, 0.44), (0.5, 0.48, 0.08), "black")
+    B(p, "naslon", (0, -0.24, 0.52), (0.46, 0.06, 0.62), "black")
+    for x in (-0.26, 0.26):
+        B(p, f"rukohvat_{x}", (x, 0, 0.6), (0.05, 0.3, 0.04), "black")
+
+    p = H("auto_dizalica")                      # 2-post car lift (garage / hangar)
+    for x in (-1.6, 1.6):
+        B(p, f"stup_{x}", (x, 0, 0), (0.35, 0.35, 3.2), "graysteel")
+        B(p, f"ruka_{x}", (x * 0.75, 0.3, 0.45), (0.9, 0.12, 0.1), "yellow")
+        B(p, f"ruka2_{x}", (x * 0.75, -0.3, 0.45), (0.9, 0.12, 0.1), "yellow")
+    B(p, "vrh", (0, 0, 3.2), (3.55, 0.25, 0.2), "graysteel")
+
+    # ---------------- v1.0.47 soft edges: every box-shaped part gets a small rounded bevel (props looked like raw blocks)
+    import bmesh
+    nb = 0
+    for o in pcol.objects:
+        if o.type != "MESH" or len(o.data.vertices) != 8 or "decal_" in o.name or "__lice" in o.name:
+            continue
+        d = sorted(o.dimensions)
+        if d[0] < 0.025:
+            continue
+        w = min(0.03, d[0] * 0.22, d[1] * 0.22)
+        if any(k in o.name for k in ("jastuk", "madrac", "deka", "baza", "naslon", "rukohvat", "uzglavlje", "sjedalo", "ukrasni")):
+            w = min(0.07, d[0] * 0.35, d[1] * 0.3)                        # cushions: really soft
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bmesh.ops.bevel(bm, geom=list(bm.verts) + list(bm.edges), offset=w, offset_type="OFFSET", segments=2,
+                        profile=0.5, affect="EDGES", clamp_overlap=True)
+        bm.to_mesh(o.data)
+        bm.free()
+        o.data.update()
+        nb += 1
+    print(f"[OSRP] props: {nb} parts with soft edges")
 
     return pcol, names

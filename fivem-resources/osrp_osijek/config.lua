@@ -20,7 +20,8 @@ Config.TreeModels = {
 }
 
 -- Doors of the houses you can enter: first model that exists in your GTA is used
-Config.DoorModels = { 'v_ilev_fh_frontdoor', 'v_ilev_trevtraildr', 'prop_com_ls_door_01' }
+Config.DoorModels = { 'osrpprop_door_house', 'v_ilev_fh_frontdoor', 'v_ilev_trevtraildr' }   -- v1.0.47: our own door fits the 1.5 m doorway exactly
+Config.DoorOpenDistance = 3.0         -- v1.0.47: a door opens when you (or another player / NPC) come this close
 Config.DoorsLocked = false            -- true = everyone needs a key (lock them from your own scripts)
 
 -- Furniture inside the houses (first existing model per type)

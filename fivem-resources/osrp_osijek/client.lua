@@ -145,32 +145,54 @@ local function spawnDoor(i, d)
     doorObjs[i] = obj
 end
 
--- swing nearby doors
+-- swing nearby doors (v1.0.47: opens for you, other players and NPCs, earlier and smoother; no bumping into a half-open door)
 CreateThread(function()
+    local pedsNear, nextScan = {}, 0
     while true do
         local sleep = 400
         local ped = PlayerPedId()
         local pos = GetEntityCoords(ped)
+        local now = GetGameTimer()
+        if now > nextScan then                         -- other people near you (cheap: refreshed 4x a second)
+            nextScan = now + 250
+            pedsNear = {}
+            for _, p in ipairs(GetGamePool('CPed')) do
+                if p ~= ped and #(GetEntityCoords(p) - pos) < 30.0 then pedsNear[#pedsNear + 1] = p end
+            end
+        end
+        local R = Config.DoorOpenDistance or 3.0
         for i, st in pairs(doorState) do
             local obj = doorObjs[i]
             if obj and DoesEntityExist(obj) then
-                local op = GetEntityCoords(obj)
                 local cx, cy = rightVec(st.closed)
-                local mid = vector3(op.x + cx * 0.7, op.y + cy * 0.7, op.z + 1.0)
+                local hinge = st.hinge or GetEntityCoords(obj)
+                st.hinge = hinge
+                local mid = vector3(hinge.x + cx * 0.73, hinge.y + cy * 0.73, hinge.z + 1.0)
                 local dist = #(pos - mid)
-                if dist < 12.0 then sleep = 0 end
+                if dist < 14.0 then sleep = 0 end
+                local near = dist < R
+                if not near and dist < 14.0 then
+                    for _, p in ipairs(pedsNear) do
+                        if #(GetEntityCoords(p) - mid) < R - 0.6 then near = true break end
+                    end
+                end
                 local want
                 if Config.DoorsLocked then want = st.closed
-                elseif dist < 2.2 then st.away = 0 want = st.open
+                elseif near then st.away = 0 want = st.open
                 else
                     st.away = st.away + (sleep == 0 and GetFrameTime() or 0.4)
-                    want = (st.away > 2.0 and dist > 3.0) and st.closed or nil
+                    want = (st.away > 1.5) and st.closed or nil
                 end
-                if want and math.abs(st.cur - want) > 0.5 then
-                    local step = 160.0 * GetFrameTime()
-                    if sleep ~= 0 then step = 90.0 end
-                    if st.cur < want then st.cur = math.min(want, st.cur + step) else st.cur = math.max(want, st.cur - step) end
+                if want and math.abs(st.cur - want) > 0.3 then
+                    -- ease: fast at the start, slow at the end (like a real door), 100 % in ~0.7 s
+                    local diff = want - st.cur
+                    local step = math.max(1.2, math.abs(diff) * 7.0 * (sleep == 0 and GetFrameTime() or 0.4))
+                    if diff > 0 then st.cur = math.min(want, st.cur + step) else st.cur = math.max(want, st.cur - step) end
                     SetEntityHeading(obj, st.cur % 360.0)
+                    -- while it moves it has no collision, so it never shoves you or gets stuck on you
+                    SetEntityCollision(obj, math.abs(st.cur - want) < 2.0, false)
+                elseif want then
+                    SetEntityCollision(obj, true, false)
                 end
             else
                 doorState[i] = nil

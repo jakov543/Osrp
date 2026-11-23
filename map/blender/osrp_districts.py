@@ -540,6 +540,8 @@ def build(g):
                 x += w + 14
             y += 34
 
+    HCOUNT = [0]
+
     def house_block(b):                          # Retfala: family houses with front yards, fences, gable roofs, back gardens
         x0, x1, y0, y1 = b
         fill(b, "park")
@@ -555,7 +557,27 @@ def build(g):
             while x < x1 - 14:
                 w, d = rnd.choice(((9, 10), (10, 11), (11, 9), (12, 10)))
                 fl = rnd.choice((1, 1, 2))
+                HCOUNT[0] += 1
+                enter = HCOUNT[0] % 20 == 3               # v1.0.47: every 20th house has a real door + furnished flat
+                if enter:
+                    w, d = 12, 11
                 hy = edge - s_ * (3 + 5 + d / 2)          # 3 m sidewalk + 5 m front yard
+                if enter:
+                    hh = 3.9 if fl == 1 else 6.9
+                    g["house_enterable"](f"osrp_retfala_kuca_{HCOUNT[0]}", x + w / 2, hy, w, d, hh, rnd.choice(HOUSE), s_)
+                    T.roof(rnd.choice(ROOFS), x + w / 2, hy, hh, w, d, rnd.uniform(2.2, 3.0), along_x=True)
+                    fy = edge - s_ * 3.6
+                    la, lb = x - 3.5, x + w / 2 - 0.8                       # fence with a 1.6 m gate in front of the door
+                    ra, rb = x + w / 2 + 0.8, x + w + 0.5
+                    T.box(M_FENCE, (la + lb) / 2, fy, 0.0, lb - la, 0.1, 1.0)
+                    T.box(M_FENCE, (ra + rb) / 2, fy, 0.0, rb - ra, 0.1, 1.0)
+                    T.quad(M_CONC, x + w / 2 - 0.7, min(fy, hy + s_ * d / 2), x + w / 2 + 0.7, max(fy, hy + s_ * d / 2), 0.03)  # path to the door
+                    T.quad(M_CONC, x + w + 0.6, min(edge - s_ * 3, hy), x + w + 3.6, max(edge - s_ * 3, hy), 0.03)
+                    if rnd.random() < 0.75:
+                        tree(x + w / 2 + rnd.uniform(-2, 2), hy - s_ * (d / 2 + 6), rnd.uniform(0.7, 1.1))
+                    MAPRECTS.append(("bld", x + w / 2, hy, w, d))
+                    x += w + 9
+                    continue
                 T.box(rnd.choice(HOUSE), x + w / 2, hy, 0.0, w, d, fl * 3.0)
                 lit(x + w / 2, hy, w, d, fl, 0.4)
                 T.roof(rnd.choice(ROOFS), x + w / 2, hy, fl * 3.0, w, d, rnd.uniform(2.2, 3.0), along_x=True)

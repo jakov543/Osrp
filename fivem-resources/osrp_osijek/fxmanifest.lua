@@ -5,7 +5,7 @@ lua54 'yes'
 name 'osrp_osijek'
 author 'Bandera'
 description 'OSRP - Osijek city SCRIPTS (traffic, NPCs, BULET, bikes, cutscene, minimap, F7 map). Map files are in osrp_osijek_map.'
-version '1.0.46'
+version '1.0.47'
 
 dependency 'osrp_osijek_map'
 

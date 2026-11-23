@@ -1497,19 +1497,16 @@ for k, hx in enumerate((-300, -170)):
     box(col, f"osrp_hangar_linija_{k}", (hx, hy - 4, 0.121), (0.3, 40, 0.005), M_HLINE)
     for sx in (-1, 1):
         box(col, f"osrp_hangar_okvir_l_{k}_{sx}", (hx + sx * 16, hy - 4, 0.121), (0.25, 36, 0.005), M_HLINE)
-    # workshop along the back wall: benches, red tool chests, shelves with crates, compressor
+    # workshop along the back wall (v1.0.47: real workbenches, tool chests and shelving props)
+    for j in range(8):
+        x = hx - 42 + j * 4.2
+        cprop("h_radni_stol", x, hy + HD / 2 - 0.85, 0.12, 180.0)
+        if j % 2 == 0:
+            cprop("h_alatnica", x + 1.55, hy + HD / 2 - 2.0, 0.12, 180.0)
     for j in range(5):
-        x = hx - 40 + j * 7
-        box(col, f"osrp_hangar_klupa_{k}_{j}", (x, hy + HD / 2 - 1.2, 0.12), (4.0, 1.2, 0.95), M_STEEL)
-        box(col, f"osrp_hangar_klupa_ploca_{k}_{j}", (x, hy + HD / 2 - 1.2, 1.07), (4.1, 1.3, 0.06), M_WOOD)
-        box(col, f"osrp_hangar_alat_{k}_{j}", (x + 2.7, hy + HD / 2 - 0.9, 0.12), (1.2, 0.7, 1.3), M_TOOLRED)
-        box(col, f"osrp_hangar_ploca_alat_{k}_{j}", (x, hy + HD / 2 - 0.42, 1.3), (3.6, 0.04, 1.4), M_WOOD)
-    for j in range(3):
-        x = hx + 18 + j * 8
-        box(col, f"osrp_hangar_polica_{k}_{j}", (x, hy + HD / 2 - 1.1, 0.12), (6.0, 1.6, 4.2), M_STEEL)
-        for z in (0.3, 1.7, 3.1):
-            box(col, f"osrp_hangar_sanduk_{k}_{j}_{z}", (x - 1.5, hy + HD / 2 - 1.1, 0.12 + z), (2.2, 1.2, 1.0), M_WOOD)
-            box(col, f"osrp_hangar_kutija_{k}_{j}_{z}", (x + 1.4, hy + HD / 2 - 1.1, 0.12 + z), (1.6, 1.1, 0.8), M_HOSP)
+        cprop("h_regal", hx + 10 + j * 2.6, hy + HD / 2 - 0.75, 0.12, 180.0)
+    for j in range(2):
+        cprop("h_regal", hx - HW / 2 + 0.8, hy - 6 + j * 2.6, 0.12, 270.0)
     # office in the back corner (walk-in, window to the hall) with stairs up to the roof of the office (mezzanine)
     ox, oy = hx + 40, hy + 18
     box(col, f"osrp_hangar_ured_pod_{k}", (ox, oy, 0.12), (16, 16, 0.1), M_FLOOR)
@@ -1524,8 +1521,11 @@ for k, hx in enumerate((-300, -170)):
     box(col, f"osrp_hangar_galerija_ograda_j_{k}", (ox - 1.5, oy - 7.95, 3.77), (13, 0.08, 1.0), M_STEEL)
     for st in range(12):                                     # stairs up to the gallery (along the office front, east end)
         box(col, f"osrp_hangar_stube_{k}_{st}", (ox + 6.8, oy - 8.6 - (11 - st) * 0.3, 0.12 + st * 0.285), (2.2, 0.3, 0.285), M_STEEL)
-    box(col, f"osrp_hangar_ured_stol_{k}", (ox - 2, oy + 2, 0.22), (2.4, 1.2, 0.75), M_WOOD)
-    box(col, f"osrp_hangar_ured_ormar_{k}", (ox + 6.5, oy + 6, 0.22), (2.0, 0.6, 2.2), M_STEEL)
+    for dx in (-4.5, -1.5):
+        cprop("h_pisaci", ox + dx, oy + 6.9, 0.22, 180.0)
+        cprop("h_uredska", ox + dx, oy + 6.1, 0.22, 0.0)
+    cprop("h_regal", ox + 6.6, oy + 3, 0.22, 90.0)
+    cprop("h_biljka", ox - 7.3, oy + 7.3, 0.22, 0.0)
     plane(col, f"osrp_hangar_platforma_{k}", (hx, (front + TW_Y + 9) / 2, 0.1), (HW, front - TW_Y - 9), M_APRON)
     INTERIOR_LIGHTS.extend([(hx + dx, hy + dy, HH - 1.4, 18.0, 60.0) for dx in (-33, 0, 33) for dy in (-14, 8)])
     INTERIOR_LIGHTS.append((ox, oy, 3.3, 7.0, 30.0))
@@ -2242,11 +2242,30 @@ for st in range(13):                                  # stairs up to the first f
 FURNITURE.extend([("tepih", HX0 - 8, HY0, FLOOR_Z, 0.0), ("sofa", HX0 - 8, HY0 + 3.2, FLOOR_Z, 180.0), ("fotelja", HX0 - 12, HY0, FLOOR_Z, 90.0),
                   ("stolic", HX0 - 8, HY0, FLOOR_Z, 0.0), ("tvstol", HX0 - 8, HY0 - 3.4, FLOOR_Z, 0.0), ("tv", HX0 - 8, HY0 - 3.4, FLOOR_Z + 0.55, 0.0),
                   ("lampa", HX0 - 13.5, HY0 + 4.5, FLOOR_Z, 0.0), ("biljka", HX0 - 2.5, HY0 - 5.5, FLOOR_Z, 0.0), ("polica", HX0 - 3, HY0 + 7.9, FLOOR_Z, 180.0),
-                  ("stol", HX0 + 5, HY0 + 1, FLOOR_Z, 0.0), ("stolica", HX0 + 4.2, HY0 + 1, FLOOR_Z, 270.0), ("stolica", HX0 + 5.8, HY0 + 1, FLOOR_Z, 90.0),
+                  ("stol", HX0 + 5, HY0 - 3, FLOOR_Z, 0.0), ("stolica", HX0 + 4.2, HY0 - 3, FLOOR_Z, 270.0), ("stolica", HX0 + 5.8, HY0 - 3, FLOOR_Z, 90.0),
+                  ("stolica", HX0 + 5, HY0 - 3.75, FLOOR_Z, 0.0), ("stolica", HX0 + 5, HY0 - 2.25, FLOOR_Z, 180.0),
                   ("hladnjak", HX0 + 3, HY0 + 7.9, FLOOR_Z, 180.0), ("stednjak", HX0 + 5, HY0 + 7.9, FLOOR_Z, 180.0), ("sudoper", HX0 + 7, HY0 + 7.9, FLOOR_Z, 180.0),
                   ("ormaric", HX0 + 9, HY0 + 7.9, FLOOR_Z, 180.0), ("slika", HX0 - 8, HY0 + 8.7, FLOOR_Z + 1.5, 180.0),
                   ("sofa", HX0 - 6, HY0 + 4, 3.9, 180.0), ("tepih", HX0 - 6, HY0 + 1, 3.9, 0.0), ("stolic", HX0 - 6, HY0 + 1, 3.9, 0.0),
                   ("biljka", HX0 + 6, HY0 - 4, 3.9, 0.0), ("lampa", HX0 - 12, HY0 + 6, 3.9, 0.0)])
+# v1.0.47 villa: kitchen island with bar stools, upstairs bedroom + home office, garage workshop
+cprop("h_otok", HX0 + 6, HY0 + 4.6, FLOOR_Z, 180.0)
+for k in range(3):
+    cprop("h_barstolac", HX0 + 5.3 + k * 0.7, HY0 + 3.7, FLOOR_Z, 0.0)
+UP = 3.9
+cprop("h_krevet_d", HX0 + 8, HY0 + 7.4, UP, 180.0)
+for dx in (-1.25, 1.25):
+    cprop("h_nocni", HX0 + 8 + dx, HY0 + 8.5, UP, 180.0)
+    cprop("h_stolna_lampa", HX0 + 8 + dx, HY0 + 8.5, UP + 0.55, 180.0)
+cprop("h_tepih", HX0 + 8, HY0 + 5.2, UP, 0.0)
+cprop("h_ormar", HX0 + 15.2, HY0 + 4.5, UP, 90.0)
+cprop("h_ormar", HX0 + 15.2, HY0 + 6.0, UP, 90.0)
+cprop("h_komoda", HX0 + 3.5, HY0 + 8.5, UP, 180.0)
+cprop("h_pisaci", HX0 - 13, HY0 + 8.2, UP, 180.0)
+cprop("h_uredska", HX0 - 13, HY0 + 7.4, UP, 0.0)
+cprop("h_polica", HX0 - 15.3, HY0 + 4, UP, 270.0)
+cprop("h_biljka", HX0 - 15, HY0 + 8.3, UP, 0.0)
+INTERIOR_LIGHTS.extend([(HX0 + 8, HY0 + 5, UP + 2.6, 7.0, 35.0), (HX0 - 12, HY0 + 6, UP + 2.6, 7.0, 35.0)])
 GX0 = HX0 - HW_ / 2 - 5.0                             # garage on the west side
 box(col, "osrp_vila_garaza_zid_s", (GX0, HY0 + 4, 0.0), (10, 0.3, 3.2), M_VILA)
 box(col, "osrp_vila_garaza_zid_z", (GX0 - 4.85, HY0 - 1, 0.0), (0.3, 10, 3.2), M_VILA)
@@ -2254,6 +2273,10 @@ box(col, "osrp_vila_garaza_krov", (GX0, HY0 - 1, 3.2), (10.4, 10.4, 0.3), M_VILA
 box(col, "osrp_vila_garaza_pod", (GX0, HY0 - 1, 0.0), (10, 10, 0.12), M_APRON)
 box(col, "osrp_vila_garaza_vrata_nad", (GX0, HY0 - 6.05, 2.6), (10, 0.3, 0.6), M_VILA)
 SPECIAL += [(GX0, HY0 - 1.0, None, 180.0, "cognoscenti", 0)]
+cprop("h_radni_stol", GX0 - 1.0, HY0 + 3.35, 0.12, 180.0)
+cprop("h_alatnica", GX0 + 2.6, HY0 + 3.45, 0.12, 180.0)
+cprop("h_regal", GX0 - 4.3, HY0 - 1.5, 0.12, 270.0)
+INTERIOR_LIGHTS.append((GX0, HY0 - 1, 2.9, 7.0, 30.0))
 PX0, PY0 = MX + 25, 372.0                             # pool + wooden deck, loungers, umbrellas
 box(col, "osrp_vila_bazen_rub", (PX0, PY0, 0.0), (16, 8, 0.2), M_POOLTILE)
 box(col, "osrp_vila_bazen_voda", (PX0, PY0, 0.12), (14, 6, 0.1), M_POOL)
@@ -2426,4 +2449,4 @@ PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 # v1.0.40: Veliki Osijek - new districts all around the old city (osrp_districts.py)
 import osrp_districts
 osrp_districts.build(globals())
-print(f"[OSRP] Osijek map v1.0.45: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.47: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

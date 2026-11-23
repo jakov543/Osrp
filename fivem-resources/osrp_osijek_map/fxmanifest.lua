@@ -5,7 +5,7 @@ lua54 'yes'
 name 'osrp_osijek_map'
 author 'Bandera'
 description 'OSRP - Osijek city MAP only (models, collisions, textures). Scripts are in osrp_osijek.'
-version '1.0.45'
+version '1.0.47'
 
 this_is_a_map 'yes'
 
