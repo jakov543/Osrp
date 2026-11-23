@@ -1,10 +1,11 @@
 =====================================================================
-  OSRP | Osijek Roleplay - SERVER PAKET (v1.0.43)
+  OSRP | Osijek Roleplay - SERVER PAKET (v1.0.44)
 =====================================================================
 
 U paketu:
-  fivem-resources\      svih 6 OSRP skripti (osrp_loading, osrp_core, osrp_framework,
-                        osrp_accounts, osrp_map, osrp_osijek = karta Osijeka)
+  fivem-resources\      svih 7 OSRP resursa (osrp_loading, osrp_core, osrp_framework,
+                        osrp_accounts, osrp_map, osrp_osijek_map = KARTA Osijeka,
+                        osrp_osijek = SKRIPTE grada)
   server\               skripte za instalaciju i pokretanje servera (Windows + Linux)
   server.cfg.example    gotov server.cfg s postavkama (samo upiši svoj ključ)
   UPUTE-SERVER.txt      ove upute
@@ -42,6 +43,7 @@ U paketu:
      ensure osrp_framework
      ensure osrp_accounts
      ensure osrp_map
+     ensure osrp_osijek_map     (karta - uvijek PRIJE osrp_osijek)
      ensure osrp_osijek
 
 
@@ -107,3 +109,15 @@ U paketu:
 
  VAŽNO: NIKAD ne dijeli server.cfg s upisanim ključem (sv_licenseKey) i
         ne stavljaj ga na GitHub ili Discord.
+
+
+---------------------------------------------------------------------
+ KARTA I SKRIPTE ODVOJENO (od v1.0.44)
+---------------------------------------------------------------------
+ osrp_osijek_map   = samo karta (modeli, teksture, ytyp). ~89 MB.
+ osrp_osijek       = samo skripte (promet, NPC, BULET, bicikli, cutscena,
+                     minimapa, F7 karta, config.lua). Mala, brzo se mijenja.
+
+ Kad mijenjaš samo skripte/config, zamijeni samo osrp_osijek - karta ostaje.
+ Kad dođe nova karta, zamijeni samo osrp_osijek_map.
+ Ako si imao staru verziju: obriši staru mapu osrp_osijek\stream (više ne treba).

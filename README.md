@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.43 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.44 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.43
-git push origin v1.0.43
+git tag v1.0.44
+git push origin v1.0.44
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -166,7 +166,7 @@ Short names are in `osrp_map/config.lua` and you can add your own. Props only ap
 
 On Linux it writes CodeWalker XML. On Windows, with Sollumz plus PyMateria, it writes the native `.ydr` / `.ytyp` files directly.
 
-**The finished files are already in `osrp_osijek/stream/`.** v1.0.9 has 36 models with real textures (asphalt, paving, grass, brick, roof tiles, plaster, water, stone, gravel, glass, wood), per-surface collision (tarmac, concrete paving, grass, gravel, brick, roof tile...), intersections open for cars, and 109 real GTA V trees placed by script. Converted with `tools/xml2gta` (CodeWalker.Core) and verified.
+**The finished files are already in `osrp_osijek_map/stream/`.** v1.0.9 has 36 models with real textures (asphalt, paving, grass, brick, roof tiles, plaster, water, stone, gravel, glass, wood), per-surface collision (tarmac, concrete paving, grass, gravel, brick, roof tile...), intersections open for cars, and 109 real GTA V trees placed by script. Converted with `tools/xml2gta` (CodeWalker.Core) and verified.
 
 v1.0.10: **30 enterable houses**. Each has a doorway with a real **GTA V door** (door system, unlocked; `Config.DoorsLocked`), a wooden floor, **GTA V furniture** (sofa, table, chairs, TV, plants) and a warm ceiling light. Every other building got a front door, a step and a canopy.
 
@@ -237,6 +237,7 @@ v1.0.16 – **characters, arrival, interiors, HUD**:
 - v1.0.31: sliding glass doors (hospital, emergency, terminal, police, gun shop) can never block you any more (no collision) and open earlier (5 m)
 - v1.0.32: police station looks better - stone cladding, blue entrance portal with the MUP plate, POLICIJA signs now readable (were mirrored), CCTV cameras, bollards, bike rack, roof parapet, AC units, antenna; inside: LED ceiling panels, police emblem wall, wanted-poster board, glass screen on the front desk, blue floor stripe, city map in the offices, interrogation room with one-way mirror, weapon rack, toilets in the cells
 - v1.0.33: **BULET e-scooters** - 8 green rental stations around Osijek (avenue, promenade, Tvrđa, hospital, airport, beach, police), own Blender scooter model, E = rent ($2 unlock + $1/min), stand on it and ride with W/A/S/D (max 25 km/h, battery), F = end ride, ride panel with speed/time/cost/battery (`Config.Bulet`)
+- v1.0.44: map and scripts split into two resources: `osrp_osijek_map` (only the map: models, textures, ytyp - `this_is_a_map`) and `osrp_osijek` (only scripts, depends on the map). Separate zips: `OSRP_Karta_v1.0.44.zip` and `OSRP_Skripte_v1.0.44.zip`. In server.cfg: `ensure osrp_osijek_map` before `ensure osrp_osijek`
 - v1.0.43: BULET scooter: readable BULET name plates on the stem, grip tape, brake light; own riding animation (lean into turns, lean forward on gas / back on brake, knees bend at speed, small road bounce) - `Config.Bulet.LeanDeg` / `PitchDeg`
 - **HUD**: custom notifications (colour codes work, success/error/warning), weapon HUD (name, clip / ammo), status row in the money card (health, armour, stamina, voice), server ID, players online and clock
 

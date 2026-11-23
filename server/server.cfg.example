@@ -50,7 +50,8 @@ ensure osrp_core
 ensure osrp_framework
 ensure osrp_accounts
 ensure osrp_map
-ensure osrp_osijek
+ensure osrp_osijek_map    # karta (modeli/teksture) - PRIJE skripti
+ensure osrp_osijek        # skripte grada
 
 # ---------- admins ----------
 # Join the server once - the console prints your license line. Paste it here:

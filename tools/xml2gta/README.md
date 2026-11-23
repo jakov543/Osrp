@@ -11,4 +11,4 @@ dotnet run -c Release -- <xml folder> <output folder>
 dotnet run -c Release -- verify <output folder>
 ```
 
-OSRP pipeline: `map/blender/osijek_export_gta.py` (Blender + Sollumz, writes XML) → `xml2gta` (binary) → `fivem-resources/osrp_osijek/stream/`.
+OSRP pipeline: `map/blender/osijek_export_gta.py` (Blender + Sollumz, writes XML) → `xml2gta` (binary) → `fivem-resources/osrp_osijek_map/stream/`.
