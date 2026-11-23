@@ -5,7 +5,7 @@
 A free launcher for **OSRP (Osijek Roleplay)**, a GTA V server (it runs on FiveM).
 It uses the player's **own installed GTA V** (`GTA5.exe`). Players have to own a legal copy of the game.
 
-> **Version:** 1.0.47 (V1). Stays at V1 until V2 is approved.
+> **Version:** 1.0.48 (V1). Stays at V1 until V2 is approved.
 
 ## What V1 does
 
@@ -126,8 +126,8 @@ The installer ends up in `launcher/dist/`.
 ```
 git remote add origin https://github.com/jakov543/Osrp.git
 git push -u origin main
-git tag v1.0.47
-git push origin v1.0.47
+git tag v1.0.48
+git push origin v1.0.48
 ```
 GitHub Actions builds the Windows installer and puts it on the **Releases** page.
 
@@ -237,6 +237,7 @@ v1.0.16 – **characters, arrival, interiors, HUD**:
 - v1.0.31: sliding glass doors (hospital, emergency, terminal, police, gun shop) can never block you any more (no collision) and open earlier (5 m)
 - v1.0.32: police station looks better - stone cladding, blue entrance portal with the MUP plate, POLICIJA signs now readable (were mirrored), CCTV cameras, bollards, bike rack, roof parapet, AC units, antenna; inside: LED ceiling panels, police emblem wall, wanted-poster board, glass screen on the front desk, blue floor stripe, city map in the offices, interrogation room with one-way mirror, weapon rack, toilets in the cells
 - v1.0.33: **BULET e-scooters** - 8 green rental stations around Osijek (avenue, promenade, Tvrđa, hospital, airport, beach, police), own Blender scooter model, E = rent ($2 unlock + $1/min), stand on it and ride with W/A/S/D (max 25 km/h, battery), F = end ride, ride panel with speed/time/cost/battery (`Config.Bulet`)
+- v1.0.48: no more open edges / holes: district roads, car parks, paths and bike crossings have closed sides into the ground, bike lanes sit in the ground, bike crossings only cover the road; quay walls without z-fight streaks (ground stops 3 m before the river), map-edge wall no longer missing next to the river; houses get day windows (frame, glass, sill), front doors and real garden fences (low wall + steel rails); red bike lanes on Europska avenija + N-S roads; traffic lights at big junctions; cleanup of trees / bushes / lamps on roads; silos no longer stick into roads; new 2048 px billboards on a real single-pole structure with catwalk and lamps; HITNA sign no longer mirrored; airport bin removed from the doorway; fountain with stone finial + modelled falling water (sand-looking particle off); doors open only with E (synced to all players), sliding doors fade instead of poking through walls; sirens, emergency traffic and police / truck liveries removed
 - v1.0.47 (`osrp_osijek` + `osrp_osijek_map`): own house door model that fills the 1.5 m doorway (the GTA door left a gap), doors open at 3 m for you, other players and NPCs, ease in/out, no collision while moving; every doorway checked by ray test (all 89 clear); ~150 Retfala houses can be entered (furnished flat, gate + path to the door); villa: kitchen island + bar stools, upstairs bedroom + office, garage workshop; hangars: real workbenches, tool chests, shelving, office desks; all props get soft rounded edges, new sofa / armchair / bed, new furniture (kitchen island, bar stool, workbench, tool chest, shelving, desk, office chair, car lift)
 - v1.0.46 (only `osrp_osijek` changed): pedestrians in the new districts too (328 sidewalks made from the road network), dog walkers, standing NPCs near you, 80 NPCs, 14 cyclists also riding on the streets, police cars / ambulances on calls in traffic (lights + siren, overtaking), siren system for every emergency vehicle: Q lights, E siren, R tone (Croatian two-tone / wail / yelp / priority), H air horn, synced to all players (`sirens.lua`, `Config.Sirens`)
 - v1.0.45: wider district roads (4-lane Europska avenija + bypass, 14-16 m streets) with edge lines, zebra crossings, stop lines, no dashes inside junctions; bridges only over the water with footpaths, concrete parapets and steel rails; bike lanes cross roads as flat red crossings (no more lane through the bridge walls); real Croatian signs at every junction (B01 yield, C08 priority, C02 crossing, B31 50, B45 bike path, yellow direction signs); Bike Osijek station board; clear approach corridor west of the runway + glide slope, the arrival camera never goes inside buildings; police decal livery (blue POLICIJA band on both sides, follows the body) and brand panels on box trucks (`liveries.lua`, `Config.Liveries`); traffic: wider lanes, gives way in crossings, no pop-in in view, real paints, Croatian plates, branded trucks; Bike Osijek chooser hides the parked bikes; GTA V style character switch (sky camera + character wheel with portraits); loading screen with rendered photos of our Osijek; normal maps and colour variants at 512 px (smaller map)

@@ -163,7 +163,6 @@ CreateThread(function()
                         SetEntityAsMissionEntity(v, true, true)
                         local isPol = false
                         for _, m in ipairs((Config.Liveries or {}).PoliceModels or {}) do if sv[5] == m then isPol = true end end
-                        if isPol then SetVehicleColours(v, 111, 111) end
                         SetVehicleNumberPlateText(v, isPol and 'POLICIJA' or (sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK'))
                         SetModelAsNoLongerNeeded(hash)
                         parked[key] = v
@@ -511,7 +510,7 @@ local function spawnCar(i, me)
             local emerg = nil
             local busy = false
             for _, o in pairs(cars) do if o.emerg then busy = true end end
-            if not busy and math.random() < (Config.EmergencyChance or 0.06) then
+            if not busy and math.random() < (Config.EmergencyChance or 0.0) then
                 local em = (Config.EmergencyModels or { { 'police3', 's_m_y_cop_01' } })
                 emerg = em[math.random(#em)]
                 vhash = firstModel({ emerg[1], 'police3' })
@@ -923,7 +922,7 @@ CreateThread(function()
         for i, f in ipairs(Life.FOUNTAINS or {}) do
             local p = W(f[1], f[2], f[3])
             local d = #(pos - p)
-            if d < 120.0 and not fx[i] then
+            if Config.FountainParticle and d < 120.0 and not fx[i] then
                 RequestNamedPtfxAsset('core')
                 local t = GetGameTimer()
                 while not HasNamedPtfxAssetLoaded('core') and GetGameTimer() - t < 3000 do Wait(0) end

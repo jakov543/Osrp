@@ -62,6 +62,14 @@ class Tiles:
         b = len(vs)
         vs.extend([(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z)])
         fs.append((b, b + 1, b + 2, b + 3))
+        # v1.0.48: slabs that lie above the grass (roads, car parks, paths, bike crossings) get closed sides down into
+        # the ground - there was an open edge with a dark gap under every road. Thin paint (lines, zebras) does not need it.
+        if z > 0.015 and abs(x1 - x0) > 1.2 and abs(y1 - y0) > 1.2 and "line" not in mat.name:
+            zb = -0.25
+            xa, xb_, ya, yb = min(x0, x1), max(x0, x1), min(y0, y1), max(y0, y1)
+            c = len(vs)
+            vs.extend([(xa, ya, zb), (xb_, ya, zb), (xb_, yb, zb), (xa, yb, zb), (xa, ya, z), (xb_, ya, z), (xb_, yb, z), (xa, yb, z)])
+            fs.extend([(c, c + 1, c + 5, c + 4), (c + 1, c + 2, c + 6, c + 5), (c + 2, c + 3, c + 7, c + 6), (c + 3, c, c + 4, c + 7)])
 
     def vquad(self, mat, pts):
         """any 4-point face (pts in order, normal by right-hand rule)"""
@@ -163,6 +171,61 @@ def build(g):
                     else:              # -X
                         x = cx - w / 2 - 0.04
                         T.vquad(m, [(x, cy + b, z0), (x, cy + a, z0), (x, cy + a, z1), (x, cy + b, z1)])
+
+    # v1.0.48: real windows in the daytime too (houses were blank walls by day): white frame, dark glass, sill
+    M_WGLASS = mat("osrp_glass_window_okrug", (0.16, 0.22, 0.28), rough=0.15, metal=0.3)
+    M_WFRAME = mat("osrp_paint_window_frame", (0.92, 0.92, 0.9))
+    M_SHUTTER = mat("osrp_paint_shutter_brown", (0.36, 0.22, 0.12))
+
+    def day_windows(cx, cy, w, d, floors, fh=3.0, door_side=None):
+        for side in range(4):
+            L = w if side < 2 else d
+            n = int((L - 1.0) // 3.2)
+            if n < 1:
+                continue
+            for k in range(n):
+                c = -L / 2 + (L - (n - 1) * 3.2) / 2 + k * 3.2
+                for f in range(floors):
+                    if f == 0 and side == door_side and abs(c) < 1.6:
+                        continue                                   # the door is here
+                    z0, z1 = f * fh + 0.9, f * fh + 2.2
+                    for (m, half, off, zz0, zz1) in ((M_WFRAME, 0.68, 0.025, z0 - 0.08, z1 + 0.08), (M_WGLASS, 0.58, 0.032, z0, z1)):
+                        a, b = c - half, c + half
+                        if side == 0:
+                            y = cy - d / 2 - off
+                            T.vquad(m, [(cx + a, y, zz0), (cx + b, y, zz0), (cx + b, y, zz1), (cx + a, y, zz1)])
+                        elif side == 1:
+                            y = cy + d / 2 + off
+                            T.vquad(m, [(cx + b, y, zz0), (cx + a, y, zz0), (cx + a, y, zz1), (cx + b, y, zz1)])
+                        elif side == 2:
+                            x = cx + w / 2 + off
+                            T.vquad(m, [(x, cy + a, zz0), (x, cy + b, zz0), (x, cy + b, zz1), (x, cy + a, zz1)])
+                        else:
+                            x = cx - w / 2 - off
+                            T.vquad(m, [(x, cy + b, zz0), (x, cy + a, zz0), (x, cy + a, zz1), (x, cy + b, zz1)])
+                    # sill
+                    if side == 0:
+                        T.box(M_WFRAME, cx + c, cy - d / 2 - 0.08, z0 - 0.12, 1.5, 0.16, 0.06)
+                    elif side == 1:
+                        T.box(M_WFRAME, cx + c, cy + d / 2 + 0.08, z0 - 0.12, 1.5, 0.16, 0.06)
+                    elif side == 2:
+                        T.box(M_WFRAME, cx + w / 2 + 0.08, cy + c, z0 - 0.12, 0.16, 1.5, 0.06)
+                    else:
+                        T.box(M_WFRAME, cx - w / 2 - 0.08, cy + c, z0 - 0.12, 0.16, 1.5, 0.06)
+
+    M_FBASE = mat("osrp_plaster_fence_base", (0.78, 0.76, 0.72))
+
+    def fence_x(xa, xb, y):
+        # v1.0.48: garden fence like in Osijek: low plastered wall + dark steel rails and posts (was a 1 m grey slab)
+        if xb - xa < 0.3:
+            return
+        T.box(M_FBASE, (xa + xb) / 2, y, 0.0, xb - xa, 0.25, 0.45)
+        T.box(M_FBASE, (xa + xb) / 2, y, 0.45, xb - xa + 0.04, 0.3, 0.05)
+        for z in (0.62, 1.05):
+            T.box(M_FENCE, (xa + xb) / 2, y, z, xb - xa, 0.04, 0.05)
+        npost = max(1, int((xb - xa) // 2.0))
+        for k in range(npost + 1):
+            T.box(M_FENCE, xa + (xb - xa) * k / npost, y, 0.45, 0.07, 0.07, 0.72)
 
     BED_Z = g.get("BED_Z", -20.0)
 
@@ -294,6 +357,31 @@ def build(g):
             MAPRECTS.append(("road", (x0 + x1) / 2, y0, x1 - x0, w))
         else:
             MAPRECTS.append(("road", x0, (y0 + y1) / 2, w, y1 - y0))
+    # v1.0.48: red bike lanes on both sides of Europska avenija and the N-S through roads (with a dashed white edge)
+    M_BIKE_R = g.get("M_BIKE", M_ROAD)
+    for (x0, y0, x1, y1, w) in ROADS:
+        horiz = (y1 - y0) < 1
+        if horiz and abs(y0) > 0.5:
+            continue
+        if (not horiz) and x0 not in (-1000, 900, 1700):
+            continue
+        if horiz:
+            pieces = free_iv(x0, x1, gaps_h(y0, w))
+        else:
+            pieces = []
+            for (a, b) in ((y0, RIV0 - 2.0), (RIV1 + 2.0, y1)):
+                pieces += free_iv(max(a, y0), min(b, y1), gaps_v(x0, w))
+        for (a, b) in pieces:
+            for sg in (-1, 1):
+                o = sg * (w / 2 - 1.35)
+                if horiz:
+                    T.quad(M_BIKE_R, a, y0 + o - 0.75, b, y0 + o + 0.75, 0.109)
+                    for j in range(int((b - a) // 4)):
+                        T.quad(M_LINE, a + j * 4 + 0.5, y0 + o - sg * 0.82 - 0.06, a + j * 4 + 2.5, y0 + o - sg * 0.82 + 0.06, 0.116)
+                else:
+                    T.quad(M_BIKE_R, x0 + o - 0.75, a, x0 + o + 0.75, b, 0.112)
+                    for j in range(int((b - a) // 4)):
+                        T.quad(M_LINE, x0 + o - sg * 0.82 - 0.06, a + j * 4 + 0.5, x0 + o - sg * 0.82 + 0.06, a + j * 4 + 2.5, 0.121)
     for x in (-1000, 900, 1700):                 # bridge piers
         for yy in (RIV0 + 30, RIV1 - 30):
             T.box(M_STONE, x, yy, BED_Z, 8, 4, -BED_Z - 0.8)
@@ -310,6 +398,10 @@ def build(g):
         has_w = any(abs(r[1] - jy) < 0.5 and r[0] < jx - 1 for r in HR if r[0] - 1 <= jx <= r[2] + 1)
         if jy > RIV0 - 30 and jy < RIV1 + 30:
             continue
+        lights = wh >= 16 and wv >= 16                 # v1.0.48: traffic lights where two big roads cross
+        if lights:
+            for (sx, sy, hd) in ((1, -1, 90.0), (-1, 1, 270.0), (1, 1, 180.0), (-1, -1, 0.0)):
+                SIGNS.append(("semafor", round(jx + sx * (wv / 2 + 1.0), 2), round(jy + sy * (wh / 2 + 1.2), 2), hd))
         arms = []                                # (exists, horizontal?, side, zebra centre, sign spot, heading of the sign)
         arms.append((has_s, False, -1, (jx, jy - wh / 2 - 2.0), (jx + wv / 2 + 1.3, jy - wh / 2 - 5.0), 180.0))
         arms.append((has_n, False, 1, (jx, jy + wh / 2 + 2.0), (jx - wv / 2 - 1.3, jy + wh / 2 + 5.0), 0.0))
@@ -340,7 +432,8 @@ def build(g):
             sx_, sy_ = spot
             if _blocked(sx_ - 0.5, sx_ + 0.5, sy_ - 0.5, sy_ + 0.5, 1):
                 continue
-            cprop("sign_yield" if minor else "sign_priority", sx_, sy_, 0.15, hd, 150.0)
+            if not lights:
+                cprop("sign_yield" if minor else "sign_priority", sx_, sy_, 0.15, hd, 150.0)
             # crossing sign (C02) facing the same traffic, a bit further out
             ox, oy = (side * 9.0, 0.0) if horiz else (0.0, side * 9.0)
             if not _blocked(sx_ + ox - 0.5, sx_ + ox + 0.5, sy_ + oy - 0.5, sy_ + oy + 0.5, 1):
@@ -413,7 +506,7 @@ def build(g):
                 for cy in range(n10):
                     a, b = x0 + cx * 10, y0 + cy * 10
                     free = [(b, b + 10)]                     # cells are aligned in x, so only clip in y
-                    cuts = [(RIV0, RIV1)] + [(r[2], r[3]) for r in EXCL if a + 10 > r[0] + 0.01 and a < r[1] - 0.01]
+                    cuts = [(RIV0 - 3.0, RIV1 + 3.0)] + [(r[2], r[3]) for r in EXCL if a + 10 > r[0] + 0.01 and a < r[1] - 0.01]
                     for (c0, c1) in cuts:
                         nxt = []
                         for (f0, f1) in free:
@@ -453,9 +546,10 @@ def build(g):
                 a = YS + k * 100
                 if a >= YN:
                     break
-                if a + 100 > RIV0 and a < RIV1:
-                    continue
-                T.box(M_STONE, cxw, a + 50, BED_Z, 3, 100, -BED_Z + 0.05)
+                bb_ = min(a + 100, YN)
+                for (p0, p1) in ((a, min(bb_, RIV0)), (max(a, RIV1), bb_)):
+                    if p1 - p0 > 0.1:
+                        T.box(M_STONE, cxw, (p0 + p1) / 2, BED_Z, 3, p1 - p0, -BED_Z + 0.05)
     for (x0, x1, y0, y1) in ((XW, CORE[0], YS, RIV0), (CORE[1], XE, YS, RIV0), (CORE[0], CORE[1], YS, CORE[2]),
                              (XW, XE, RIV1, YN)):
         MAPRECTS.insert(0, ("land", (x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0))
@@ -569,8 +663,9 @@ def build(g):
                     fy = edge - s_ * 3.6
                     la, lb = x - 3.5, x + w / 2 - 0.8                       # fence with a 1.6 m gate in front of the door
                     ra, rb = x + w / 2 + 0.8, x + w + 0.5
-                    T.box(M_FENCE, (la + lb) / 2, fy, 0.0, lb - la, 0.1, 1.0)
-                    T.box(M_FENCE, (ra + rb) / 2, fy, 0.0, rb - ra, 0.1, 1.0)
+                    fence_x(la, lb, fy)
+                    fence_x(ra, rb, fy)
+                    day_windows(x + w / 2, hy, w, d, 1 if hh < 5 else 2, 3.3, 0 if s_ < 0 else 1)
                     T.quad(M_CONC, x + w / 2 - 0.7, min(fy, hy + s_ * d / 2), x + w / 2 + 0.7, max(fy, hy + s_ * d / 2), 0.03)  # path to the door
                     T.quad(M_CONC, x + w + 0.6, min(edge - s_ * 3, hy), x + w + 3.6, max(edge - s_ * 3, hy), 0.03)
                     if rnd.random() < 0.75:
@@ -581,7 +676,17 @@ def build(g):
                 T.box(rnd.choice(HOUSE), x + w / 2, hy, 0.0, w, d, fl * 3.0)
                 lit(x + w / 2, hy, w, d, fl, 0.4)
                 T.roof(rnd.choice(ROOFS), x + w / 2, hy, fl * 3.0, w, d, rnd.uniform(2.2, 3.0), along_x=True)
-                T.box(M_FENCE, x + w / 2 - 1.5, edge - s_ * 3.6, 0.0, w + 4, 0.1, 1.0)          # street fence, gate gap at the drive
+                ds = 0 if s_ < 0 else 1
+                day_windows(x + w / 2, hy, w, d, fl, 3.0, ds)
+                fyd = hy + s_ * (d / 2 + 0.035)                       # front door (wood) + step on the street side
+                cxd = x + w / 2
+                if s_ < 0:
+                    T.vquad(M_SHUTTER, [(cxd - 0.55, fyd, 0.15), (cxd + 0.55, fyd, 0.15), (cxd + 0.55, fyd, 2.3), (cxd - 0.55, fyd, 2.3)])
+                else:
+                    T.vquad(M_SHUTTER, [(cxd + 0.55, fyd, 0.15), (cxd - 0.55, fyd, 0.15), (cxd - 0.55, fyd, 2.3), (cxd + 0.55, fyd, 2.3)])
+                T.box(M_FBASE, cxd, hy + s_ * (d / 2 + 0.4), 0.0, 1.8, 0.8, 0.15)
+                T.box(M_WFRAME, cxd, hy + s_ * (d / 2 + 0.5), 2.45, 1.8, 1.0, 0.08)  # little canopy
+                fence_x(x - 3.5, x + w + 0.5, edge - s_ * 3.6)                               # street fence (gate gap at the drive)
                 T.quad(M_CONC, x + w + 0.6, min(edge - s_ * 3, hy), x + w + 3.6, max(edge - s_ * 3, hy), 0.03)
                 if rnd.random() < 0.75:
                     tree(x + w / 2 + rnd.uniform(-2, 2), hy - s_ * (d / 2 + 6), rnd.uniform(0.7, 1.1))
@@ -600,7 +705,7 @@ def build(g):
                 d = min(rnd.choice((30, 40, 50)), y1 - 8 - y)
                 if w < 25 or d < 20:
                     break
-                if rnd.random() < 0.15:                                 # silo group
+                if rnd.random() < 0.15 and x + 8 + 2 * 12 + 5 < x1 - 3:     # silo group (v1.0.48: only if it fits in the yard)
                     for k in range(3):
                         for s in range(8):
                             a = s * math.pi / 4
@@ -716,12 +821,12 @@ def build(g):
     BIKE_S2, BIKE_N2 = RIV0 - 10.0, RIV1 + 7.0
     for (a, b) in ((XW + 60, -556.0), (556.0, XE - 60)):
         for yy in (BIKE_S2, BIKE_N2):
-            cross = [(r[0] - r[4] / 2 - 0.4, r[0] + r[4] / 2 + 0.4) for r in VR if r[1] - 1 <= yy <= r[3] + 1 and a - 10 < r[0] < b + 10]
+            cross = [(r[0] - r[4] / 2, r[0] + r[4] / 2) for r in VR if r[1] - 1 <= yy <= r[3] + 1 and a - 10 < r[0] < b + 10]
             pieces = free_iv(a, b, cross)
             for (p0, p1) in pieces:
                 for k in range(int(math.ceil((p1 - p0) / 100))):
                     x0_, x1_ = p0 + k * 100, min(p1, p0 + (k + 1) * 100)
-                    T.box(M_BIKE, (x0_ + x1_) / 2, yy, 0.0, x1_ - x0_, 2.6, 0.14)
+                    T.box(M_BIKE, (x0_ + x1_) / 2, yy, -0.2, x1_ - x0_, 2.6, 0.32)          # v1.0.48: goes into the ground (no hole)
                     for j in range(int((x1_ - x0_) // 5)):
                         T.quad(M_LINE, x0_ + j * 5 + 1, yy - 0.06, x0_ + j * 5 + 3, yy + 0.06, 0.145)
             for (c0, c1) in cross:                                    # flat crossing on the road
@@ -735,10 +840,10 @@ def build(g):
             g["BIKEROUTES"].append((a, yy, b, yy))
             MAPRECTS.append(("bike", (a + b) / 2, yy, b - a, 2.6))
     for sx in (-1, 1):                                     # connectors from the old lanes
-        T.box(M_BIKE, sx * 552.0, BS, 0.0, 8.0, 2.6, 0.14)
-        T.box(M_BIKE, sx * 554.7, (BS + BIKE_S2) / 2, 0.0, 2.6, abs(BIKE_S2 - BS) + 2.6, 0.14)
-        T.box(M_BIKE, sx * 552.0, BN, 0.0, 8.0, 2.6, 0.14)
-        T.box(M_BIKE, sx * 554.7, (BN + BIKE_N2) / 2, 0.0, 2.6, abs(BN - BIKE_N2) + 2.6, 0.14)
+        T.box(M_BIKE, sx * 552.0, BS, -0.2, 8.0, 2.6, 0.34)
+        T.box(M_BIKE, sx * 554.7, (BS + BIKE_S2) / 2, -0.2, 2.6, abs(BIKE_S2 - BS) + 2.6, 0.335)
+        T.box(M_BIKE, sx * 552.0, BN, -0.2, 8.0, 2.6, 0.34)
+        T.box(M_BIKE, sx * 554.7, (BN + BIKE_N2) / 2, -0.2, 2.6, abs(BN - BIKE_N2) + 2.6, 0.335)
 
     # ------------------------------------------------------------ v1.0.41 lit windows in the old city at night (on the window glass)
     glass = g.get("M_GLASS")
@@ -799,4 +904,28 @@ def build(g):
     g["ROADNET"] = {"nodes": nodes, "edges": edges}
     print(f"[OSRP] road network: {len(nodes)} crossings, {len(edges)} street pieces")
     meshes = T.emit(g)
+    # v1.0.48 cleanup: no trees / bushes / lamps standing on a road or inside a building (found by the map audit)
+    def _rects(kind):
+        return [(r[1] - r[3] / 2, r[1] + r[3] / 2, r[2] - r[4] / 2, r[2] + r[4] / 2) for r in MAPRECTS if r[0] == kind]
+    from collections import defaultdict as _dd
+    def _grid(rs):
+        gd = _dd(list)
+        for i, (a, b, c, d) in enumerate(rs):
+            for cx in range(int(a // 50), int(b // 50) + 1):
+                for cy in range(int(c // 50), int(d // 50) + 1):
+                    gd[(cx, cy)].append(i)
+        return gd
+    _R, _B = _rects("road"), _rects("bld")
+    _GR, _GB = _grid(_R), _grid(_B)
+    def _in(x, y, rs, gd, pad):
+        for i in gd.get((int(x // 50), int(y // 50)), []):
+            a, b, c, d = rs[i]
+            if a + pad < x < b - pad and c + pad < y < d - pad:
+                return True
+        return False
+    before_t = len(TREES)
+    TREES[:] = [t for t in TREES if not _in(t[0], t[1], _R, _GR, 0.5) and not _in(t[0], t[1], _B, _GB, 0.5)]
+    before_s = len(SIGNS)
+    SIGNS[:] = [s_ for s_ in SIGNS if not (s_[0] in ("grm", "ulicna_lampa", "park_lampa", "trava", "kanta", "hidrant") and _in(s_[1], s_[2], _R, _GR, 0.3))]
+    print(f"[OSRP] cleanup: removed {before_t - len(TREES)} trees and {before_s - len(SIGNS)} street objects from roads / buildings")
     print(f"[OSRP] Veliki Osijek: {nb} new blocks, {len(ROADS)} roads, {meshes} district meshes")

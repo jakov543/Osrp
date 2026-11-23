@@ -145,57 +145,60 @@ local function spawnDoor(i, d)
     doorObjs[i] = obj
 end
 
--- swing nearby doors (v1.0.47: opens for you, other players and NPCs, earlier and smoother; no bumping into a half-open door)
+-- v1.0.48: doors open only when a player presses E (help text shown near a door); the state is synced through the server,
+-- so everyone sees the same open / closed door. The door swings with an ease-out and has no collision while it moves.
+OsrpDoorOpen = OsrpDoorOpen or {}            -- ['h12'] = true
+RegisterNetEvent('osrp_osijek:doorState', function(kind, i, open) OsrpDoorOpen[kind .. i] = open or nil end)
+RegisterNetEvent('osrp_osijek:doorAll', function(t) OsrpDoorOpen = t or {} end)
+CreateThread(function() Wait(3000) TriggerServerEvent('osrp_osijek:doorSync') end)
+
+local function doorHelp(open)
+    BeginTextCommandDisplayHelp('STRING')
+    AddTextComponentSubstringPlayerName(open and '~INPUT_CONTEXT~ Zatvori vrata' or '~INPUT_CONTEXT~ Otvori vrata')
+    EndTextCommandDisplayHelp(0, false, false, -1)
+end
+OsrpDoorHelp = doorHelp
+
 CreateThread(function()
-    local pedsNear, nextScan = {}, 0
     while true do
         local sleep = 400
         local ped = PlayerPedId()
         local pos = GetEntityCoords(ped)
-        local now = GetGameTimer()
-        if now > nextScan then                         -- other people near you (cheap: refreshed 4x a second)
-            nextScan = now + 250
-            pedsNear = {}
-            for _, p in ipairs(GetGamePool('CPed')) do
-                if p ~= ped and #(GetEntityCoords(p) - pos) < 30.0 then pedsNear[#pedsNear + 1] = p end
-            end
-        end
-        local R = Config.DoorOpenDistance or 3.0
+        local R = Config.DoorOpenDistance or 2.2
+        local best, bestD = nil, R
         for i, st in pairs(doorState) do
             local obj = doorObjs[i]
             if obj and DoesEntityExist(obj) then
                 local cx, cy = rightVec(st.closed)
-                local hinge = st.hinge or GetEntityCoords(obj)
-                st.hinge = hinge
-                local mid = vector3(hinge.x + cx * 0.73, hinge.y + cy * 0.73, hinge.z + 1.0)
+                st.hinge = st.hinge or GetEntityCoords(obj)
+                local mid = vector3(st.hinge.x + cx * 0.73, st.hinge.y + cy * 0.73, st.hinge.z + 1.0)
                 local dist = #(pos - mid)
                 if dist < 14.0 then sleep = 0 end
-                local near = dist < R
-                if not near and dist < 14.0 then
-                    for _, p in ipairs(pedsNear) do
-                        if #(GetEntityCoords(p) - mid) < R - 0.6 then near = true break end
-                    end
-                end
-                local want
-                if Config.DoorsLocked then want = st.closed
-                elseif near then st.away = 0 want = st.open
-                else
-                    st.away = st.away + (sleep == 0 and GetFrameTime() or 0.4)
-                    want = (st.away > 1.5) and st.closed or nil
-                end
-                if want and math.abs(st.cur - want) > 0.3 then
-                    -- ease: fast at the start, slow at the end (like a real door), 100 % in ~0.7 s
+                if dist < bestD then best, bestD = i, dist end
+                local want = (OsrpDoorOpen['h' .. i] and not Config.DoorsLocked) and st.open or st.closed
+                if math.abs(st.cur - want) > 0.3 then
                     local diff = want - st.cur
                     local step = math.max(1.2, math.abs(diff) * 7.0 * (sleep == 0 and GetFrameTime() or 0.4))
                     if diff > 0 then st.cur = math.min(want, st.cur + step) else st.cur = math.max(want, st.cur - step) end
                     SetEntityHeading(obj, st.cur % 360.0)
-                    -- while it moves it has no collision, so it never shoves you or gets stuck on you
                     SetEntityCollision(obj, math.abs(st.cur - want) < 2.0, false)
-                elseif want then
+                else
                     SetEntityCollision(obj, true, false)
                 end
             else
                 doorState[i] = nil
+            end
+        end
+        if best and not IsPedInAnyVehicle(ped, false) and not (OsijekDialogOpen and OsijekDialogOpen()) then
+            local open = OsrpDoorOpen['h' .. best] and true or false
+            doorHelp(open)
+            if IsControlJustPressed(0, Config.DoorKey or 38) then
+                if Config.DoorsLocked then
+                    BeginTextCommandThefeedPost('STRING') AddTextComponentSubstringPlayerName('~r~Zaključano.') EndTextCommandThefeedPostTicker(false, false)
+                else
+                    OsrpDoorOpen['h' .. best] = not open or nil
+                    TriggerServerEvent('osrp_osijek:door', 'h', best, not open)
+                end
             end
         end
         Wait(sleep)
@@ -412,7 +415,7 @@ CreateThread(function()
                             local o = CreateObjectNoOffset(hash, c.x + rx * sgn * d[5] / 2, c.y + ry * sgn * d[5] / 2, c.z, false, false, false)
                             SetEntityHeading(o, d[4])
                             FreezeEntityPosition(o, true)
-                            SetEntityCollision(o, false, false)      -- v1.0.31: the glass panels never block the way in
+                            SetEntityCollision(o, true, false)       -- v1.0.48: closed glass doors block (open them with E)
                             s.objs[k] = o
                         end
                         SetModelAsNoLongerNeeded(hash)
@@ -420,22 +423,31 @@ CreateThread(function()
                     end
                 end
                 if s then
-                    -- anybody (you, other players, NPCs) within 3.5 m opens it
-                    local want = dist < 5.0
-                    if not want then
-                        for _, p in ipairs(GetGamePool('CPed')) do
-                            if #(GetEntityCoords(p) - c) < 4.5 then want = true break end
+                    -- v1.0.48: opened / closed by a player with E (synced). The panels slide 60 % of their width while they
+                    -- fade out (they used to slide out through the wall next to the door), and they block the way when closed.
+                    local isOpen = OsrpDoorOpen and OsrpDoorOpen['s' .. i]
+                    if dist < 2.6 and not IsPedInAnyVehicle(ped, false) then
+                        if OsrpDoorHelp then OsrpDoorHelp(isOpen) end
+                        if IsControlJustPressed(0, Config.DoorKey or 38) then
+                            OsrpDoorOpen['s' .. i] = not isOpen or nil
+                            TriggerServerEvent('osrp_osijek:door', 's', i, not isOpen)
+                            isOpen = not isOpen
                         end
                     end
-                    local target = want and (d[5] - 0.15) or 0.0
+                    local target = isOpen and 1.0 or 0.0
                     if math.abs(s.open - target) > 0.01 then
                         active = true
-                        s.open = s.open + math.max(-0.06, math.min(0.06, target - s.open))
+                        s.open = s.open + math.max(-0.05, math.min(0.05, target - s.open))
                         local rx, ry = slidePanels(d)
                         for k, sgn in ipairs({ -1, 1 }) do
-                            local off = sgn * (d[5] / 2 + s.open)
-                            if DoesEntityExist(s.objs[k]) then
-                                SetEntityCoordsNoOffset(s.objs[k], c.x + rx * off, c.y + ry * off, c.z, false, false, false)
+                            local off = sgn * (d[5] / 2 + s.open * d[5] * 0.6)
+                            local o = s.objs[k]
+                            if DoesEntityExist(o) then
+                                SetEntityCoordsNoOffset(o, c.x + rx * off, c.y + ry * off, c.z, false, false, false)
+                                local a = math.floor(255 * (1.0 - s.open))
+                                if a < 8 then SetEntityVisible(o, false, false) else SetEntityVisible(o, true, false) SetEntityAlpha(o, a, false) end
+                                if a >= 250 then ResetEntityAlpha(o) end
+                                SetEntityCollision(o, s.open < 0.05, false)
                             end
                         end
                     end

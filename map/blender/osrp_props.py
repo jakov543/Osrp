@@ -600,14 +600,24 @@ def build_props(h):
         B(p, f"radio_{k}", (-0.95 + k * 0.48, 0, 0.63), (0.22, 0.1, 0.32), "black")
         B(p, f"antena_{k}", (-0.88 + k * 0.48, 0, 0.95), (0.015, 0.015, 0.18), "steel")
     for ad in ("bulet", "volt", "stil", "osijek", "kava"):
-        p = "billboard_" + ad; names.append(p)        # 8 x 4 m billboard on two legs, picture on both sides
-        for sx in (-2.5, 2.5):
-            B(p, f"noga_{sx}", (sx, 0, 0), (0.35, 0.35, 4.2), "steel")
-        B(p, "okvir", (0, 0, 4.0), (8.3, 0.3, 4.3), "black")
-        face("prop_" + p, "lice_p", [(-4.0, 4.15), (4.0, 4.15), (4.0, 8.15), (-4.0, 8.15)], 0.16, signtex("ad_" + ad))
-        face("prop_" + p, "lice_z", [(-4.0, 4.15), (4.0, 4.15), (4.0, 8.15), (-4.0, 8.15)], -0.16, signtex("ad_" + ad))
-        for sx in (-2.6, 0, 2.6):                      # lamps over the picture
-            B(p, f"lampa_{sx}", (sx, 0.55, 8.3), (0.5, 0.25, 0.12), "lamp")
+        p = "billboard_" + ad; names.append(p)        # v1.0.48: real 8 x 4 m billboard on one steel pole, catwalk, lamp arms
+        C(p, "stup", (0, 0, 0), 0.32, 5.2, "steel", 16)
+        C(p, "temelj", (0, 0, 0), 0.6, 0.35, "graysteel" if "graysteel" in M else "steel", 16)
+        for sx in (-2.8, 2.8):                         # diagonal braces to the frame
+            B(p, f"kosnik_{sx}", (sx * 0.5, 0, 4.7), (abs(sx) + 0.2, 0.18, 0.18), "steel")
+        B(p, "nosac", (0, 0, 5.0), (7.4, 0.35, 0.25), "steel")
+        B(p, "okvir", (0, 0, 5.15), (8.5, 0.5, 4.45), "black")
+        B(p, "okvir_gore", (0, 0, 9.55), (8.6, 0.6, 0.12), "steel")
+        face("prop_" + p, "lice_p", [(-4.0, 5.35), (4.0, 5.35), (4.0, 9.35), (-4.0, 9.35)], 0.26, signtex("ad_" + ad))
+        face("prop_" + p, "lice_z", [(-4.0, 5.35), (4.0, 5.35), (4.0, 9.35), (-4.0, 9.35)], -0.26, signtex("ad_" + ad))
+        for side in (1, -1):                           # catwalk + railing on both sides, 3 lamps on arms over each picture
+            B(p, f"staza_{side}", (0, side * 0.85, 5.05), (8.2, 0.9, 0.06), "steel")
+            B(p, f"ograda_{side}", (0, side * 1.27, 5.95), (8.2, 0.05, 0.05), "steel")
+            for x in (-4.0, -2.0, 0.0, 2.0, 4.0):
+                B(p, f"ograda_stup_{side}_{x}", (x, side * 1.27, 5.11), (0.05, 0.05, 0.86), "steel")
+            for x in (-2.7, 0.0, 2.7):
+                B(p, f"ruka_{side}_{x}", (x, side * 0.75, 9.6), (0.08, 1.0, 0.08), "steel")
+                B(p, f"lampa_{side}_{x}", (x, side * 1.2, 9.45), (0.6, 0.3, 0.15), "lamp")
 
     # ---------------- v1.0.38 tram stop shelter (glass, roof, bench, ad panel), tram stop pole, bike rack
     for ad in ("kava", "volt"):

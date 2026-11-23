@@ -217,51 +217,109 @@ def draw(key):
 
 
 def _billboard(k):
-    W, H = 1024, 512
+    """v1.0.48: sharp 2048 x 1024 ad posters (2 : 1 like the 8 x 4 m board) - layouts like real outdoor ads:
+    big headline, product drawing, offer badge, logo bar and web address"""
+    W, H = 2048, 1024
     im = Image.new("RGB", (W, H))
     d = ImageDraw.Draw(im)
-    def grad(c0, c1):
-        for y in range(H):
-            t = y / H
-            d.line([(0, y), (W, y)], fill=tuple(int(c0[i] + (c1[i] - c0[i]) * t) for i in range(3)))
-    def txt(t, y, size, fill, x=None, cond=False):
+
+    def grad(c0, c1, horiz=False):
+        n = W if horiz else H
+        for i in range(n):
+            t = i / n
+            col = tuple(int(c0[j] + (c1[j] - c0[j]) * t) for j in range(3))
+            d.line([(i, 0), (i, H)] if horiz else [(0, i), (W, i)], fill=col)
+
+    def txt(t, x, y, size, fill, cond=False, anchor="l", shadow=None):
         f = _font(size, cond)
-        b = d.textbbox((0, 0), t, font=f)
-        xx = (W - (b[2] - b[0])) / 2 - b[0] if x is None else x
-        d.text((xx, y - (b[3] - b[1]) / 2 - b[1]), t, font=f, fill=fill)
+        bb = d.textbbox((0, 0), t, font=f)
+        tw, th = bb[2] - bb[0], bb[3] - bb[1]
+        xx = x - bb[0] if anchor == "l" else (x - tw / 2 - bb[0] if anchor == "c" else x - tw - bb[0])
+        yy = y - th / 2 - bb[1]
+        if shadow:
+            d.text((xx + 6, yy + 6), t, font=f, fill=shadow)
+        d.text((xx, yy), t, font=f, fill=fill)
+
+    def badge(cx, cy, r, col, lines, tcol=(255, 255, 255)):
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=col)
+        d.ellipse((cx - r + 14, cy - r + 14, cx + r - 14, cy + r - 14), outline=tcol, width=5)
+        for i, (t, sz) in enumerate(lines):
+            txt(t, cx, cy + (i - (len(lines) - 1) / 2) * sz * 1.05, sz, tcol, cond=True, anchor="c")
+
+    def bar(col, left, right, tcol=(255, 255, 255)):
+        d.rectangle((0, H - 120, W, H), fill=col)
+        txt(left, 70, H - 60, 52, tcol, cond=True)
+        txt(right, W - 70, H - 60, 52, tcol, cond=True, anchor="r")
+
     if k == "bulet":
-        grad((22, 170, 100), (10, 90, 60))
-        txt("BULET", 170, 200, WHITE)
-        txt("E-romobili po cijelom Osijeku", 320, 54, WHITE, cond=True)
-        d.rounded_rectangle((330, 390, 694, 460), radius=35, fill=WHITE)
-        txt("$2 + $1/min", 425, 46, (16, 120, 70), cond=True)
+        grad((26, 190, 112), (8, 92, 58))
+        for i in range(9):                                     # speed stripes
+            d.polygon([(1100 + i * 110, 0), (1160 + i * 110, 0), (860 + i * 110, H - 120), (800 + i * 110, H - 120)], fill=(40, 210, 130))
+        txt("BULET", 90, 260, 300, (255, 255, 255), shadow=(6, 60, 38))
+        txt("E-romobili po cijelom Osijeku", 100, 480, 92, (230, 255, 240), cond=True)
+        txt("Skeniraj · vozi · ostavi", 100, 600, 70, (190, 245, 215), cond=True)
+        # scooter drawing
+        g_ = (250, 250, 250)
+        d.ellipse((1250, 640, 1410, 800), outline=g_, width=26); d.ellipse((1720, 640, 1880, 800), outline=g_, width=26)
+        d.line([(1330, 720), (1800, 720)], fill=g_, width=34); d.line([(1780, 720), (1700, 250)], fill=g_, width=30)
+        d.line([(1630, 250), (1790, 250)], fill=g_, width=26)
+        badge(1030, 770, 125, (255, 210, 40), [("$2", 96), ("+$1/min", 42)], (20, 60, 40))
+        bar((6, 60, 38), "BULET · E-ROMOBILI", "osrp.hr/bulet")
     elif k == "volt":
-        grad((10, 16, 34), (30, 50, 110))
-        txt("VOLT", 150, 190, (70, 210, 255), x=60)
-        txt("MOBITELI · RADIO · TABLETI", 300, 48, WHITE, cond=True, x=60)
-        d.rounded_rectangle((860, 110, 980, 380), radius=22, fill=(20, 22, 28), outline=(70, 210, 255), width=6)
-        d.rectangle((876, 140, 964, 345), fill=(60, 120, 220))
-        txt("Odmah do oružarnice", 420, 40, (180, 200, 230), cond=True, x=60)
+        grad((6, 10, 26), (24, 42, 100))
+        for r_ in range(6):                                    # glow rings
+            d.ellipse((1380 - r_ * 60, 120 - r_ * 60, 1880 + r_ * 60, 860 + r_ * 60), outline=(30 + r_ * 6, 70 + r_ * 10, 140 + r_ * 12), width=4)
+        d.rounded_rectangle((1440, 150, 1820, 830), radius=60, fill=(16, 18, 24), outline=(90, 220, 255), width=10)   # phone
+        for y in range(190, 790, 8):
+            t_ = (y - 190) / 600
+            d.line([(1470, y), (1790, y)], fill=(int(40 + 160 * t_), int(110 + 60 * t_), 255))
+        d.rounded_rectangle((1570, 170, 1690, 196), radius=12, fill=(16, 18, 24))
+        txt("VOLT", 90, 250, 290, (90, 220, 255), shadow=(0, 0, 0))
+        txt("NOVI MOBITELI STIGLI", 100, 470, 96, (255, 255, 255), cond=True)
+        txt("Mobiteli · radio · tableti", 100, 590, 58, (170, 200, 240), cond=True)
+        badge(1200, 770, 125, (255, 60, 90), [("-20%", 80), ("tjedan", 36)])
+        bar((60, 200, 255), "VOLT ELEKTRONIKA · CENTAR", "osrp.hr/volt", (6, 10, 26))
     elif k == "stil":
-        grad((250, 236, 240), (230, 190, 210))
-        txt("STIL", 160, 210, (20, 20, 24))
-        txt("NOVA KOLEKCIJA", 310, 66, (190, 40, 90), cond=True)
-        txt("-30% na sve jakne", 410, 52, (20, 20, 24), cond=True)
+        grad((252, 240, 244), (236, 200, 216))
+        d.polygon([(1150, 0), (W, 0), (W, H - 120), (1350, H - 120)], fill=(30, 26, 32))
+        # jacket silhouette
+        c_ = (190, 40, 90)
+        d.polygon([(1560, 230), (1700, 180), (1840, 230), (1900, 620), (1780, 640), (1770, 420), (1630, 420), (1620, 640), (1500, 620)], fill=c_)
+        d.polygon([(1650, 200), (1700, 330), (1750, 200)], fill=(250, 235, 240))
+        txt("STIL", 90, 270, 320, (24, 22, 28))
+        txt("NOVA KOLEKCIJA", 100, 500, 104, (190, 40, 90), cond=True)
+        txt("jakne · traperice · tenisice", 100, 620, 62, (60, 50, 60), cond=True)
+        badge(1180, 760, 120, (190, 40, 90), [("-30%", 76), ("jakne", 38)])
+        bar((24, 22, 28), "STIL · MODA ZA SVAKI DAN", "osrp.hr/stil")
     elif k == "osijek":
-        grad((0, 72, 160), (0, 40, 100))
-        for i in range(6):                  # chequer strip
+        grad((0, 80, 170), (0, 36, 96))
+        for i in range(10):                                    # Croatian chequer
             for j in range(2):
-                d.rectangle((40 + i * 40, 40 + j * 40, 80 + i * 40, 80 + j * 40), fill=RED if (i + j) % 2 == 0 else WHITE)
-        txt("DOBRODOŠLI", 190, 120, WHITE)
-        txt("U OSIJEK", 330, 140, YELLOW)
-        txt("Grad na Dravi", 445, 44, WHITE, cond=True)
-    elif k == "kava":
-        grad((70, 40, 24), (30, 16, 10))
-        txt("KAVA DRAVA", 170, 130, (245, 220, 180))
-        txt("Svježe pržena, svako jutro", 300, 54, WHITE, cond=True)
-        d.ellipse((440, 360, 584, 470), fill=WHITE)
-        d.ellipse((460, 372, 564, 420), fill=(90, 50, 24))
-    return im.resize((S, S))
+                d.rectangle((80 + i * 56, 80 + j * 56, 136 + i * 56, 136 + j * 56), fill=RED if (i + j) % 2 == 0 else WHITE)
+        # skyline: cathedral + bridge
+        sk = (255, 214, 120)
+        d.polygon([(1680, 820), (1680, 420), (1740, 300), (1800, 420), (1800, 820)], fill=sk)
+        d.polygon([(1725, 300), (1740, 120), (1755, 300)], fill=sk)
+        d.rectangle((1500, 600, 1680, 820), fill=sk); d.rectangle((1800, 640, 1990, 820), fill=sk)
+        d.arc((1150, 700, 1500, 1000), 180, 360, fill=sk, width=14)
+        txt("DOBRODOŠLI", 90, 380, 150, (255, 255, 255), shadow=(0, 20, 60))
+        txt("U OSIJEK", 90, 580, 170, YELLOW, shadow=(0, 20, 60))
+        bar((200, 20, 40), "GRAD NA DRAVI", "osijek.hr")
+    else:                                                      # kava
+        grad((92, 54, 30), (34, 18, 10))
+        d.ellipse((1440, 220, 1900, 680), fill=(245, 236, 222))           # cup from above
+        d.ellipse((1486, 266, 1854, 634), fill=(110, 62, 30))
+        d.ellipse((1570, 350, 1770, 550), fill=(200, 150, 100))
+        d.arc((1850, 350, 2030, 550), 270, 90, fill=(245, 236, 222), width=34)
+        for i in range(3):                                     # steam
+            x0 = 1560 + i * 90
+            d.arc((x0, 60, x0 + 80, 200), 90, 270, fill=(220, 200, 180), width=10)
+        txt("KAVA DRAVA", 90, 280, 160, (245, 222, 180), shadow=(20, 10, 4))
+        txt("Svježe pržena, svako jutro", 100, 470, 84, (255, 255, 255), cond=True)
+        txt("Uz Dravu · Promenada", 100, 580, 62, (230, 180, 120), cond=True)
+        badge(1150, 760, 120, (230, 150, 60), [("2 za 1", 56), ("do 10h", 36)], (40, 20, 8))
+        bar((20, 10, 4), "KAVA DRAVA · PRŽIONICA", "osrp.hr/kava")
+    return im
 
 
 KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava", "tram_stop", "mall_logo", "shop_stil", "shop_volt", "shop_kava", "shop_sport", "shop_knjige", "shop_igracke", "shop_market", "shop_ljekarna"]

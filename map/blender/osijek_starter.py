@@ -1105,7 +1105,18 @@ cylinder(col, "osrp_fontana_voda1", (FX, FY, 2.2), 1.95, 0.1, M_FWATER, verts=24
 cylinder(col, "osrp_fontana_stup2", (FX, FY, 2.3), 0.3, 1.2, M_WHITE_STONE, verts=12)
 cylinder(col, "osrp_fontana_zdjela2", (FX, FY, 3.45), 1.1, 0.28, M_WHITE_STONE, verts=20)
 cylinder(col, "osrp_fontana_voda2", (FX, FY, 3.68), 0.9, 0.08, M_FWATER, verts=20)
-pyramid(col, "osrp_fontana_vrh", (FX, FY, 3.75), 0.25, 0.7, M_GOLD)
+cylinder(col, "osrp_fontana_vrh_stup", (FX, FY, 3.73), 0.16, 0.35, M_WHITE_STONE, verts=12)        # v1.0.48: stone finial (was a yellow pyramid)
+cylinder(col, "osrp_fontana_vrh_kugla", (FX, FY, 4.08), 0.24, 0.32, M_WHITE_STONE, verts=12)
+cylinder(col, "osrp_fontana_vrh_kapa", (FX, FY, 4.4), 0.1, 0.18, M_WHITE_STONE, verts=8)
+M_FALL = material("osrp_clear_glass_fountain_water", (0.55, 0.75, 0.85))                       # see-through falling water
+for (r_, z0_, z1_) in ((1.12, 2.3, 3.45), (2.22, 0.5, 1.9)):
+    for k in range(24):
+        a_ = k * 2 * math.pi / 24
+        a2 = (k + 1) * 2 * math.pi / 24
+        p1 = (FX + math.cos(a_) * r_, FY + math.sin(a_) * r_)
+        p2 = (FX + math.cos(a2) * r_, FY + math.sin(a2) * r_)
+        _mesh_obj(col, f"osrp_fontana_slap_{r_}_{k}", [(p1[0], p1[1], z0_), (p2[0], p2[1], z0_), (p2[0], p2[1], z1_), (p1[0], p1[1], z1_)],
+                  [(0, 1, 2, 3), (3, 2, 1, 0)], M_FALL)
 FOUNTAINS = [(FX, FY, 4.3), (FX, FY, 2.4)]
 
 # Bus stops on Europska avenija
@@ -1259,7 +1270,7 @@ FURNITURE += [("vend_soda", HX - 18.5, HY + 6.0, FLOOR_Z, 90.0, 0.0), ("vend_sna
 for k, dx in enumerate((-30, -26.5, -23)):
     cprop("flagpole", HX + dx, HY + 30, 0.1, 0.0, 250.0)
 box(col, "osrp_hitna_pult", (HX + 48, HY + 14, FLOOR_Z), (5, 1.0, 1.1), M_WHITE_STONE)
-block_text("osrp_hitna_natpis_unutra", "HITNA", (HX + 37.5 + text_width("HITNA", 0.3) / 2, HY + 4.1, 2.7), 0.3, (-1, 0, 0), (0, 0, 1), M_SIGN_RED)
+block_text("osrp_hitna_natpis_unutra", "HITNA", (HX + 37.5 - text_width("HITNA", 0.3) / 2, HY + 4.1, 2.7), 0.3, (1, 0, 0), (0, 0, 1), M_SIGN_RED)   # v1.0.48: was mirrored
 box(col, "osrp_kbc_prizemlje_s", (HX, HY + 22 - LOB_D - (44 - LOB_D) / 2, 0), (LOB_W, 44 - LOB_D, LOB_H), M_HOSP)
 box(col, "osrp_kbc_pod", (HX, HY + 22 - LOB_D / 2, 0), (LOB_W, LOB_D, FLOOR_Z), M_HFLOOR)
 box(col, "osrp_kbc_staklo_nad", (HX, HY + 21.85, FLOOR_Z + 3.0), (5, 0.3, LOB_H - FLOOR_Z - 3.0), M_CLEAR)   # above the sliding doors
@@ -1420,7 +1431,7 @@ STAFF.append(("s_f_y_shop_mid", TX - 35, TY - 11.0, 0.0, "WORLD_HUMAN_STAND_IMPA
 for k in range(3):
     cprop("gatedesk", TX + 36 + k * 24, TY - 10.5, FLOOR_Z, 0.0)
 FURNITURE += [("atm", TX + 7.5 + k * 1.0, TY + 12.1, FLOOR_Z, 0.0, 0.0) for k in range(2)]
-FURNITURE += [("bin_in", TX - 90 + k * 30, TY + 11.5, FLOOR_Z, 0.0, 0.0) for k in range(7)]
+FURNITURE += [("bin_in", TX - 90 + k * 30, TY + 11.5, FLOOR_Z, 0.0, 0.0) for k in range(7) if k != 3]   # v1.0.48: none in the doorway
 FURNITURE += [("vend_soda", TX + 92, TY + 11.6, FLOOR_Z, 0.0, 0.0), ("vend_snack", TX + 93.5, TY + 11.6, FLOOR_Z, 0.0, 0.0)]
 for k, dx in enumerate((-12, -8.5, 8.5, 12)):
     cprop("flagpole", TX + dx, TY + 22, 0.1, 0.0, 250.0)
@@ -2449,4 +2460,4 @@ PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 # v1.0.40: Veliki Osijek - new districts all around the old city (osrp_districts.py)
 import osrp_districts
 osrp_districts.build(globals())
-print(f"[OSRP] Osijek map v1.0.47: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.48: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

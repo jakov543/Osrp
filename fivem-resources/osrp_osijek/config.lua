@@ -21,7 +21,8 @@ Config.TreeModels = {
 
 -- Doors of the houses you can enter: first model that exists in your GTA is used
 Config.DoorModels = { 'osrpprop_door_house', 'v_ilev_fh_frontdoor', 'v_ilev_trevtraildr' }   -- v1.0.47: our own door fits the 1.5 m doorway exactly
-Config.DoorOpenDistance = 3.0         -- v1.0.47: a door opens when you (or another player / NPC) come this close
+Config.DoorOpenDistance = 2.2         -- v1.0.48: doors open only when a player presses E within this distance (synced to everyone)
+Config.DoorKey = 38                    -- E
 Config.DoorsLocked = false            -- true = everyone needs a key (lock them from your own scripts)
 
 -- Furniture inside the houses (first existing model per type)
@@ -125,7 +126,7 @@ Config.SignTurn = { ulicna_lampa = 0.0, park_lampa = 0.0, stop = 180.0, pjesacki
 
 Config.Pedestrians = true
 Config.DogWalkers = 0.18             -- v1.0.46: share of walkers that have a dog with them
-Config.EmergencyChance = 0.06        -- v1.0.46: chance that a new traffic car is a police car / ambulance on a call (max 1 at a time)
+Config.EmergencyChance = 0.0         -- v1.0.48: off (was: police car / ambulance with siren in the traffic)
 Config.EmergencyModels = { { 'police3', 's_m_y_cop_01' }, { 'police', 's_m_y_cop_01' }, { 'ambulance', 's_m_m_paramedic_01' } }
 Config.EmergencyStyle = 1074528293   -- rushed: overtakes, goes around cars
 Config.PedCount = 80                -- NPCs walking, jogging, sitting, standing around you (phone, coffee, smoking ...)
@@ -189,7 +190,7 @@ Config.NpcChat = {
 
 -- ===================================================================== v1.0.18
 Config.BenchModels = { 'prop_bench_01a', 'prop_bench_05', 'prop_bench_09' }   -- E = sit (NPCs sit too)
-Config.FountainParticle = 'ent_amb_fountain_pour'                              -- water jets of the Tvrđa fountain
+Config.FountainParticle = false        -- v1.0.48: off (the GTA particle looked like sand); the fountain has modelled water now
 
 -- ===================================================================== v1.0.20
 Config.Cyclists = 14                -- NPCs riding bikes (Drava bike paths + streets near you, v1.0.46)
@@ -216,7 +217,7 @@ Config.Sirens = {
 
 -- v1.0.45 liveries made of our own decal models (liveries.lua): Croatian police band + brand panels on box trucks
 Config.Liveries = {
-    Enabled = true,
+    Enabled = false,             -- v1.0.48: OFF (no police / truck decals). liveries.lua is no longer loaded
     PoliceModels = { 'police', 'police2', 'police3', 'police4', 'policet', 'sheriff', 'sheriff2' },
     PoliceColour = 111,          -- white body (GTA paint index)
     PoliceBandHeight = 0.42,     -- band height on the doors (0 = bottom of the car, 1 = roof). Move it if it sits too high / low

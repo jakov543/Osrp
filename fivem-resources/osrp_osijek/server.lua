@@ -21,3 +21,15 @@ RegisterCommand('dogadaj', function(src, args)
     end
     TriggerClientEvent('osrp_osijek:testEvent', src, args[1] or '')
 end, false)
+
+-- v1.0.48: doors are opened by players (E) and everyone sees the same door state
+local doorStates = {}            -- ['h12'] = true (house door 12 open), ['s3'] = true (sliding door 3 open)
+RegisterNetEvent('osrp_osijek:door', function(kind, i, open)
+    if (kind ~= 'h' and kind ~= 's') or type(i) ~= 'number' then return end
+    local key = kind .. i
+    doorStates[key] = open and true or nil
+    TriggerClientEvent('osrp_osijek:doorState', -1, kind, i, open and true or false)
+end)
+RegisterNetEvent('osrp_osijek:doorSync', function()
+    TriggerClientEvent('osrp_osijek:doorAll', source, doorStates)
+end)
