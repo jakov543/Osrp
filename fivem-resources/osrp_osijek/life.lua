@@ -199,6 +199,66 @@ end)
 
 -- ===================================================================== pedestrians
 local peds = {}
+
+-- v1.0.46: sidewalks of the new districts, made from the road network (both sides of every street outside the old city),
+-- so people walk everywhere and not only in the centre
+do
+    local net = Life.ROADNET
+    local added = 0
+    if net and net.edges then
+        for _, e in ipairs(net.edges) do
+            local A, B = net.nodes[e[1] + 1], net.nodes[e[2] + 1]
+            local mx, my = (A[1] + B[1]) / 2, (A[2] + B[2]) / 2
+            local core = math.abs(mx) < 560 and my > -810 and my < 460
+            local river = (math.min(A[2], B[2]) < 175 and math.max(A[2], B[2]) > 265)
+            local dx, dy = B[1] - A[1], B[2] - A[2]
+            local L = math.sqrt(dx * dx + dy * dy)
+            if not core and not river and L > 30.0 then
+                dx, dy = dx / L, dy / L
+                local off, trim = e[3] / 2 + 1.75, 13.0
+                for _, sg in ipairs({ 1, -1 }) do
+                    local ox, oy = dy * off * sg, -dx * off * sg
+                    Life.WALKS[#Life.WALKS + 1] = { A[1] + dx * trim + ox, A[2] + dy * trim + oy, B[1] - dx * trim + ox, B[2] - dy * trim + oy }
+                    added = added + 1
+                end
+            end
+        end
+    end
+    print(('[OSRP] %d district sidewalks for pedestrians'):format(added))
+end
+
+local DOGS = { 'a_c_retriever', 'a_c_shepherd', 'a_c_westy', 'a_c_pug', 'a_c_poodle', 'a_c_husky', 'a_c_rottweiler' }
+local dogs = {}                                     -- { dog, owner }
+
+local function addDog(owner)
+    if math.random() > (Config.DogWalkers or 0.18) then return end
+    local hash = firstModel({ DOGS[math.random(#DOGS)], 'a_c_retriever' })
+    if not hash or not load(hash) then return end
+    local c = GetOffsetFromEntityInWorldCoords(owner, 0.6, -0.9, 0.0)
+    local d = CreatePed(28, hash, c.x, c.y, c.z, GetEntityHeading(owner), false, true)
+    SetModelAsNoLongerNeeded(hash)
+    SetBlockingOfNonTemporaryEvents(d, true)
+    SetPedKeepTask(d, true)
+    TaskFollowToOffsetOfEntity(d, owner, 0.6, -0.9, 0.0, 1.0, -1, 0.8, true)
+    dogs[#dogs + 1] = { dog = d, owner = owner }
+end
+
+CreateThread(function()                              -- dog goes away with its owner
+    while true do
+        for k = #dogs, 1, -1 do
+            local o = dogs[k]
+            if not DoesEntityExist(o.owner) or IsEntityDead(o.owner) then
+                if DoesEntityExist(o.dog) then DeletePed(o.dog) end
+                table.remove(dogs, k)
+            elseif DoesEntityExist(o.dog) and #(GetEntityCoords(o.dog) - GetEntityCoords(o.owner)) > 12.0 then
+                local c = GetOffsetFromEntityInWorldCoords(o.owner, 0.6, -0.9, 0.0)
+                SetEntityCoordsNoOffset(o.dog, c.x, c.y, c.z, false, false, false)
+                TaskFollowToOffsetOfEntity(o.dog, o.owner, 0.6, -0.9, 0.0, 1.0, -1, 0.8, true)
+            end
+        end
+        Wait(1500)
+    end
+end)
 OsijekBenches, OsijekBenchUsed = {}, {}
 
 local function pedModel(i)
@@ -246,14 +306,15 @@ local function newWalker(i)
     local tx, ty = goEnd and w[3] or w[1], goEnd and w[4] or w[2]
     local tw = W(tx, ty, 0.3)
     TaskGoStraightToCoord(p, tw.x, tw.y, tw.z, speed, -1, 0.0, 0.5)
+    if not jogger then addDog(p) end
 end
 
 local SCENARIOS = { 'WORLD_HUMAN_SMOKING', 'WORLD_HUMAN_STAND_MOBILE', 'WORLD_HUMAN_AA_COFFEE', 'WORLD_HUMAN_TOURIST_MAP',
                     'WORLD_HUMAN_HANG_OUT_STREET', 'WORLD_HUMAN_DRINKING', 'WORLD_HUMAN_MOBILE_FILM_SHOCKING', 'WORLD_HUMAN_STAND_IMPATIENT' }
 
 local function newStander(i)
-    local w = Life.WALKS[math.random(#Life.WALKS)]
-    local t = math.random()
+    local w, t = nearWalk()                          -- v1.0.46: near you (was anywhere in the city)
+    if not w then return end
     local x, y = w[1] + (w[3] - w[1]) * t, w[2] + (w[4] - w[2]) * t
     local wp = groundAt(x, y, 0.05)
     if not wp then return end
@@ -408,7 +469,7 @@ local function driveTo(c)
     local es = NET.edges[c.e][4]
     local sp = (es >= 19.0 and es or math.min(es, Config.TrafficSpeed or 13.5)) * (c.mood or 1.0)   -- bypass keeps its 70 km/h
     local p = W(tx, ty, 0.5)
-    TaskVehicleDriveToCoord(c.drv, c.veh, p.x, p.y, p.z, sp, 0, GetEntityModel(c.veh), Config.DrivingStyle, 3.0, true)
+    TaskVehicleDriveToCoord(c.drv, c.veh, p.x, p.y, p.z, sp, 0, GetEntityModel(c.veh), c.emerg and (Config.EmergencyStyle or 1074528293) or Config.DrivingStyle, 3.0, true)
     c.tx, c.ty, c.phase = tx, ty, 'edge'
 end
 
@@ -419,7 +480,7 @@ local function turnTo(c)
     c.from, c.to, c.e = c.to, o.to, o.e
     local tx, ty = lane(c.e, c.from, c.to, 12.0)
     local p = W(tx, ty, 0.5)
-    TaskVehicleDriveToCoord(c.drv, c.veh, p.x, p.y, p.z, 7.0, 0, GetEntityModel(c.veh), Config.DrivingStyle, 3.0, true)
+    TaskVehicleDriveToCoord(c.drv, c.veh, p.x, p.y, p.z, c.emerg and 11.0 or 7.0, 0, GetEntityModel(c.veh), c.emerg and (Config.EmergencyStyle or 1074528293) or Config.DrivingStyle, 3.0, true)
     c.tx, c.ty, c.phase = tx, ty, 'turn'
     return true
 end
@@ -446,6 +507,16 @@ local function spawnCar(i, me)
             local list = Config.TrafficModels
             local vhash = firstModel({ list[math.random(#list)], list[1] })
             local phash = pedModel(i + 7)
+            -- v1.0.46: now and then a police car or an ambulance on a call (lights + siren, faster, overtakes)
+            local emerg = nil
+            local busy = false
+            for _, o in pairs(cars) do if o.emerg then busy = true end end
+            if not busy and math.random() < (Config.EmergencyChance or 0.06) then
+                local em = (Config.EmergencyModels or { { 'police3', 's_m_y_cop_01' } })
+                emerg = em[math.random(#em)]
+                vhash = firstModel({ emerg[1], 'police3' })
+                phash = firstModel({ emerg[2], 's_m_y_cop_01' })
+            end
             if not load(vhash) or not load(phash) then return end
             local heading = (math.deg(math.atan(dy, dx)) - 90.0) % 360.0
             local v = CreateVehicle(vhash, wp.x, wp.y, wp.z, heading, false, false)
@@ -467,6 +538,13 @@ local function spawnCar(i, me)
             SetModelAsNoLongerNeeded(vhash)
             SetModelAsNoLongerNeeded(phash)
             cars[i] = { veh = v, drv = drv, e = ei, from = from, to = to, stuck = 0, last = GetEntityCoords(v), mood = 0.85 + math.random() * 0.25 }
+            if emerg then
+                cars[i].emerg, cars[i].mood = true, 1.45
+                SetVehicleNumberPlateText(v, emerg[1] == 'ambulance' and 'HITNA' or 'POLICIJA')
+                SetVehicleSiren(v, true)
+                OsrpNpcSiren = OsrpNpcSiren or {}
+                OsrpNpcSiren[v] = true                     -- sirens.lua plays the Croatian two-tone on it
+            end
             SetVehicleForwardSpeed(v, math.min(e[4], Config.TrafficSpeed or 13.5) * 0.7)
             driveTo(cars[i])
             return
@@ -899,13 +977,53 @@ end)
 local bikers = {}
 local BIKES = { 'cruiser', 'scorcher', 'bmx', 'tribike', 'fixter', 'tribike2' }
 
+local function streetCyclist(i, me)
+    -- v1.0.46: cyclist on the right edge of a street near you (the new districts have no bike paths on every street)
+    if not NET or not NET.edges then return end
+    local mx, my = me.x - Config.Origin.x, me.y - Config.Origin.y
+    for _ = 1, 10 do
+        local ei = math.random(#NET.edges)
+        local e = NET.edges[ei]
+        local from, to = e[1] + 1, e[2] + 1
+        if math.random() < 0.5 then from, to = to, from end
+        local A, B = NET.nodes[from], NET.nodes[to]
+        local dx, dy = B[1] - A[1], B[2] - A[2]
+        local L = math.sqrt(dx * dx + dy * dy)
+        if L > 80.0 then
+            dx, dy = dx / L, dy / L
+            local off = e[3] / 2 - 1.0
+            local t = 15.0 + math.random() * (L - 60.0)
+            local x, y = A[1] + dx * t + dy * off, A[2] + dy * t - dx * off
+            local d = math.sqrt((x - mx) ^ 2 + (y - my) ^ 2)
+            if d > 50.0 and d < 220.0 then
+                local g = groundAt(x, y, 0.2)
+                local bh = firstModel({ BIKES[math.random(#BIKES)], 'cruiser' })
+                local ph = firstModel({ RUNNERS[math.random(#RUNNERS)], 'a_m_y_cyclist_01' })
+                if not g or not bh or not ph or not load(bh) or not load(ph) then return end
+                local v = CreateVehicle(bh, g.x, g.y, g.z, (math.deg(math.atan(dy, dx)) - 90.0) % 360.0, false, false)
+                local drv = CreatePedInsideVehicle(v, 4, ph, -1, false, true)
+                SetModelAsNoLongerNeeded(bh) SetModelAsNoLongerNeeded(ph)
+                SetBlockingOfNonTemporaryEvents(drv, true)
+                SetEntityAsMissionEntity(v, true, true)
+                local ex, ey = B[1] - dx * 12.0 + dy * off, B[2] - dy * 12.0 - dx * off
+                local tg = W(ex, ey, 0.3)
+                TaskVehicleDriveToCoord(drv, v, tg.x, tg.y, tg.z, (Config.CyclistSpeed or 6.0) * 0.9, 0, bh, 786603, 3.0, true)
+                bikers[i] = { veh = v, drv = drv, target = tg, last = GetEntityCoords(v), stuck = 0 }
+                return
+            end
+        end
+    end
+end
+
 local function newCyclist(i)
     local routes = Life.BIKEROUTES or {}
-    if #routes == 0 then return end
     local me = GetEntityCoords(PlayerPedId())
+    if #routes == 0 then return streetCyclist(i, me) end
     local r = routes[math.random(#routes)]
     local mx = me.x - Config.Origin.x
-    if math.abs((me.y - Config.Origin.y) - r[2]) > 260.0 then return end
+    if math.abs((me.y - Config.Origin.y) - r[2]) > 260.0 or (mx > r[3] + 100 or mx < r[1] - 100) or math.random() < 0.35 then
+        return streetCyclist(i, me)
+    end
     local dir = math.random() < 0.5 and 1 or -1
     local x = math.max(r[1] + 5, math.min(r[3] - 5, mx + (math.random() * 2 - 1) * 180.0))
     local lane = r[2] - dir * 0.6                                  -- ride on the right half of the path

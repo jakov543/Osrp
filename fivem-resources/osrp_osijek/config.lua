@@ -123,7 +123,11 @@ Config.SignModels = {
 Config.SignTurn = { ulicna_lampa = 0.0, park_lampa = 0.0, stop = 180.0, pjesacki = 180.0 }   -- our own sign models face the other way than GTA props
 
 Config.Pedestrians = true
-Config.PedCount = 64                -- NPCs walking, jogging, sitting, standing around you (phone, coffee, smoking ...)
+Config.DogWalkers = 0.18             -- v1.0.46: share of walkers that have a dog with them
+Config.EmergencyChance = 0.06        -- v1.0.46: chance that a new traffic car is a police car / ambulance on a call (max 1 at a time)
+Config.EmergencyModels = { { 'police3', 's_m_y_cop_01' }, { 'police', 's_m_y_cop_01' }, { 'ambulance', 's_m_m_paramedic_01' } }
+Config.EmergencyStyle = 1074528293   -- rushed: overtakes, goes around cars
+Config.PedCount = 80                -- NPCs walking, jogging, sitting, standing around you (phone, coffee, smoking ...)
 Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_01', 'a_f_y_hipster_01', 'a_m_y_hipster_01',
                      'a_f_m_bevhills_01', 'a_m_y_vinewood_01', 'a_f_y_tourist_01', 'a_m_m_skater_01', 'a_f_y_eastsa_01',
                      'a_m_y_bevhills_01', 'a_f_y_bevhills_02', 'a_m_m_eastsa_02', 'a_f_m_tourist_01', 'a_m_y_runner_01',
@@ -187,7 +191,7 @@ Config.BenchModels = { 'prop_bench_01a', 'prop_bench_05', 'prop_bench_09' }   --
 Config.FountainParticle = 'ent_amb_fountain_pour'                              -- water jets of the Tvrđa fountain
 
 -- ===================================================================== v1.0.20
-Config.Cyclists = 8                 -- NPCs riding bikes on the Drava bike paths
+Config.Cyclists = 14                -- NPCs riding bikes (Drava bike paths + streets near you, v1.0.46)
 Config.CyclistSpeed = 6.0           -- m/s (about 22 km/h)
 Config.JoggerShare = 0.35           -- part of the people on the promenades who jog
 
@@ -200,6 +204,13 @@ Config.PoliceLivery = {
     Image = 'html/livery/policija_hr.png',
     Models = { 'police3', 'police', 'policet' },
     Colour = 111,                -- white body (GTA paint index) on the station's police cars
+}
+
+-- v1.0.46 sirens on every emergency vehicle (sirens.lua). Players can change the keys in GTA Settings -> Key Bindings -> FiveM
+Config.Sirens = {
+    KeyLights = 'Q', KeySiren = 'E', KeyTone = 'R', KeyHorn = 'H',
+    Range = 260.0,               -- metres you can hear a siren
+    -- Tones = { { id = 'hr', label = 'HR dvotonac' }, { id = 'wail', label = 'Wail', sound = 'VEHICLES_HORNS_SIREN_1' }, ... }
 }
 
 -- v1.0.45 liveries made of our own decal models (liveries.lua): Croatian police band + brand panels on box trucks
