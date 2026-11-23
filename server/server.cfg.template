@@ -32,6 +32,8 @@ setr osrp_map nui
 # BULET e-romobili: cijena otključavanja i cijena po minuti ($)
 setr osrp_bulet_unlock 2
 setr osrp_bulet_minute 1
+# BULET kao pravo add-on vozilo (romobil mod koji sam staviš na server, uz dopuštenje autora); prazno = naš BULET model
+setr osrp_bulet_vehicle ""
 # novi lik: početni novac
 setr osrp_start_cash 500
 setr osrp_start_bank 2000

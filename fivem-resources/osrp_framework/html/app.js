@@ -178,10 +178,19 @@ function setWeapon(d) {
   $('wTotal').textContent = '/ ' + Math.max(0, d.total - d.clip);
   $('wClip').classList.toggle('low', d.clip <= Math.max(2, d.clipMax * 0.2));
 }
-// v1.0.27: status rings live in their own bar above the location box
+// v1.0.42: one dock next to the minimap - location row on top, status bars below
 (() => {
   const st = document.querySelector('.h-status');
-  if (st) { st.classList.add('stbar'); st.classList.remove('h-status'); st.id = 'stbar'; document.body.appendChild(st); st.style.display = 'none'; }
+  const loc = $('loc');
+  if (st && loc) {
+    st.classList.add('stbar'); st.classList.remove('h-status'); st.id = 'stbar';
+    const row = document.createElement('div');
+    row.className = 'l-row';
+    while (loc.firstChild) row.appendChild(loc.firstChild);
+    loc.appendChild(row);
+    loc.appendChild(st);
+    loc.classList.add('dock');
+  }
 })();
 function setStatus(d) {
   const clamp = (v) => Math.max(0, Math.min(100, v));
@@ -224,7 +233,7 @@ window.addEventListener('message', (e) => {
     case 'weapon': setWeapon(d); break;
     case 'status': setStatus(d); break;
     case 'showHud': $('hud').classList.remove('hidden'); break;
-    case 'hideHud': ['hud', 'loc', 'speedo', 'weapon'].forEach((i) => $(i).classList.add('hidden')); if ($('stbar')) $('stbar').style.display = 'none'; break;
+    case 'hideHud': ['hud', 'loc', 'speedo', 'weapon'].forEach((i) => $(i).classList.add('hidden')); break;
     case 'hud': setHud(d); break;
     case 'loc': setLoc(d); break;
     case 'veh': setVeh(d); break;
@@ -271,12 +280,7 @@ function setLoc(d) {
   $('lStreet').textContent = d.street || '—';
   $('lZone').textContent = d.zone || 'Osijek';
   $('lTime').textContent = d.time || '';
-  const sb = $('stbar');
-  if (sb) {
-    sb.style.display = d.show ? 'flex' : 'none';
-    sb.style.left = `calc(${(d.left * 100).toFixed(3)}vw + 14px)`;
-    sb.style.top = `calc(${(d.bottom * 100).toFixed(3)}vh - 96px)`;
-  }
+  // v1.0.42: status bars live inside the dock (moved with it)
 }
 
 // tick marks on the dial

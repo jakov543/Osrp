@@ -1,5 +1,5 @@
 =====================================================================
-  OSRP | Osijek Roleplay - SERVER PAKET (v1.0.41)
+  OSRP | Osijek Roleplay - SERVER PAKET (v1.0.42)
 =====================================================================
 
 U paketu:
@@ -63,6 +63,10 @@ U paketu:
    setr osrp_map nui             nui = nacrtana karta (minimapa + F7), blips = stara
    setr osrp_bulet_unlock 2      BULET e-romobil: otključavanje ($)
    setr osrp_bulet_minute 1      BULET e-romobil: cijena po minuti ($)
+   setr osrp_bulet_vehicle ime   BULET kao pravo add-on vozilo (romobil mod). Mod stavi u svoj
+                                 resurs sa stream/ mapom, ensure ga PRIJE osrp_osijek, i upiši
+                                 spawn ime. Prazno ("") = naš BULET model. Samo uz dopuštenje autora moda!
+   setr osrp_bulet_livery 0      livery tog vozila (broj)
    setr osrp_start_cash 500      početna gotovina novog lika
    setr osrp_start_bank 2000     početni novac u banci
    setr osrp_respawn 60          sekunde do respawna nakon smrti

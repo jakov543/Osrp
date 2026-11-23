@@ -1,7 +1,7 @@
 {
   "name": "osrp-launcher",
   "productName": "OSRP Launcher",
-  "version": "1.0.41",
+  "version": "1.0.42",
   "description": "OSRP Launcher V1 - Osijek Roleplay (GTA V / FiveM). Requires a legal copy of GTA V.",
   "main": "main.js",
   "author": "Bandera",

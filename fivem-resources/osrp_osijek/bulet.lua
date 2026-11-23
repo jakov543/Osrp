@@ -17,6 +17,16 @@ local function loadModel(m)
     return HasModelLoaded(h) and h or nil
 end
 
+-- v1.0.42: optional add-on scooter vehicle (e.g. a downloaded e-scooter mod you put in your own stream resource).
+-- Config.Bulet.VehicleModel = 'spawnname' (or setr osrp_bulet_vehicle spawnname in server.cfg). Empty = our own BULET model.
+local function addonModel()
+    local m = B.VehicleModel
+    if not m or m == '' then return nil end
+    local h = joaat(m)
+    if not IsModelInCdimage(h) or not IsModelAVehicle(h) then return nil end
+    return h
+end
+
 local function help(t)
     BeginTextCommandDisplayHelp('STRING')
     AddTextComponentSubstringPlayerName(t)
@@ -44,17 +54,28 @@ CreateThread(function()
                     local waitOk = not s.empty[k] or GetGameTimer() - s.empty[k] > B.RefillSeconds * 1000
                     if (not o or not DoesEntityExist(o)) and waitOk then
                         local p, ok = slotPos(st, k)
-                        local h = ok and loadModel('osrpprop_escooter')
-                        if h then
-                            o = CreateObjectNoOffset(h, p.x, p.y, p.z, false, false, false)
-                            SetEntityHeading(o, st[3] - 90.0)
+                        local av = ok and addonModel()
+                        if av and loadModel(av) then                  -- parked add-on scooter (local, locked)
+                            o = CreateVehicle(av, p.x, p.y, p.z + 0.1, st[3] - 90.0, false, false)
+                            SetVehicleOnGroundProperly(o)
                             FreezeEntityPosition(o, true)
+                            SetVehicleDoorsLocked(o, 2)
+                            SetEntityInvincible(o, true)
+                            if B.Livery then SetVehicleLivery(o, B.Livery) end
                             s.objs[k], s.empty[k] = o, nil
+                        else
+                            local h = ok and loadModel('osrpprop_escooter')
+                            if h then
+                                o = CreateObjectNoOffset(h, p.x, p.y, p.z, false, false, false)
+                                SetEntityHeading(o, st[3] - 90.0)
+                                FreezeEntityPosition(o, true)
+                                s.objs[k], s.empty[k] = o, nil
+                            end
                         end
                     end
                 end
             else
-                for k, o in pairs(s.objs) do if DoesEntityExist(o) then DeleteObject(o) end s.objs[k] = nil end
+                for k, o in pairs(s.objs) do if DoesEntityExist(o) then DeleteEntity(o) end s.objs[k] = nil end
             end
         end
         Wait(2000)
@@ -81,6 +102,18 @@ local function stopRide(crash)
     local r = ride
     ride = nil
     local ped = PlayerPedId()
+    if r.addon then
+        local c = GetEntityCoords(r.veh)
+        if IsPedInVehicle(ped, r.veh, false) then
+            ClearPedTasksImmediately(ped)
+            SetEntityCoords(ped, c.x + 0.8, c.y, c.z + 0.3, false, false, false, false)
+        end
+        if crash then SetPedToRagdoll(ped, 2500, 2500, 0, false, false, false) end
+        if DoesEntityExist(r.veh) then DeleteVehicle(r.veh) end
+        SendNUIMessage({ t = 'bulet', show = false })
+        TriggerServerEvent('osrp:buletEnd')
+        return
+    end
     DetachEntity(ped, true, true)
     ClearPedTasks(ped)
     local c = GetEntityCoords(r.veh)
@@ -94,6 +127,20 @@ local function stopRide(crash)
 end
 
 local function startRide(pos, heading)
+    local av = addonModel()
+    if av and loadModel(av) then                                   -- v1.0.42 real add-on scooter: you ride it like a bike
+        local ped = PlayerPedId()
+        local veh = CreateVehicle(av, pos.x, pos.y, pos.z + 0.2, heading, true, false)
+        SetVehicleOnGroundProperly(veh)
+        SetVehicleHasBeenOwnedByPlayer(veh, true)
+        SetEntityMaxSpeed(veh, B.MaxSpeed / 3.6)
+        if B.Livery then SetVehicleLivery(veh, B.Livery) end
+        TaskWarpPedIntoVehicle(ped, veh, -1)
+        SetModelAsNoLongerNeeded(av)
+        ride = { veh = veh, addon = true, start = GetGameTimer(), battery = 100.0, parts = {} }
+        TriggerEvent('osrp:notify', ('~g~BULET~s~ - vožnja je počela. ~y~F~s~ kraj vožnje. Cijena: $%d/min.'):format(B.PerMinute))
+        return
+    end
     local vh = loadModel(B.BaseVehicle)
     local ph = loadModel('osrpprop_escooter_body')
     local wh, sh = loadModel('osrpprop_escooter_wheel'), loadModel('osrpprop_escooter_steer')
@@ -140,7 +187,7 @@ RegisterNetEvent('osrp_osijek:buletOk', function(i, k)
     local o = s and s.objs[k]
     if not o or not DoesEntityExist(o) then return end
     local pos, heading = GetEntityCoords(o), GetEntityHeading(o)
-    DeleteObject(o)
+    DeleteEntity(o)
     s.objs[k], s.empty[k] = nil, GetGameTimer()
     startRide(pos, heading)
 end)
@@ -149,7 +196,25 @@ CreateThread(function()
     while true do
         local sleep = 300
         local ped = PlayerPedId()
-        if ride then
+        if ride and ride.addon then                                -- add-on scooter: GTA does the riding, we bill + battery
+            sleep = 0
+            local r = ride
+            DisableControlAction(0, 75, true)                      -- F = our end ride (no normal exit)
+            if not DoesEntityExist(r.veh) or IsEntityDead(ped) or not IsPedInVehicle(ped, r.veh, false) then
+                stopRide(false)
+            else
+                local real = GetEntitySpeed(r.veh)
+                if r.battery <= 0 then SetEntityMaxSpeed(r.veh, 6.0 / 3.6) end
+                r.battery = math.max(0.0, r.battery - GetFrameTime() * (real > 0.5 and B.BatteryDrain or 0.0))
+                local secs = math.floor((GetGameTimer() - r.start) / 1000)
+                local mins = math.max(1, math.ceil(secs / 60))
+                if GetGameTimer() % 250 < 20 then
+                    SendNUIMessage({ t = 'bulet', show = true, time = ('%02d:%02d'):format(secs // 60, secs % 60),
+                                     cost = B.Unlock + mins * B.PerMinute, speed = math.floor(real * 3.6 + 0.5), battery = math.floor(r.battery) })
+                end
+                if IsDisabledControlJustReleased(0, 75) then stopRide(false) end
+            end
+        elseif ride then
             sleep = 0
             local r = ride
             local dt = GetFrameTime()
@@ -248,5 +313,5 @@ end)
 AddEventHandler('onResourceStop', function(res)
     if res ~= GetCurrentResourceName() then return end
     if ride then stopRide(false) end
-    for _, s in pairs(stations) do for _, o in pairs(s.objs) do if DoesEntityExist(o) then DeleteObject(o) end end end
+    for _, s in pairs(stations) do for _, o in pairs(s.objs) do if DoesEntityExist(o) then DeleteEntity(o) end end end
 end)

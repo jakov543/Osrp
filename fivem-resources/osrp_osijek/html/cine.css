@@ -1,0 +1,26 @@
+/* v1.0.42 arrival film overlay */
+.cine { position: absolute; inset: 0; pointer-events: none; font-family: "Segoe UI", Arial, sans-serif; color: #fff; }
+.cine .bar { position: absolute; left: 0; right: 0; height: 11vh; background: #000; transition: transform 1.2s cubic-bezier(.2,.8,.2,1); }
+.cine .bar.top { top: 0; transform: translateY(-100%); } .cine .bar.bot { bottom: 0; transform: translateY(100%); }
+.cine.on .bar { transform: none; }
+.cine .title { position: absolute; left: 0; right: 0; top: 34vh; text-align: center; opacity: 0; transition: opacity 1.4s, transform 6s ease-out; transform: scale(1.06); }
+.cine .title.show { opacity: 1; transform: scale(1); }
+.cine .title b { display: block; font-size: 15vh; line-height: 1; font-weight: 900; letter-spacing: 3.2vh; padding-left: 3.2vh;
+  text-shadow: 0 0.6vh 4vh rgba(0,0,0,.6); background: linear-gradient(180deg, #fff 40%, #ffd89a); -webkit-background-clip: text; color: transparent; }
+.cine .title span { display: inline-block; margin-top: 2vh; font-size: 2.2vh; letter-spacing: .9vh; text-transform: uppercase; color: #ffd27a;
+  padding: .8vh 2.4vh; border-top: 1px solid rgba(255,210,122,.5); border-bottom: 1px solid rgba(255,210,122,.5); }
+.cine .lower { position: absolute; left: 5vw; bottom: 14vh; opacity: 0; transform: translateX(-2vw); transition: opacity .9s, transform .9s; }
+.cine .lower.show { opacity: 1; transform: none; }
+.cine .lower small { display: block; font-size: 1.5vh; letter-spacing: .5vh; text-transform: uppercase; color: #1fd6b6; font-weight: 800; }
+.cine .lower b { display: block; font-size: 4vh; font-weight: 800; text-shadow: 0 .3vh 2vh rgba(0,0,0,.7); }
+.cine .lower i { display: block; width: 7vh; height: .4vh; margin-top: 1vh; background: linear-gradient(90deg, #1fd6b6, #f4b740); }
+.cine .welcome { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; opacity: 0; transition: opacity 1s; }
+.cine .welcome.show { opacity: 1; }
+.cine .welcome b { display: block; font-size: 5vh; font-weight: 900; letter-spacing: .6vh; }
+.cine .welcome span { display: block; margin-top: 1.2vh; font-size: 2vh; color: #b9c6d6; letter-spacing: .3vh; }
+.cine .skip { position: absolute; right: 3vw; bottom: 3.6vh; font-size: 1.5vh; color: #9aa6b4; letter-spacing: .2vh; }
+.cine .skip kbd { padding: .2vh .8vh; border: 1px solid #5a6573; border-radius: .5vh; color: #fff; margin-right: .6vh; font-family: inherit; }
+.cine .prog { position: absolute; left: 3vw; bottom: 4.4vh; width: 18vw; height: .35vh; background: rgba(255,255,255,.12); border-radius: 1vh; overflow: hidden; }
+.cine .prog span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1fd6b6, #f4b740); transition: width .15s linear; }
+.cine .brand { position: absolute; left: 3vw; top: 3.6vh; font-size: 1.6vh; font-weight: 800; letter-spacing: .5vh; color: #d7dee8; opacity: .85; }
+.cine .brand em { font-style: normal; color: #1fd6b6; }

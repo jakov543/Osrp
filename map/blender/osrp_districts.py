@@ -129,6 +129,7 @@ def build(g):
     M_SHED_B = mat("osrp_hangar_metal_okrug_plavi", (0.20, 0.34, 0.55), rough=0.4, metal=0.7)
     M_SILO = mat("osrp_hangar_metal_silos", (0.78, 0.78, 0.76), rough=0.4, metal=0.7)
     M_FENCE = mat("osrp_fence_okrug", (0.30, 0.30, 0.32), metal=0.6)
+    M_RIVERBED = mat("osrp_soil_dno_rijeke", (0.16, 0.13, 0.09))
     FLATS = [mat(f"osrp_flats_{k}", c) for k, c in enumerate(((0.86, 0.82, 0.70), (0.80, 0.84, 0.86), (0.88, 0.76, 0.62), (0.74, 0.80, 0.72), (0.90, 0.88, 0.84)))]
     HOUSE = [mat(f"osrp_plaster_kuca_okrug_{k}", c) for k, c in enumerate(((0.92, 0.88, 0.78), (0.86, 0.80, 0.66), (0.94, 0.94, 0.90), (0.80, 0.70, 0.58)))]
     MAPRECTS, TREES, SIGNS, LANDMARKS = g["MAPRECTS"], g["TREES"], g["SIGNS"], g["LANDMARKS"]
@@ -257,8 +258,9 @@ def build(g):
                 T.quad(M_GRASS, x0, y0, x1, y1, 0.0)
                 T.box(M_BASE, (x0 + x1) / 2, (y0 + y1) / 2, -2.0, TILE, TILE, 1.97)
                 continue
-            for cx in range(10):
-                for cy in range(10):
+            n10 = int(TILE // 10)                    # v1.0.42: whole tile (was only the first 100 m -> holes by the river)
+            for cx in range(n10):
+                for cy in range(n10):
                     a, b = x0 + cx * 10, y0 + cy * 10
                     free = [(b, b + 10)]                     # cells are aligned in x, so only clip in y
                     cuts = [(RIV0, RIV1)] + [(r[2], r[3]) for r in EXCL if a + 10 > r[0] + 0.01 and a < r[1] - 0.01]
@@ -284,6 +286,9 @@ def build(g):
             for yy in (RIV0 - 1.5, RIV1 + 1.5):
                 T.box(M_STONE, (x + xe) / 2, yy, BED_Z, xe - x, 3, -BED_Z + 0.05)
         MAPRECTS.append(("water", (a + b) / 2, (RIV0 + RIV1) / 2, b - a, RIV1 - RIV0))
+        for x in range(int(a), int(b), 100):                 # v1.0.42: river bed under the water (no void under the Drava)
+            xe = min(b, x + 100)
+            T.quad(M_RIVERBED, x, RIV0, xe, RIV1, BED_Z)
     for (x, y, sx, sy) in ((XW - 1.5, 0, 3, YN - YS), (XE + 1.5, 0, 3, YN - YS), (0, YS - 1.5, XE - XW, 3), (0, YN + 1.5, XE - XW, 3)):
         cxw = (XW + XE) / 2 if sx > 3 else x
         cyw = (YS + YN) / 2 if sy > 3 else y

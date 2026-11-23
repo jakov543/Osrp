@@ -336,3 +336,51 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
   background: linear-gradient(90deg, #0ea5e9, #38bdf8); color: #04121f; }
 .sh-card button.use { background: linear-gradient(90deg, #22c55e, #4ade80); }
 .sh-empty { grid-column: 1 / -1; text-align: center; padding: 30px; color: #8ba3c4; }
+
+/* ===================== v1.0.42 HUD redesign: player card (top right), dock next to the minimap, new speedometer ===================== */
+:root { --g1: rgba(12,16,23,.82); --g2: rgba(12,16,23,.55); --edge: rgba(255,255,255,.08); --cash: #5ee08a; --bank: #74b6ff; }
+/* player card */
+.hud { top: 20px !important; right: 22px !important; width: 248px !important; padding: 12px 14px 11px !important; border-radius: 16px !important;
+  background: linear-gradient(160deg, var(--g1), var(--g2)) !important; border: 1px solid var(--edge) !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.35) !important; text-align: left !important; backdrop-filter: blur(4px); }
+.hud::before { display: block !important; content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--gold)); }
+.hud .h-top { justify-content: flex-start !important; gap: 10px !important; padding-bottom: 9px !important; margin: 0 !important;
+  border-bottom: 1px solid var(--edge) !important; }
+.hud .h-emb { width: 32px !important; height: 32px !important; }
+.hud .h-name { font-size: 14px !important; font-weight: 800; text-shadow: none !important; }
+.hud .h-job { margin-top: 3px !important; padding: 2px 9px !important; font-size: 9.5px !important; letter-spacing: 1.4px !important; }
+.hud .h-money { display: grid !important; gap: 6px !important; padding-top: 9px !important; }
+.hud .h-row { justify-content: flex-start !important; gap: 9px !important; padding: 0 !important; }
+.hud .h-row i, .hud .h-row span { display: grid !important; }
+.hud .h-row span { display: block !important; flex: 1; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: #8e9db0; }
+.hud .h-row i { width: 26px !important; height: 26px !important; border-radius: 8px !important; place-items: center; }
+.hud .h-row b { font-family: inherit !important; text-shadow: none !important; letter-spacing: .3px !important; font-variant-numeric: tabular-nums; }
+.hud .h-row.cash b { font-size: 21px !important; color: var(--cash) !important; }
+.hud .h-row.bank b { font-size: 16px !important; color: var(--bank) !important; opacity: 1 !important; }
+.hud .h-foot { display: flex !important; justify-content: space-between !important; gap: 6px !important; margin-top: 10px !important;
+  padding-top: 9px !important; border-top: 1px solid var(--edge) !important; font-size: 10.5px !important; color: #b9c6d6 !important; text-shadow: none !important; }
+.hud .h-foot span { flex: 1; text-align: center; padding: 3px 0 !important; border-radius: 7px !important; background: rgba(255,255,255,.05) !important;
+  border: none !important; font-weight: 700; letter-spacing: .5px; }
+.hud .h-delta { right: 14px !important; bottom: -28px !important; }
+
+/* dock next to the minimap: location on top, status bars below */
+.loc.dock { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; padding: 10px 12px !important; min-width: 300px;
+  border-radius: 16px !important; background: linear-gradient(160deg, var(--g1), var(--g2)) !important; border: 1px solid var(--edge) !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.35) !important; }
+.loc.dock .l-row { display: flex; align-items: center; gap: 11px; }
+.loc.dock .compass { width: 40px !important; height: 40px !important; font-size: 13px !important; border-width: 2px !important; flex: none; }
+.loc.dock .street { font-size: 15px !important; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.loc.dock .stbar { position: static !important; display: grid !important; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px !important; }
+.loc.dock .stbar .st { width: auto !important; height: 22px !important; border-radius: 7px !important; box-shadow: none !important; background: rgba(255,255,255,.06) !important; border: none; }
+.loc.dock .stbar .st.mic { width: 26px !important; }
+
+/* speedometer */
+.speedo { width: 210px !important; height: 210px !important; right: 30px !important; bottom: 30px !important; }
+.speedo::before { inset: 22px !important; background: radial-gradient(circle at 50% 30%, rgba(26,34,46,.95), rgba(8,11,16,.95)) !important;
+  border: 1px solid var(--edge); }
+.dial circle { stroke-width: 9 !important; }
+.s-speed { font-size: 58px !important; font-weight: 900 !important; text-shadow: 0 0 18px rgba(31,214,182,.25); }
+.s-unit { font-size: 9px !important; letter-spacing: 4px !important; }
+.s-gear { width: 34px !important; height: 20px !important; border-radius: 6px !important; font-size: 12px !important; }
+.s-bars { width: 112px !important; bottom: 10px !important; }
