@@ -6,17 +6,49 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="bg"></div>
-  <div class="vignette"></div>
-  <div class="top">
+  <!-- v1.0.43: animated Osijek sunset scene (drawn in script.js) -->
+  <div class="scene">
+    <div class="sky"></div>
+    <div class="sun"></div>
+    <div class="clouds" id="clouds"></div>
+    <svg class="skyline" id="skyline" viewBox="0 0 1600 420" preserveAspectRatio="xMidYMax slice"></svg>
+    <div class="river"><div class="shine"></div></div>
+  </div>
+  <div class="shade"></div>
+
+  <header>
     <img class="logo" src="logo.png" alt="OSRP" />
-  </div>
-  <div class="wrap">
-    <div class="tip" id="tip">Učitavanje grada Osijeka...</div>
-    <div class="bar"><div class="fill" id="fill"></div></div>
-    <div class="row"><span id="stage">Učitavanje</span><span id="pct">0%</span></div>
-  </div>
-  <div class="corner">OSRP &middot; V1</div>
+    <div class="brand"><small>DOBRODOŠLI U</small><b>OSIJEK ROLEPLAY</b><span>Grad na Dravi · V1</span></div>
+  </header>
+
+  <aside class="side">
+    <div class="card">
+      <h3>Novo</h3>
+      <ul>
+        <li><i>🗺️</i>Veliki Osijek - 10x veća karta, nove četvrti</li>
+        <li><i>🚲</i>Bike Osijek - izaberi bicikl i boju</li>
+        <li><i>🛍️</i>DRAVA CENTAR, STIL i VOLT trgovine</li>
+        <li><i>🌙</i>Osvijetljeni prozori i most noću</li>
+        <li><i>🍔</i>Glad i žeđ - jedi u kafiću</li>
+      </ul>
+    </div>
+    <div class="card keys">
+      <h3>Tipke</h3>
+      <div><kbd>F7</kbd>Karta i GPS</div>
+      <div><kbd>F2</kbd>Moje stvari</div>
+      <div><kbd>F10</kbd>HUD postavke</div>
+      <div><kbd>E</kbd>Razgovor / najam</div>
+      <div><kbd>F</kbd>Uzmi vozilo / kraj vožnje</div>
+    </div>
+  </aside>
+
+  <main class="load">
+    <div class="tip"><i id="tipIcon">💡</i><span id="tip">Učitavanje grada Osijeka...</span></div>
+    <div class="top"><b id="pct">0%</b><span id="stage">Pripremam grad</span></div>
+    <div class="bar"><div class="fill" id="fill"><div class="glow"></div></div></div>
+    <div class="steps" id="steps"><span>Mapa</span><span>Grad</span><span>Skripte</span><span>Ulaz</span></div>
+  </main>
+  <div class="corner">OSRP · Osijek Roleplay</div>
   <script src="script.js"></script>
 </body>
 </html>

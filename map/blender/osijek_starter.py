@@ -247,13 +247,31 @@ M_BRICK = material("osrp_red_brick", (0.45, 0.14, 0.09))
 M_ROOF = material("osrp_roof_tiles", (0.42, 0.13, 0.07))
 M_SPIRE = material("osrp_spire", (0.30, 0.09, 0.06))
 M_GLASS = material("osrp_window_glass", (0.08, 0.11, 0.15), rough=0.1, metal=0.3)
-M_PLASTER = [
+M_PLASTER = [                          # v1.0.43: 15 facade colours like the real Osijek streets (was 5)
     material("osrp_plaster_yellow", (0.86, 0.73, 0.42)),
     material("osrp_plaster_white", (0.88, 0.86, 0.82)),
     material("osrp_plaster_peach", (0.88, 0.62, 0.48)),
     material("osrp_plaster_green", (0.60, 0.70, 0.55)),
     material("osrp_plaster_grey", (0.62, 0.62, 0.64)),
+    material("osrp_plaster_ochre", (0.80, 0.58, 0.28)),
+    material("osrp_plaster_pink", (0.90, 0.66, 0.66)),
+    material("osrp_plaster_skyblue", (0.62, 0.74, 0.84)),
+    material("osrp_plaster_mint", (0.66, 0.82, 0.72)),
+    material("osrp_plaster_terracotta", (0.74, 0.42, 0.30)),
+    material("osrp_plaster_cream", (0.94, 0.88, 0.70)),
+    material("osrp_plaster_lilac", (0.74, 0.66, 0.82)),
+    material("osrp_plaster_salmon", (0.92, 0.56, 0.44)),
+    material("osrp_plaster_sage", (0.70, 0.74, 0.60)),
+    material("osrp_plaster_sand", (0.84, 0.76, 0.60)),
 ]
+_last_plaster = []
+
+
+def pick_plaster():
+    """v1.0.43: random facade colour, never the same as the last two neighbours"""
+    m = random.choice([c for c in M_PLASTER if c not in _last_plaster[-2:]])
+    _last_plaster.append(m)
+    return m
 M_POLE = material("osrp_lamp_pole", (0.10, 0.11, 0.12), rough=0.4, metal=0.8)
 M_LAMP = material("osrp_lamp_light", (1.0, 0.82, 0.55), emit=25.0)
 M_STEEL = material("osrp_bridge_steel", (0.75, 0.77, 0.80), rough=0.3, metal=1.0)
@@ -917,7 +935,7 @@ for bx in range(len(CROSS_X) - 1):
             floors = random.choice([2, 3, 3, 4, 5, 6])
             floor_h = 3.3
             h = floors * floor_h + 1.0
-            mat = random.choice(M_PLASTER)
+            mat = pick_plaster()
             for side, yy, facing in (("a", y0, -1), ("b", y1 - d, 1)):
                 cx, cy = x + w / 2, yy + d / 2
                 street_face = yy if facing == -1 else yy + d
@@ -2407,4 +2425,4 @@ PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 # v1.0.40: Veliki Osijek - new districts all around the old city (osrp_districts.py)
 import osrp_districts
 osrp_districts.build(globals())
-print(f"[OSRP] Osijek map v1.0.42: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.43: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

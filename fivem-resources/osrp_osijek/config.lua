@@ -79,7 +79,7 @@ Config.InteriorLight = false          -- (old single light) - v1.0.21 has a ligh
 
 -- ===================== city life (v1.0.11) =====================
 Config.CityRadius = 1000.0          -- size of Osijek incl. hospital + airport (metres from the centre)
-Config.MapRadius = 3200.0           -- v1.0.42: Veliki Osijek (new districts) - the drawn minimap + F7 map cover this
+Config.MapRadius = 3200.0           -- v1.0.43: Veliki Osijek (new districts) - the drawn minimap + F7 map cover this
 Config.DrawMap = true               -- landmark blips (hospital, airport ...) on the pause map
 Config.MapMode = 'nui'              -- 'nui' = real drawn minimap + big map (F7) | 'blips' = old blip rectangles
 
@@ -131,7 +131,7 @@ Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_0
                      'a_m_m_tourist_01', 'a_m_y_hipster_01', 'a_f_y_hipster_01', 'a_m_m_farmer_01', 'a_f_m_fatwhite_01' }
 
 Config.Traffic = true
-Config.TrafficCount = 24            -- v1.0.42: cars around you (road network of the whole city)
+Config.TrafficCount = 24            -- v1.0.43: cars around you (road network of the whole city)
 Config.TrafficModels = { 'asea', 'premier', 'blista', 'ingot', 'stanier', 'tailgater', 'fugitive', 'primo', 'dilettante', 'emperor',
     'asterope', 'glendale', 'warrener', 'intruder', 'surge', 'issi2', 'panto', 'rhapsody', 'minivan', 'speedo', 'mule', 'benson' }
 Config.TrafficSpeed = 13.5          -- m/s top speed in town (about 50 km/h); bypass streets have their own
@@ -210,16 +210,16 @@ Config.Bulet = {
     BaseVehicle = 'rcbandito',  -- hidden small car that does the physics under the scooter
     PropZ = -0.32, PedZ = 0.88,  -- height of the scooter model / of you on it (tune if it floats or sinks)
     AnimDict = 'anim@heists@box_carry@', AnimName = 'idle',   -- standing with hands forward on the handlebar
-    HandIK = true,                       -- v1.0.42: hands locked on the grips, head looks into turns
-    LeanDeg = 12.0, PitchDeg = 5.0,  -- v1.0.42 own riding animation: lean into turns / forward + back
-    -- v1.0.42: use a real add-on scooter VEHICLE instead of our own model (you ride it like a bike, GTA animations).
+    HandIK = true,                       -- v1.0.43: hands locked on the grips, head looks into turns
+    LeanDeg = 12.0, PitchDeg = 5.0,  -- v1.0.43 own riding animation: lean into turns / forward + back
+    -- v1.0.43: use a real add-on scooter VEHICLE instead of our own model (you ride it like a bike, GTA animations).
     -- Put the vehicle mod in its own stream resource on your server (only with the mod author's permission), ensure it
     -- BEFORE osrp_osijek, then write its spawn name here, e.g. VehicleModel = 'escooter'. Empty = our BULET model.
     VehicleModel = '',
     Livery = nil,             -- livery number of the add-on (nil = its default)
 }
 
--- ===================================================================== v1.0.42: settings from server.cfg
+-- ===================================================================== v1.0.43: settings from server.cfg
 -- Every line above is the default. A server owner can change the most used ones in server.cfg without
 -- touching this file (setr = also sent to the players), for example:
 --   setr osrp_traffic 30            setr osrp_traffic_on true      setr osrp_language hr

@@ -109,3 +109,26 @@ Config.StartCash = tonumber(cv('osrp_start_cash', Config.StartCash)) or Config.S
 Config.StartBank = tonumber(cv('osrp_start_bank', Config.StartBank)) or Config.StartBank
 Config.RespawnSeconds = tonumber(cv('osrp_respawn', Config.RespawnSeconds)) or Config.RespawnSeconds
 Config.RadioChannel = tonumber(cv('osrp_radio_channel', Config.RadioChannel)) or Config.RadioChannel
+
+-- ---------- v1.0.43 hunger + thirst (shown as rings in the HUD) ----------
+Config.Needs = {
+    Enabled = true,
+    HungerMinutes = 90,       -- from full to empty
+    ThirstMinutes = 60,
+    Damage = true,            -- lose a little health while starving / thirsty
+    Items = {                 -- what NPC food and drinks give back (0-100)
+        limunada = { thirst = 40 }, sok = { thirst = 40 }, pivo = { thirst = 25 }, kava = { thirst = 15, hunger = 5 },
+        burek = { hunger = 45 }, sendvic = { hunger = 40, thirst = 5 }, pizza = { hunger = 55 },
+    },
+}
+
+-- ---------- v1.0.43 cinematic crash camera (slow motion when you crash / hit someone / get hit) ----------
+Config.CrashCam = {
+    Enabled = true,
+    MinSpeedKmh = 45,       -- crash only counts above this speed
+    CrashDrop = 8.5,        -- speed lost in one moment (m/s) that counts as a crash
+    SlowMo = 0.22,          -- game speed during the shot (1.0 = normal)
+    Duration = 2400,        -- ms
+    Cooldown = 20,          -- seconds before it can happen again
+}
+Config.CrashCam.Enabled = tostring(GetConvar('osrp_crashcam', Config.CrashCam.Enabled and 'true' or 'false')) == 'true'

@@ -415,3 +415,115 @@ function setDeath(d) {
     if (d.action === 'shopClose') { $('shop').classList.add('hidden'); $('clothes').classList.add('hidden'); }
   });
 })();
+
+// ===================== v1.0.43 HUD (#hud2) - replaces the old HUD functions =====================
+const H2 = { opts: { srv: true, money: true, head: true, st: true, car: true, mph: false, scale: 100 }, needs: { on: true, hu: 100, th: 100 } };
+try { Object.assign(H2.opts, JSON.parse(localStorage.getItem('osrp_hud') || '{}')); } catch (e) {}
+function h2Apply() {
+  const r = $('hud2');
+  ['srv', 'money', 'head', 'st', 'car'].forEach((k) => r.classList.toggle('no-' + k, !H2.opts[k]));
+  r.style.transform = `scale(${H2.opts.scale / 100})`;
+  r.style.width = (10000 / H2.opts.scale) + '%'; r.style.height = (10000 / H2.opts.scale) + '%';
+  $('h2Unit').textContent = H2.opts.mph ? 'MPH' : 'KM/H';
+  document.querySelectorAll('#h2Set input[type=checkbox]').forEach((c) => { c.checked = !!H2.opts[c.dataset.o]; });
+  $('h2Scale').value = H2.opts.scale; $('h2ScaleV').textContent = H2.opts.scale + '%';
+  try { localStorage.setItem('osrp_hud', JSON.stringify(H2.opts)); } catch (e) {}
+}
+document.querySelectorAll('#h2Set input[type=checkbox]').forEach((c) => c.addEventListener('change', () => { H2.opts[c.dataset.o] = c.checked; h2Apply(); }));
+$('h2Scale').addEventListener('input', (e) => { H2.opts.scale = +e.target.value; h2Apply(); });
+$('h2SetClose').addEventListener('click', () => post('hudSettingsClose'));
+window.addEventListener('keydown', (e) => { if (!$('h2Set').classList.contains('hidden') && (e.key === 'Escape' || e.key === 'F10')) post('hudSettingsClose'); });
+(() => { const g = $('h2Rpm'); for (let i = 0; i < 24; i++) { const s = document.createElement('i'); if (i >= 15) s.className = i >= 20 ? 'r' : 'y'; g.appendChild(s); } })();
+h2Apply();
+
+function ring(k, v) {
+  const el = document.querySelector(`.ring.${k}`);
+  if (!el) return;
+  v = Math.max(0, Math.min(100, v));
+  el.querySelector('.val').style.strokeDasharray = `${v} 100`;
+  return el;
+}
+const h2shown = { cash: null, bank: null };
+function h2Money(id, key, to) {
+  const el = $(id), from = h2shown[key];
+  h2shown[key] = to;
+  el.textContent = money(to);
+  if (from === null || from === to) return;
+  const dl = $('h2Delta');
+  dl.textContent = (to > from ? '+' : '-') + money(Math.abs(to - from)) + (key === 'bank' ? ' banka' : '');
+  dl.className = 'h2-delta ' + (to > from ? 'plus' : 'minus');
+  void dl.offsetWidth; dl.classList.add('show');
+}
+function setHud(d) {
+  $('hud2').classList.remove('hidden');
+  $('h2Name').textContent = d.name || '—';
+  $('h2Job').textContent = d.job || 'Nezaposlen';
+  h2Money('h2Cash', 'cash', Number(d.cash || 0));
+  h2Money('h2Bank', 'bank', Number(d.bank || 0));
+}
+function setLoc(d) {
+  const show = !!d.show;
+  $('h2Head').style.visibility = show ? 'visible' : 'hidden';
+  $('h2St').style.visibility = show ? 'visible' : 'hidden';
+  if (d.rx !== undefined) {
+    const s = H2.opts.scale / 100;
+    $('h2Head').style.left = `calc(${(d.rx * 100).toFixed(3)}vw / ${s} + 6px)`;
+    $('h2Head').style.top = `calc(${(d.ry * 100).toFixed(3)}vh / ${s} - 10px)`;
+    $('h2St').style.left = `calc(${(d.rr * 100).toFixed(3)}vw / ${s} + 16px)`;
+    $('h2St').style.top = `calc(${(d.rb * 100).toFixed(3)}vh / ${s} - 4px)`;
+  }
+  $('h2Dir').textContent = d.dir || 'S';
+  $('h2Deg').textContent = (d.deg !== undefined ? d.deg : 0) + '°';
+  $('h2Street').textContent = d.street || '—';
+  $('h2Zone').textContent = d.zone || 'Osijek';
+  if (d.time) $('h2Time').textContent = d.time;
+}
+function setStatus(d) {
+  const hp = ring('hp', d.hp); if (hp) hp.classList.toggle('low', d.hp < 25);
+  ring('ar', d.ar);
+  ring('mic', 100).classList.toggle('talk', !!d.talk);
+  const used = d.st || 0;                                        // stamina used; ring shows what is left, only while running
+  const sp = ring('sp', 100 - used); if (sp) sp.classList.toggle('off', used <= 1);
+  $('h2Id').textContent = 'ID ' + d.id;
+  $('h2Online').textContent = d.online || 1;
+  if (d.time) $('h2Time').textContent = d.time;
+  ring('hu', H2.needs.hu); ring('th', H2.needs.th);
+}
+function setVeh(d) {
+  const c = $('h2Car');
+  if (!d.show) { c.classList.add('hidden'); return; }
+  c.classList.remove('hidden');
+  $('h2Kmh').textContent = H2.opts.mph ? Math.round(d.speed * 0.621) : d.speed;
+  const n = Math.round(Math.max(0, Math.min(1, d.rpm)) * 24);
+  document.querySelectorAll('#h2Rpm i').forEach((s, i) => s.classList.toggle('on', i < n));
+  const g = $('h2GearTxt');
+  const gear = d.reverse ? 'R' : (d.speed < 1 ? 'N' : String(d.gear || 1));
+  g.textContent = gear; g.classList.toggle('r', gear === 'R'); g.classList.toggle('n', gear === 'N');
+  $('h2Fuel').style.width = (d.fuel * 100).toFixed(0) + '%'; $('h2Fuel').classList.toggle('low', d.fuel < 0.15);
+  $('h2Eng').style.width = (d.engine * 100).toFixed(0) + '%'; $('h2Eng').classList.toggle('low', d.engine < 0.3);
+  $('h2Lt').classList.toggle('on', !!d.lights);
+}
+window.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.action === 'needs') {
+    H2.needs = { on: d.on !== false, hu: d.hunger, th: d.thirst };
+    document.querySelector('.ring.hu').classList.toggle('off', !H2.needs.on);
+    document.querySelector('.ring.th').classList.toggle('off', !H2.needs.on);
+    ring('hu', d.hunger).classList.toggle('low', d.hunger < 20);
+    ring('th', d.thirst).classList.toggle('low', d.thirst < 20);
+  }
+  if (d.action === 'showHud') $('hud2').classList.remove('hidden');
+  if (d.action === 'hideHud') $('hud2').classList.add('hidden');
+  if (d.action === 'hudSettings') $('h2Set').classList.toggle('hidden', !d.open);
+});
+
+// v1.0.43 crash cinematic overlay
+window.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.action !== 'crashcam') return;
+  const c = $('crash');
+  if (d.on) {
+    $('crashT').textContent = d.title || 'SUDAR'; $('crashS').textContent = d.sub || '';
+    c.classList.remove('hidden'); void c.offsetWidth; c.classList.add('on');
+  } else { c.classList.remove('on'); setTimeout(() => c.classList.add('hidden'), 400); }
+});

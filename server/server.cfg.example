@@ -39,6 +39,8 @@ setr osrp_start_cash 500
 setr osrp_start_bank 2000
 # smrt: sekunde do respawna
 setr osrp_respawn 60
+# filmska kamera pri sudaru (usporeno kad se zabiješ / udariš nekoga / udare tebe)
+setr osrp_crashcam true
 # radio (VOLT trgovina): kanal za pma-voice
 setr osrp_radio_channel 1
 

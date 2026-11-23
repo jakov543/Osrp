@@ -1,5 +1,5 @@
 =====================================================================
-  OSRP | Osijek Roleplay - SERVER PAKET (v1.0.42)
+  OSRP | Osijek Roleplay - SERVER PAKET (v1.0.43)
 =====================================================================
 
 U paketu:
@@ -71,6 +71,7 @@ U paketu:
    setr osrp_start_bank 2000     početni novac u banci
    setr osrp_respawn 60          sekunde do respawna nakon smrti
    setr osrp_radio_channel 1     kanal radija (pma-voice)
+   setr osrp_crashcam true       filmska kamera pri sudaru (true/false)
 
  B) Sve ostalo je u config datotekama (otvori u Notepad++ / VS Code):
 
@@ -98,6 +99,7 @@ U paketu:
 ---------------------------------------------------------------------
  F7         karta Osijeka (GPS, popis mjesta, pretraga)
  F2         moje stvari (mobitel, radio, tablet ...)
+ F10        HUD postavke (što se vidi, veličina, km/h ili mph)
  E          razgovor s NPC-om / najam BULET romobila
  F          kraj vožnje romobilom / uzmi parkirano vozilo
  X          spremi mobitel / radio iz ruke

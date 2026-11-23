@@ -130,8 +130,13 @@ def build(g):
     M_SILO = mat("osrp_hangar_metal_silos", (0.78, 0.78, 0.76), rough=0.4, metal=0.7)
     M_FENCE = mat("osrp_fence_okrug", (0.30, 0.30, 0.32), metal=0.6)
     M_RIVERBED = mat("osrp_soil_dno_rijeke", (0.16, 0.13, 0.09))
-    FLATS = [mat(f"osrp_flats_{k}", c) for k, c in enumerate(((0.86, 0.82, 0.70), (0.80, 0.84, 0.86), (0.88, 0.76, 0.62), (0.74, 0.80, 0.72), (0.90, 0.88, 0.84)))]
-    HOUSE = [mat(f"osrp_plaster_kuca_okrug_{k}", c) for k, c in enumerate(((0.92, 0.88, 0.78), (0.86, 0.80, 0.66), (0.94, 0.94, 0.90), (0.80, 0.70, 0.58)))]
+    FLATS = [mat(f"osrp_flats_{k}", c) for k, c in enumerate(((0.86, 0.82, 0.70), (0.80, 0.84, 0.86), (0.88, 0.76, 0.62), (0.74, 0.80, 0.72), (0.90, 0.88, 0.84),
+                                                              (0.86, 0.70, 0.58), (0.72, 0.78, 0.88), (0.92, 0.84, 0.60), (0.80, 0.72, 0.80), (0.70, 0.84, 0.80)))]
+    HOUSE = [mat(f"osrp_plaster_kuca_okrug_{k}", c) for k, c in enumerate((
+        (0.92, 0.88, 0.78), (0.86, 0.80, 0.66), (0.94, 0.94, 0.90), (0.80, 0.70, 0.58), (0.90, 0.72, 0.42), (0.92, 0.66, 0.62),
+        (0.66, 0.78, 0.88), (0.68, 0.84, 0.70), (0.78, 0.46, 0.34), (0.96, 0.90, 0.66), (0.76, 0.68, 0.84), (0.86, 0.60, 0.46)))]
+    ROOFS = [mat("osrp_roof_tiles_okrug", (0.45, 0.16, 0.10)), mat("osrp_roof_tiles_okrug_smedi", (0.32, 0.20, 0.14)),
+             mat("osrp_roof_tiles_okrug_tamni", (0.20, 0.20, 0.22)), mat("osrp_roof_tiles_okrug_narancasti", (0.62, 0.30, 0.14))]
     MAPRECTS, TREES, SIGNS, LANDMARKS = g["MAPRECTS"], g["TREES"], g["SIGNS"], g["LANDMARKS"]
     NW = [mat("osrp_nightwin_warm", (1.0, 0.74, 0.38)), mat("osrp_nightwin_soft", (1.0, 0.86, 0.6)), mat("osrp_nightwin_cool", (0.78, 0.86, 1.0))]
 
@@ -401,7 +406,7 @@ def build(g):
                 hy = edge - s_ * (3 + 5 + d / 2)          # 3 m sidewalk + 5 m front yard
                 T.box(rnd.choice(HOUSE), x + w / 2, hy, 0.0, w, d, fl * 3.0)
                 lit(x + w / 2, hy, w, d, fl, 0.4)
-                T.roof(M_ROOFTILE, x + w / 2, hy, fl * 3.0, w, d, rnd.uniform(2.2, 3.0), along_x=True)
+                T.roof(rnd.choice(ROOFS), x + w / 2, hy, fl * 3.0, w, d, rnd.uniform(2.2, 3.0), along_x=True)
                 T.box(M_FENCE, x + w / 2 - 1.5, edge - s_ * 3.6, 0.0, w + 4, 0.1, 1.0)          # street fence, gate gap at the drive
                 T.quad(M_CONC, x + w + 0.6, min(edge - s_ * 3, hy), x + w + 3.6, max(edge - s_ * 3, hy), 0.03)
                 if rnd.random() < 0.75:

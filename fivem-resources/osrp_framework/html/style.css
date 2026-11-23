@@ -384,3 +384,111 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 .s-unit { font-size: 9px !important; letter-spacing: 4px !important; }
 .s-gear { width: 34px !important; height: 20px !important; border-radius: 6px !important; font-size: 12px !important; }
 .s-bars { width: 112px !important; bottom: 10px !important; }
+
+/* ===================== v1.0.43 HUD (server card top right, heading card + status rings by the minimap, car HUD) ===================== */
+#hud, #loc, #speedo { display: none !important; }                  /* old HUD parts replaced by #hud2 */
+.h2 { position: absolute; inset: 0; pointer-events: none; font-family: "Segoe UI", Arial, sans-serif; color: #fff;
+  --glass: rgba(20, 24, 30, .62); --edge: rgba(255,255,255,.10); --sh: 0 8px 26px rgba(0,0,0,.35); transform-origin: 0 0; }
+.h2 svg { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.h2-gear { position: absolute; left: 24px; top: 24px; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--edge);
+  background: var(--glass); color: #e6edf5; display: grid; place-items: center; box-shadow: var(--sh); pointer-events: auto; cursor: pointer; backdrop-filter: blur(6px); }
+.h2-gear svg { width: 20px; height: 20px; }
+/* server card */
+.h2-srv { position: absolute; right: 18px; top: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+.h2-pill { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 14px; background: var(--glass);
+  border: 1px solid var(--edge); box-shadow: var(--sh); backdrop-filter: blur(6px); }
+.h2-pill img { width: 28px; height: 28px; }
+.h2-pill small { display: block; font-size: 9px; font-weight: 700; letter-spacing: 1.6px; color: #a9b4c2; }
+.h2-pill b { display: block; font-size: 14px; font-weight: 900; letter-spacing: .6px; }
+.h2-chips { display: flex; gap: 6px; }
+.h2-chips span { display: flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: var(--glass);
+  border: 1px solid var(--edge); font-size: 12px; font-weight: 700; backdrop-filter: blur(6px); }
+.h2-chips svg { width: 13px; height: 13px; color: #c9d3df; }
+.h2-chips i { font-style: normal; font-variant-numeric: tabular-nums; }
+.h2-money .cash i { color: #6ee7a0; } .h2-money .bank i { color: #8cc4ff; }
+.h2-money .cash svg { color: #6ee7a0; } .h2-money .bank svg { color: #8cc4ff; }
+.h2-who { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #d6dee8; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+.h2-who b { font-weight: 800; }
+.h2-who em { font-style: normal; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+  color: #0b1118; background: linear-gradient(90deg, #1fd6b6, #f4b740); text-shadow: none; }
+.h2-who span { opacity: .75; }
+.h2-delta { font-weight: 800; font-size: 14px; opacity: 0; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+.h2-delta.show { animation: delta 2.2s ease forwards; } .h2-delta.plus { color: #6ee7a0; } .h2-delta.minus { color: #ff7b7b; }
+/* heading card above the minimap */
+.h2-head { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 12px; border-radius: 16px; background: var(--glass);
+  border: 1px solid var(--edge); box-shadow: var(--sh); backdrop-filter: blur(6px); transform: translateY(-100%); min-width: 170px; max-width: 330px; }
+.h2-dir { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 900;
+  border: 1.5px solid rgba(255,255,255,.55); flex: none; }
+.h2-deg small, .h2-street small { display: block; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #a9b4c2; text-transform: uppercase; }
+.h2-deg b { display: block; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.h2-street { margin-left: 4px; padding-left: 10px; border-left: 2px solid #ec4899; min-width: 0; }
+.h2-street b { display: block; font-size: 14px; font-weight: 900; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* status rings next to the minimap */
+.h2-st { position: absolute; display: flex; gap: 10px; transform: translateY(-100%); }
+.ring { position: relative; width: 44px; height: 44px; transition: width .35s, opacity .35s, margin .35s; }
+.ring.off { width: 0; opacity: 0; margin-left: -10px; }
+.ring > svg:first-child { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { stroke-width: 3; fill: rgba(16,20,26,.55); }
+.ring .trk { stroke: rgba(255,255,255,.12); }
+.ring .val { stroke: var(--c); fill: none; stroke-dasharray: 100 100; transition: stroke-dasharray .4s; filter: drop-shadow(0 0 4px var(--c)); }
+.ring .ic { position: absolute; left: 50%; top: 50%; width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; color: var(--c); }
+.ring .ic.fill { fill: var(--c); stroke: none; }
+.ring.mic { --c: #e8eef6; } .ring.mic.talk { --c: #22c55e; }
+.ring.hp { --c: #22c55e; } .ring.hp.low { --c: #ef4444; animation: blink 1s infinite; }
+.ring.ar { --c: #3b82f6; } .ring.hu { --c: #f97316; } .ring.th { --c: #22b8e6; } .ring.sp { --c: #facc15; }
+.ring.hu.low, .ring.th.low { animation: blink 1.2s infinite; }
+/* car HUD */
+.h2-car { position: absolute; right: 26px; bottom: 26px; width: 270px; padding: 14px 16px 12px; border-radius: 20px; background: var(--glass);
+  border: 1px solid var(--edge); box-shadow: var(--sh); backdrop-filter: blur(6px); }
+.car-top { display: flex; align-items: flex-end; justify-content: space-between; }
+.car-spd b { font-size: 54px; line-height: .9; font-weight: 900; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.car-spd small { margin-left: 6px; font-size: 10px; font-weight: 800; letter-spacing: 2.5px; color: #a9b4c2; }
+.car-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.car-side .gear { min-width: 34px; padding: 3px 8px; border-radius: 9px; text-align: center; font-weight: 900; font-size: 15px;
+  background: rgba(255,255,255,.1); border: 1px solid var(--edge); }
+.car-side .gear.r { background: #ef4444; } .car-side .gear.n { color: #facc15; }
+.car-side .lt { width: 26px; height: 26px; display: grid; place-items: center; color: #5b6573; }
+.car-side .lt.on { color: #7dd3fc; filter: drop-shadow(0 0 6px #38bdf8); }
+.car-side .lt svg { width: 18px; height: 18px; }
+.car-rpm { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; height: 9px; margin: 12px 0 10px; }
+.car-rpm i { border-radius: 2px; background: rgba(255,255,255,.1); transition: background .08s; }
+.car-rpm i.on { background: #1fd6b6; } .car-rpm i.on.y { background: #f4b740; } .car-rpm i.on.r { background: #ef4444; }
+.car-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.car-bars span { display: flex; align-items: center; gap: 7px; }
+.car-bars svg { width: 15px; height: 15px; color: #a9b4c2; flex: none; }
+.car-bars i { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.car-bars u { display: block; height: 100%; width: 100%; border-radius: 3px; transition: width .4s; }
+.car-bars .fuel u { background: linear-gradient(90deg, #f97316, #f4b740); } .car-bars .eng u { background: linear-gradient(90deg, #1fd6b6, #22c55e); }
+.car-bars u.low { background: #ef4444 !important; animation: blink 1s infinite; }
+/* settings */
+.h2-set { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.35); pointer-events: auto; }
+.set-box { width: 360px; padding: 18px 20px; border-radius: 18px; background: rgba(16,20,27,.96); border: 1px solid var(--edge); box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+.set-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.set-head b { font-size: 17px; } .set-head button { width: 30px; height: 30px; border-radius: 9px; border: none; background: #232a35; color: #fff; cursor: pointer; }
+.set-box label { display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; }
+.set-box input[type=checkbox] { width: 16px; height: 16px; accent-color: #1fd6b6; }
+.set-row { display: flex; align-items: center; gap: 10px; padding: 12px 0 6px; font-size: 13px; }
+.set-row input { flex: 1; accent-color: #1fd6b6; } .set-row em { font-style: normal; width: 40px; text-align: right; color: #a9b4c2; }
+.set-box small { color: #8592a3; font-size: 11px; }
+.h2.no-srv .h2-pill, .h2.no-srv .h2-chips:not(.h2-money), .h2.no-srv .h2-who { display: none; }
+.h2.no-money .h2-money { display: none; } .h2.no-head .h2-head { display: none; } .h2.no-st .h2-st { display: none; } .h2.no-car .h2-car { display: none !important; }
+.h2-who { padding: 4px 6px 4px 10px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); text-shadow: none; }
+
+/* v1.0.43 crash cinematic */
+.crash { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+.crash .cb { position: absolute; left: 0; right: 0; height: 12vh; background: #000; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.crash .cb.top { top: 0; transform: translateY(-100%); } .crash .cb.bot { bottom: 0; transform: translateY(100%); }
+.crash.on .cb { transform: none; }
+.crash .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.crash.on .flash { animation: cflash .5s ease-out; }
+@keyframes cflash { 0% { opacity: .85; } 100% { opacity: 0; } }
+.crash::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 22vh rgba(0,0,0,.75); opacity: 0; transition: opacity .3s; }
+.crash.on::after { opacity: 1; }
+.crash .ct { position: absolute; left: 5vw; bottom: 15vh; opacity: 0; transform: translateX(-3vw); transition: opacity .4s .15s, transform .6s .15s cubic-bezier(.2,.8,.2,1); }
+.crash.on .ct { opacity: 1; transform: none; }
+.crash .ct small { display: block; font-size: 1.4vh; letter-spacing: .6vh; color: #f4b740; font-weight: 800; }
+.crash .ct b { display: block; font-size: 6vh; font-weight: 900; letter-spacing: .5vh; font-style: italic; text-shadow: 0 .4vh 2vh rgba(0,0,0,.7);
+  background: linear-gradient(180deg, #fff 40%, #ffb4a0); -webkit-background-clip: text; color: transparent; }
+.crash .ct span { display: inline-block; margin-top: .6vh; padding: .3vh 1.2vh; font-size: 1.8vh; font-weight: 800; letter-spacing: .3vh;
+  background: #ef4444; border-radius: .4vh; }
+.crash .ct span:empty { display: none; }

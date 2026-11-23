@@ -151,8 +151,26 @@ CreateThread(function()
 end)
 
 -- drinks from the beach bar
+local FOOD = { burek = 'prop_food_bs_burger2', sendvic = 'prop_sandwich_01', pizza = 'prop_pizza_box_01' }
 RegisterNetEvent('osrp_osijek:drink', function(item)
     local ped = PlayerPedId()
+    if FOOD[item] then                                        -- v1.0.43 food: eat animation
+        local h = joaat(item == 'pizza' and 'prop_cs_burger_01' or FOOD[item])
+        if not IsModelInCdimage(h) then h = joaat('prop_cs_burger_01') end
+        RequestModel(h)
+        local t = GetGameTimer()
+        while not HasModelLoaded(h) and GetGameTimer() - t < 3000 do Wait(0) end
+        local obj = HasModelLoaded(h) and CreateObject(h, 0.0, 0.0, 0.0, true, true, false) or nil
+        RequestAnimDict('mp_player_inteat@burger')
+        t = GetGameTimer()
+        while not HasAnimDictLoaded('mp_player_inteat@burger') and GetGameTimer() - t < 3000 do Wait(0) end
+        if obj then AttachEntityToEntity(obj, ped, GetPedBoneIndex(ped, 18905), 0.13, 0.05, 0.02, -50.0, 16.0, 60.0, true, true, false, true, 1, true) end
+        TaskPlayAnim(ped, 'mp_player_inteat@burger', 'mp_player_int_eat_burger', 8.0, -8.0, 4500, 49, 0, false, false, false)
+        Wait(4500)
+        if obj and DoesEntityExist(obj) then DeleteObject(obj) end
+        SetModelAsNoLongerNeeded(h)
+        return
+    end
     local model = (item == 'pivo') and 'prop_beer_bottle' or (item == 'kava' and 'p_amb_coffeecup_01' or 'prop_ld_flow_bottle')
     local h = joaat(model)
     RequestModel(h)

@@ -69,6 +69,8 @@ CreateThread(function()
                 dir = direction(GetGameplayCamRot(0).z % 360),
                 time = ('%02d:%02d'):format(GetClockHours(), GetClockMinutes()),
                 left = mr, bottom = mb, show = radar,
+                rx = mx, ry = my, rr = mr, rb = mb,                                     -- v1.0.43: whole radar rect for the new HUD
+                deg = math.floor((360.0 - GetGameplayCamRot(0).z % 360) % 360),
             }
             local key = json.encode(data)
             if key ~= last.loc then last.loc = key send('loc', data) end

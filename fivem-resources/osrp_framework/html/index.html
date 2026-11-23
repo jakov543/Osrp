@@ -179,6 +179,70 @@
     </div>
   </div>
 
+  <!-- ===================== v1.0.43 HUD (server card, heading card, status rings, car HUD, settings) ===================== -->
+  <div id="hud2" class="h2 hidden">
+    <button class="h2-gear" title="HUD postavke (F10)"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <div class="h2-srv" id="h2Srv">
+      <div class="h2-pill"><img src="emblem.png" alt="" /><div><small>SERVER</small><b>OSIJEK ROLEPLAY</b></div></div>
+      <div class="h2-chips">
+        <span><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg><i id="h2Online">1</i></span>
+        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><i id="h2Time">00:00</i></span>
+      </div>
+      <div class="h2-chips h2-money" id="h2Money">
+        <span class="cash"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg><i id="h2Cash">$0</i></span>
+        <span class="bank"><svg viewBox="0 0 24 24"><path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg><i id="h2Bank">$0</i></span>
+      </div>
+      <div class="h2-who"><b id="h2Name">—</b><em id="h2Job">—</em><span id="h2Id">ID 0</span></div>
+      <div id="h2Delta" class="h2-delta"></div>
+    </div>
+    <div class="h2-head" id="h2Head">
+      <div class="h2-dir" id="h2Dir">S</div>
+      <div class="h2-deg"><small>SMJER</small><b id="h2Deg">0°</b></div>
+      <div class="h2-street"><b id="h2Street">—</b><small id="h2Zone">OSIJEK</small></div>
+    </div>
+    <div class="h2-st" id="h2St">
+      <div class="ring mic" data-k="mic"><svg viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="19" pathLength="100"/><circle class="val" cx="22" cy="22" r="19" pathLength="100"/></svg>
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+      <div class="ring hp" data-k="hp"><svg viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="19" pathLength="100"/><circle class="val" cx="22" cy="22" r="19" pathLength="100"/></svg>
+        <svg class="ic fill" viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.5 12 21 12 21z"/></svg></div>
+      <div class="ring ar" data-k="ar"><svg viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="19" pathLength="100"/><circle class="val" cx="22" cy="22" r="19" pathLength="100"/></svg>
+        <svg class="ic fill" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5z"/></svg></div>
+      <div class="ring hu" data-k="hu"><svg viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="19" pathLength="100"/><circle class="val" cx="22" cy="22" r="19" pathLength="100"/></svg>
+        <svg class="ic" viewBox="0 0 24 24"><path d="M7 3v8a2 2 0 0 0 4 0V3M9 3v18M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/></svg></div>
+      <div class="ring th" data-k="th"><svg viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="19" pathLength="100"/><circle class="val" cx="22" cy="22" r="19" pathLength="100"/></svg>
+        <svg class="ic fill" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></div>
+      <div class="ring sp off" data-k="sp"><svg viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="19" pathLength="100"/><circle class="val" cx="22" cy="22" r="19" pathLength="100"/></svg>
+        <svg class="ic fill" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
+    </div>
+    <div class="h2-car hidden" id="h2Car">
+      <div class="car-top">
+        <div class="car-spd"><b id="h2Kmh">0</b><small id="h2Unit">KM/H</small></div>
+        <div class="car-side"><span class="gear" id="h2GearTxt">N</span><span class="lt" id="h2Lt"><svg viewBox="0 0 24 24"><path d="M3 12h4M4 7l3 2M4 17l3-2M11 6c5 0 9 2.7 9 6s-4 6-9 6V6z"/></svg></span></div>
+      </div>
+      <div class="car-rpm" id="h2Rpm"></div>
+      <div class="car-bars">
+        <span class="fuel"><svg viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16M3 21h13M15 9h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg><i><u id="h2Fuel"></u></i></span>
+        <span class="eng"><svg viewBox="0 0 24 24"><path d="M5 9h3l2-2h5l2 3h2v6h-2l-2 2H9l-2-2H5zM2 11v4"/></svg><i><u id="h2Eng"></u></i></span>
+      </div>
+    </div>
+    <div class="h2-set hidden" id="h2Set">
+      <div class="set-box">
+        <div class="set-head"><b>HUD postavke</b><button id="h2SetClose">✕</button></div>
+        <label><input type="checkbox" data-o="srv" checked /> Server kartica (igrači, vrijeme)</label>
+        <label><input type="checkbox" data-o="money" checked /> Novac</label>
+        <label><input type="checkbox" data-o="head" checked /> Smjer i ulica</label>
+        <label><input type="checkbox" data-o="st" checked /> Statusi (zdravlje, hrana, voda)</label>
+        <label><input type="checkbox" data-o="car" checked /> Brzinomjer u vozilu</label>
+        <label><input type="checkbox" data-o="mph" /> Brzina u mph</label>
+        <div class="set-row"><span>Veličina</span><input type="range" min="80" max="125" step="5" value="100" id="h2Scale" /><em id="h2ScaleV">100%</em></div>
+        <small>F10 otvara / zatvara ove postavke.</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- v1.0.43 crash cinematic overlay -->
+  <div id="crash" class="crash hidden"><div class="cb top"></div><div class="cb bot"></div><div class="flash"></div>
+    <div class="ct"><small>OSIJEK</small><b id="crashT">SUDAR</b><span id="crashS"></span></div></div>
   <script src="app.js"></script>
 </body>
 </html>

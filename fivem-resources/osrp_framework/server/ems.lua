@@ -131,7 +131,8 @@ RegisterNetEvent('osrp:npcHeal', function()
     notify(src, ('Plaćeno ~r~$%d~s~ (s %s).'):format(Config.HealPrice, acct))
 end)
 
-local SHOP = { limunada = { 5, 'Limunada' }, pivo = { 6, 'Pivo' }, kava = { 3, 'Kava' }, sok = { 4, 'Sok' } }
+local SHOP = { limunada = { 5, 'Limunada' }, pivo = { 6, 'Pivo' }, kava = { 3, 'Kava' }, sok = { 4, 'Sok' },
+              burek = { 4, 'Burek' }, sendvic = { 5, 'Sendvič' }, pizza = { 7, 'Pizza' } }   -- v1.0.43 food
 RegisterNetEvent('osrp:npcBuy', function(item)
     local src = source
     local it = SHOP[item]
