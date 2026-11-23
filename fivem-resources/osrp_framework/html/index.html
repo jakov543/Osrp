@@ -12,6 +12,31 @@
     <div class="ld-bar"><span id="ldBar"></span></div>
   </div>
 
+  <!-- v1.0.45: GTA V style character switch (sky above Osijek + character wheel) -->
+  <div id="sw" class="sw hidden">
+    <div class="sw-top"><img src="emblem.png" alt="" /><div><small>ODABIR LIKA</small><b id="swServer">OSIJEK ROLEPLAY</b></div></div>
+    <div class="sw-wheel" id="swWheel">
+      <div class="sw-ring"></div>
+      <div class="sw-center" id="swCenter"><small id="swCJob">—</small><b id="swCName">—</b></div>
+    </div>
+    <div class="sw-card" id="swCard">
+      <div class="sw-card-h"><span class="dot" id="swDot"></span><div><b id="swName">—</b><small id="swJob">—</small></div></div>
+      <div class="sw-rows">
+        <div><small>Gotovina</small><b id="swCash">$0</b></div>
+        <div><small>Banka</small><b id="swBank">$0</b></div>
+        <div><small>Rođen/a</small><b id="swDob">—</b></div>
+        <div><small>Državljanstvo</small><b id="swNat">—</b></div>
+      </div>
+      <div class="sw-btns"><button class="sw-play" id="swPlay">Igraj</button><button class="sw-del" id="swDel">Obriši</button></div>
+    </div>
+    <div class="sw-spawn hidden" id="swSpawn">
+      <h2>Gdje te spustiti?</h2><p id="swWho">—</p>
+      <div class="sw-spawns" id="swSpawns"></div>
+      <div class="sw-btns"><button class="sw-ghost" id="swBack">Natrag</button><button class="sw-play" id="swGo" disabled>Prebaci se</button></div>
+    </div>
+    <div class="sw-keys"><span><kbd>←</kbd><kbd>→</kbd> odaberi</span><span><kbd>ENTER</kbd> igraj</span><span><kbd>N</kbd> novi lik</span><span><kbd>DEL</kbd> obriši</span></div>
+  </div>
+
   <!-- v1.0.16: character selection (multicharacter) + identity creator + spawn selection -->
   <div id="menu" class="menu hidden">
     <div class="m-side">

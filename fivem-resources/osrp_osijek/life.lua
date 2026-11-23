@@ -161,7 +161,10 @@ CreateThread(function()
                         end
                         SetVehicleDoorsLocked(v, 2)
                         SetEntityAsMissionEntity(v, true, true)
-                        SetVehicleNumberPlateText(v, sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK')
+                        local isPol = false
+                        for _, m in ipairs((Config.Liveries or {}).PoliceModels or {}) do if sv[5] == m then isPol = true end end
+                        if isPol then SetVehicleColours(v, 111, 111) end
+                        SetVehicleNumberPlateText(v, isPol and 'POLICIJA' or (sv[5] == 'ambulance' and 'HITNA' or 'OSIJEK'))
                         SetModelAsNoLongerNeeded(hash)
                         parked[key] = v
                     end
@@ -384,7 +387,7 @@ local function lane(ei, from, to, t)
     local dx, dy = B[1] - A[1], B[2] - A[2]
     local L = math.sqrt(dx * dx + dy * dy)
     dx, dy = dx / L, dy / L
-    local off = e[3] >= 16 and 4.0 or e[3] / 4.0              -- inner right lane
+    local off = e[3] / 4.0                                     -- v1.0.45: middle of the right-hand half (wider roads)
     t = math.max(0.0, math.min(L, t))
     return A[1] + dx * t + dy * off, A[2] + dy * t - dx * off, L, dx, dy
 end
@@ -433,7 +436,8 @@ local function spawnCar(i, me)
         local t = math.random() * math.max(1.0, L - 20.0) + 10.0
         x, y = lane(ei, from, to, t)
         local d = math.sqrt((x - mx) ^ 2 + (y - my) ^ 2)
-        if d > 70.0 and d < 260.0 and L > 25.0 then
+        local wv = W(x, y, 1.5)
+        if d > 70.0 and d < 260.0 and L > 25.0 and not (d < 180.0 and IsSphereVisible(wv.x, wv.y, wv.z, 3.0)) then
             local wp = groundAt(x, y, 0.6)
             if not wp then return end
             for _, o in pairs(cars) do
@@ -447,7 +451,15 @@ local function spawnCar(i, me)
             local v = CreateVehicle(vhash, wp.x, wp.y, wp.z, heading, false, false)
             settleVehicle(v)
             SetVehicleEngineOn(v, true, true, false)
-            SetVehicleColours(v, math.random(0, 150), math.random(0, 150))
+            local pal = Config.TrafficColours or { 0, 111, 4 }
+            local col = pal[math.random(#pal)]
+            SetVehicleColours(v, col, col)
+            SetVehicleExtraColours(v, col, 156)
+            SetVehicleDirtLevel(v, math.random() * 4.0)
+            local A = 'ABCDEFGHIJKLMNOPRSTUVZ'
+            local r1, r2 = math.random(#A), math.random(#A)
+            SetVehicleNumberPlateText(v, ('OS%03d%s%s'):format(math.random(100, 999), A:sub(r1, r1), A:sub(r2, r2)))
+            SetVehicleNumberPlateTextIndex(v, 1)
             local drv = CreatePedInsideVehicle(v, 4, phash, -1, false, true)
             SetBlockingOfNonTemporaryEvents(drv, true)
             SetDriverAbility(drv, 1.0)
@@ -495,7 +507,27 @@ CreateThread(function()
                     else
                         local t = W(c.tx, c.ty, 0.5)
                         if #(vec2(vp.x, vp.y) - vec2(t.x, t.y)) < 7.0 then
-                            if c.phase == 'edge' then turnTo(c) else driveTo(c) end
+                            if c.phase == 'edge' then
+                                -- v1.0.45: give way - wait (max ~4 s) while another car is turning in this crossing
+                                local node = NET.nodes[c.to]
+                                local busy = false
+                                for j, o in pairs(cars) do
+                                    if j ~= i and o.phase == 'turn' and o.veh and DoesEntityExist(o.veh) then
+                                        local op = GetEntityCoords(o.veh)
+                                        if #(vec2(op.x - Config.Origin.x, op.y - Config.Origin.y) - vec2(node[1], node[2])) < 16.0 then busy = true break end
+                                    end
+                                end
+                                c.wait = busy and (c.wait or 0) + 1 or 0
+                                if busy and c.wait < 6 then
+                                    TaskVehicleTempAction(c.drv, c.veh, 6, 800)          -- brake and wait
+                                    c.stuck = 0
+                                else
+                                    c.wait = 0
+                                    turnTo(c)
+                                end
+                            else
+                                driveTo(c)
+                            end
                         end
                         if #(vp - c.last) < 0.8 then c.stuck = c.stuck + 1 else c.stuck = 0 end
                         c.last = vp

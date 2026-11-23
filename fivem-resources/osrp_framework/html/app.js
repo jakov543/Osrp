@@ -103,7 +103,10 @@ document.querySelectorAll('.sex button').forEach((b) => b.addEventListener('clic
 });
 $('rotL').addEventListener('click', () => { M.rot = (M.rot + 45) % 360; previewNew(); });
 $('rotR').addEventListener('click', () => { M.rot = (M.rot + 315) % 360; previewNew(); });
-$('cBack').addEventListener('click', () => { show('pChars'); $('idCard').classList.add('hidden'); post('preview', {}); });
+$('cBack').addEventListener('click', () => {
+  if (M.fromSwitch) { $('menu').classList.add('hidden'); post('switchBack', {}); return; }
+  show('pChars'); $('idCard').classList.add('hidden'); post('preview', {});
+});
 $('go').addEventListener('click', () => {
   if (M.sending) return;
   const firstname = $('cFirst').value.trim(), lastname = $('cLast').value.trim(), dob = $('cDob').value;
@@ -527,3 +530,153 @@ window.addEventListener('message', (e) => {
     c.classList.remove('hidden'); void c.offsetWidth; c.classList.add('on');
   } else { c.classList.remove('on'); setTimeout(() => c.classList.add('hidden'), 400); }
 });
+
+// ================= v1.0.45 GTA V style character switch =================
+(() => {
+  const COLORS = ['#5ba3d9', '#6fbf5b', '#e8a33a', '#b07ee8', '#e86a6a'];
+  const S = { chars: [], max: 3, sel: 0, slots: [], heads: {}, spawn: null, step: 'wheel' };
+  const money2 = (n) => '$' + Number(n || 0).toLocaleString('hr-HR');
+  const fmtDob = (d) => d ? d.split('-').reverse().join('.') + '.' : '—';
+
+  function slots() {
+    const out = S.chars.map((c, i) => ({ kind: 'char', c, color: COLORS[i % COLORS.length] }));
+    if (S.chars.length < S.max) out.push({ kind: 'new', color: '#ffffff' });
+    while (out.length < Math.max(3, S.max)) out.push({ kind: 'empty', color: '#777' });
+    return out;
+  }
+
+  function draw() {
+    const wheel = $('swWheel');
+    wheel.querySelectorAll('.sw-slot').forEach((e) => e.remove());
+    S.slots = slots();
+    const n = S.slots.length, R = 205;
+    S.slots.forEach((sl, i) => {
+      const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+      const el = document.createElement('div');
+      el.className = 'sw-slot ' + sl.kind + (i === S.sel ? ' on' : '');
+      el.style.left = (280 + Math.cos(a) * R) + 'px';
+      el.style.top = (280 + Math.sin(a) * R) + 'px';
+      el.style.setProperty('--c', sl.color);
+      if (sl.kind === 'char') {
+        const img = S.heads[sl.c.cid];
+        el.innerHTML = (img ? `<img src="${img}" alt="">` : `<div class="ini">${esc((sl.c.firstname || '?')[0])}${esc((sl.c.lastname || '?')[0])}</div>`)
+          + `<div class="lbl">${esc(sl.c.firstname)}</div>`;
+      } else if (sl.kind === 'new') {
+        el.innerHTML = '<div class="ini">＋</div><div class="lbl">Novi lik</div>';
+      } else {
+        el.innerHTML = '<div class="ini">·</div>';
+      }
+      el.addEventListener('click', () => {
+        if (sl.kind === 'empty') return;
+        if (S.sel === i && sl.kind === 'char') return play();
+        if (sl.kind === 'new') return post('switchNew', {});
+        S.sel = i; draw();
+      });
+      wheel.appendChild(el);
+    });
+    info();
+  }
+
+  function info() {
+    const sl = S.slots[S.sel];
+    const card = $('swCard');
+    if (!sl || sl.kind !== 'char') {
+      card.classList.add('hidden');
+      $('swCName').textContent = sl && sl.kind === 'new' ? 'Novi lik' : '—';
+      $('swCJob').textContent = sl && sl.kind === 'new' ? 'napravi osobnu' : '';
+      return;
+    }
+    const c = sl.c;
+    $('sw').style.setProperty('--c', sl.color);
+    card.style.setProperty('--c', sl.color);
+    card.classList.remove('hidden');
+    card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+    $('swName').textContent = `${c.firstname} ${c.lastname}`;
+    $('swJob').textContent = c.job || 'Nezaposlen';
+    $('swCash').textContent = money2(c.cash);
+    $('swBank').textContent = money2(c.bank);
+    $('swDob').textContent = fmtDob(c.dob);
+    $('swNat').textContent = c.nationality || 'Hrvatska';
+    $('swCName').textContent = `${c.firstname} ${c.lastname}`;
+    $('swCJob').textContent = c.job || 'Nezaposlen';
+    const del = $('swDel'); del.classList.remove('sure'); del.textContent = 'Obriši';
+  }
+
+  function play() {
+    const sl = S.slots[S.sel];
+    if (!sl || sl.kind !== 'char') return;
+    post('selectChar', { cid: sl.c.cid });
+  }
+
+  function move(d) {
+    if (S.step !== 'wheel') return;
+    const n = S.slots.length;
+    for (let k = 1; k <= n; k++) {
+      const i = (S.sel + d * k + n * 4) % n;
+      if (S.slots[i].kind !== 'empty') { S.sel = i; break; }
+    }
+    draw();
+  }
+
+  $('swPlay').addEventListener('click', play);
+  $('swDel').addEventListener('click', () => {
+    const sl = S.slots[S.sel];
+    if (!sl || sl.kind !== 'char') return;
+    const del = $('swDel');
+    if (!del.classList.contains('sure')) { del.classList.add('sure'); del.textContent = 'Sigurno?'; return; }
+    post('deleteChar', { cid: sl.c.cid });
+  });
+  $('swBack').addEventListener('click', () => { S.step = 'wheel'; $('swSpawn').classList.add('hidden'); $('swWheel').classList.remove('hidden'); info(); });
+  $('swGo').addEventListener('click', () => { if (S.spawn) { post('chooseSpawn', { id: S.spawn }); $('swGo').disabled = true; } });
+
+  window.addEventListener('keydown', (e) => {
+    if ($('sw').classList.contains('hidden')) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(-1);
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(1);
+    else if (e.key === 'Enter') { if (S.step === 'wheel') play(); else $('swGo').click(); }
+    else if (e.key === 'Delete') $('swDel').click();
+    else if ((e.key === 'n' || e.key === 'N') && S.step === 'wheel' && S.chars.length < S.max) post('switchNew', {});
+    else if (e.key === 'Escape' && S.step === 'spawn') $('swBack').click();
+  });
+
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.action === 'openSwitch') {
+      S.chars = d.chars || []; S.max = d.max || 3; S.step = 'wheel';
+      if (S.sel >= S.chars.length) S.sel = 0;
+      $('swServer').textContent = d.server || 'OSIJEK ROLEPLAY';
+      $('menu').classList.add('hidden');
+      $('sw').classList.remove('hidden');
+      $('swSpawn').classList.add('hidden');
+      $('swWheel').classList.remove('hidden');
+      draw();
+    } else if (d.action === 'switchHead') {
+      S.heads[d.cid] = d.img; draw();
+    } else if (d.action === 'switchSpawn') {
+      S.step = 'spawn'; S.spawn = null;
+      $('swWheel').classList.add('hidden'); $('swCard').classList.add('hidden');
+      $('swSpawn').classList.remove('hidden');
+      $('swWho').textContent = d.name || '';
+      $('swGo').disabled = true;
+      const box = $('swSpawns'); box.innerHTML = '';
+      (d.points || []).forEach((p) => {
+        const el = document.createElement('div');
+        el.className = 'sw-sp' + (p.disabled ? ' off' : '');
+        el.innerHTML = `<div class="ic">${p.icon || '📍'}</div><b>${esc(p.label)}</b><small>${esc(p.desc || '')}</small>`;
+        el.addEventListener('click', () => {
+          S.spawn = p.id; $('swGo').disabled = false;
+          box.querySelectorAll('.sw-sp').forEach((x) => x.classList.toggle('on', x === el));
+        });
+        el.addEventListener('dblclick', () => { S.spawn = p.id; $('swGo').disabled = false; $('swGo').click(); });
+        box.appendChild(el);
+      });
+    } else if (d.action === 'closeSwitch' || d.action === 'closeMenu') {
+      $('sw').classList.add('hidden');
+    } else if (d.action === 'openMenu' && d.create) {
+      M.fromSwitch = true;
+      $('sw').classList.add('hidden');
+    } else if (d.action === 'openMenu') {
+      M.fromSwitch = false;
+    }
+  });
+})();

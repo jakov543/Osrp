@@ -1,4 +1,4 @@
--- OSRP Osijek - arrival cutscene (v1.0.42): a short film when you arrive by plane at Zračna luka Osijek
+-- OSRP Osijek - arrival cutscene (v1.0.42, v1.0.45: glide slope + camera never inside buildings): a short film when you arrive by plane at Zračna luka Osijek
 --   1  aerial over the Drava at sunset (OSIJEK title)        4  touchdown, camera rolls next to the wheels
 --   2  chase camera behind the plane, the city ahead          5  taxi to the terminal, wide apron shot
 --   3  runway threshold - the plane flies right over you      6  orbit at the stand + welcome card
@@ -34,7 +34,10 @@ local function planeAt(t)
     if t < T_AIR then
         local u = t / T_AIR
         local x = lerp(-2100.0, TOUCH_X, u)
-        local h = 160.0 * (1.0 - u) ^ 1.45
+        -- v1.0.45: real 3.5 degree glide slope over the clear approach corridor (no towers under it any more),
+        -- the last 120 m it flares down to the runway
+        local dist = TOUCH_X - x
+        local h = dist > 120.0 and (7.3 + (dist - 120.0) * 0.0612) or (7.3 * (dist / 120.0) ^ 1.6)
         local pitch = (u < 0.9) and -2.5 or (-2.5 + (u - 0.9) / 0.1 * 8.0)          -- flare before touchdown
         local roll = math.sin(t / 2300.0) * 1.6 * (1.0 - u)                       -- small corrections in the wind
         return x, RW_Y, h, 270.0, pitch, roll
@@ -65,6 +68,31 @@ local function planeAt(t)
 end
 
 local function nui(d) d.t = 'cine' SendNUIMessage(d) end
+
+-- v1.0.45: keep the camera out of buildings - if something is between the target and the camera,
+-- the camera moves up (and a bit towards the target) until it sees the target again
+local function clearCam(cx, cy, cz, tx, ty, tz, ignore)
+    for k = 0, 8 do
+        local z = cz + k * 6.0
+        local ray = StartExpensiveSynchronousShapeTestLosProbe(tx, ty, tz, cx, cy, z, 1 + 16, ignore or 0, 4)
+        local _, hit = GetShapeTestResult(ray)
+        if hit == 0 then return cx, cy, z end
+        cx, cy = cx + (tx - cx) * 0.08, cy + (ty - cy) * 0.08
+    end
+    return cx, cy, cz + 48.0
+end
+
+local lift = { x = 0.0, y = 0.0, z = 0.0, snap = true }           -- smoothed, so the camera glides up instead of jumping
+local function camAt(cam, c, look, ignore)
+    local x, y, z = clearCam(c.x, c.y, c.z, look.x, look.y, look.z, ignore)
+    local k = math.min(1.0, GetFrameTime() * 4.0)
+    if (z - c.z) > lift.z then k = math.min(1.0, GetFrameTime() * 9.0) end   -- go up fast, come down slowly
+    if lift.snap then k = 1.0 lift.snap = false end                       -- new shot: start at a clear spot
+    lift.x = lift.x + ((x - c.x) - lift.x) * k
+    lift.y = lift.y + ((y - c.y) - lift.y) * k
+    lift.z = lift.z + ((z - c.z) - lift.z) * k
+    SetCamCoord(cam, c.x + lift.x, c.y + lift.y, c.z + lift.z)
+end
 
 function PlayArrival()
     local ped = PlayerPedId()
@@ -136,10 +164,10 @@ function PlayArrival()
             local u = smooth(t / 6000)
             local c = W(lerp(650.0, -250.0, u), lerp(20.0, 90.0, u), lerp(150.0, 105.0, u))
             local look = W(lerp(-30.0, -80.0, u), 200.0, 0.0)
-            SetCamCoord(cam, c.x, c.y, c.z) PointCamAtCoord(cam, look.x, look.y, look.z) SetCamFov(cam, 48.0)
+            camAt(cam, c, look) PointCamAtCoord(cam, look.x, look.y, look.z) SetCamFov(cam, 48.0)
         elseif t < 12000 then                                  -- 2: chase camera, the city ahead
             now = 2
-            SetCamCoord(cam, p.x - fx * 42.0 + fy * 8.0, p.y - fy * 42.0 - fx * 8.0, pz + 9.0)
+            camAt(cam, vector3(p.x - fx * 42.0 + fy * 8.0, p.y - fy * 42.0 - fx * 8.0, pz + 9.0), vector3(p.x, p.y, pz), plane)
             PointCamAtCoord(cam, p.x + fx * 60.0, p.y + fy * 60.0, pz - 6.0) SetCamFov(cam, 55.0)
         elseif t < 16300 then                                  -- 3: runway threshold, it flies over you
             now = 3
@@ -147,20 +175,21 @@ function PlayArrival()
             SetCamCoord(cam, c.x, c.y, c.z) PointCamAtEntity(cam, plane, 0.0, 0.0, 0.0, true) SetCamFov(cam, 42.0)
         elseif t < T_AIR + 3500 then                           -- 4: touchdown, camera rolls next to the wheels
             now = 4
-            SetCamCoord(cam, p.x + fx * 6.0 + fy * 24.0, p.y + fy * 6.0 - fx * 24.0, gz + 1.3)
+            camAt(cam, vector3(p.x + fx * 6.0 + fy * 24.0, p.y + fy * 6.0 - fx * 24.0, gz + 1.3), vector3(p.x, p.y, gz + 2.0), plane)
             PointCamAtCoord(cam, p.x, p.y, gz + 2.0) SetCamFov(cam, 38.0)
         elseif t < T_AIR + T_ROLL + 3500 then                  -- 5: wide apron shot from the terminal
             now = 5
             local c = W(265.0, -545.0, 16.0)
-            SetCamCoord(cam, c.x, c.y, c.z) PointCamAtEntity(cam, plane, 0.0, 0.0, 0.0, true) SetCamFov(cam, 40.0)
+            camAt(cam, c, vector3(p.x, p.y, pz + 2.0), plane) PointCamAtEntity(cam, plane, 0.0, 0.0, 0.0, true) SetCamFov(cam, 40.0)
         else                                                   -- 6: slow orbit at the stand
             now = 6
             local a = (t - T_AIR - T_ROLL - 3500) / 6000.0 * 1.2 + 0.8
-            SetCamCoord(cam, p.x + math.cos(a) * 34.0, p.y + math.sin(a) * 34.0, gz + 7.0)
+            camAt(cam, vector3(p.x + math.cos(a) * 34.0, p.y + math.sin(a) * 34.0, gz + 7.0), vector3(p.x, p.y, gz + 3.0), plane)
             PointCamAtCoord(cam, p.x, p.y, gz + 3.0) SetCamFov(cam, 45.0)
         end
         if now ~= shot then
             shot = now
+            lift.snap = true
             if shot == 2 and not attached then              -- from now on you ride with the plane (streaming follows)
                 AttachEntityToEntity(ped, plane, 0, 0.0, 0.0, -2.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
                 attached = true

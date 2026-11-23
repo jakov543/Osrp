@@ -51,6 +51,27 @@ for _, sv in ipairs(Life.SPECIAL or {}) do
 end
 
 local ui, preview, cam, myBike = nil, nil, nil, nil
+local hidden = {}                                   -- v1.0.45: parked bikes + you are hidden while you choose
+
+local function hideAround(pos)
+    hidden = {}
+    for _, v in ipairs(GetGamePool('CVehicle')) do
+        if v ~= preview and DoesEntityExist(v) and #(GetEntityCoords(v) - pos) < 14.0 and GetPedInVehicleSeat(v, -1) == 0 then
+            SetEntityVisible(v, false, false)
+            SetEntityCollision(v, false, false)
+            hidden[#hidden + 1] = v
+        end
+    end
+    SetEntityVisible(PlayerPedId(), false, false)
+end
+
+local function unhide()
+    for _, v in ipairs(hidden) do
+        if DoesEntityExist(v) then SetEntityVisible(v, true, false) SetEntityCollision(v, true, true) end
+    end
+    hidden = {}
+    SetEntityVisible(PlayerPedId(), true, false)
+end
 
 local function available()
     local out = {}
@@ -90,6 +111,7 @@ local function closeUi(take)
     FreezeEntityPosition(ped, false)
     if preview and DoesEntityExist(preview) then DeleteVehicle(preview) end
     preview = nil
+    unhide()
     if take then
         local b = u.list[take.i]
         local h = joaat(b.m)
@@ -116,6 +138,7 @@ local function openUi(st)
     pos = vector3(pos.x, pos.y, ok and gz or pp.z - 1.0)
     ui = { list = list, pos = pos, heading = GetEntityHeading(ped) + 90.0, spin = 0.0, fade = 0 }
     FreezeEntityPosition(ped, true)
+    hideAround(pos)
     cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
     SetCamFov(cam, 40.0)
     RenderScriptCams(true, true, 700, true, true)
@@ -141,6 +164,14 @@ CreateThread(function()
                 local a = math.min(255, math.floor((GetGameTimer() - ui.fade) / 400 * 255))
                 SetEntityAlpha(preview, a, false)
                 if a >= 255 then ResetEntityAlpha(preview) end
+            end
+            if GetGameTimer() > (ui.nextHide or 0) then
+                ui.nextHide = GetGameTimer() + 700
+                for _, v in ipairs(GetGamePool('CVehicle')) do
+                    if v ~= preview and IsEntityVisible(v) and #(GetEntityCoords(v) - ui.pos) < 14.0 and GetPedInVehicleSeat(v, -1) == 0 then
+                        SetEntityVisible(v, false, false) SetEntityCollision(v, false, false) hidden[#hidden + 1] = v
+                    end
+                end
             end
             if cam then
                 local t = GetGameTimer() / 9000.0

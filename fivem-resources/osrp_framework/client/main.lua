@@ -29,13 +29,13 @@ end
 local function osijek() return GetResourceState('osrp_osijek') == 'started' end
 
 -- wait (here, in this resource) until osrp_osijek has the city around x, y loaded
-local function waitArea(x, y, radius, timeout)
+local function waitArea(x, y, radius, timeout, quiet)
     if not osijek() then return end
     local t = GetGameTimer()
     while GetGameTimer() - t < (timeout or 20000) do
         local ok, loaded, total = pcall(function() return exports.osrp_osijek:AreaProgress(x, y, radius) end)
         if not ok or not total then return end
-        SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = total > 0 and loaded / total or 1 })
+        if not quiet then SendNUIMessage({ action = 'loading', show = true, text = 'Učitavanje Osijeka', progress = total > 0 and loaded / total or 1 }) end
         if loaded >= total then Wait(300) return end
         Wait(100)
     end
@@ -59,6 +59,17 @@ local function groundZ(x, y, z)
         Wait(50)
     end
     return z
+end
+
+local function lookOn(ped, data)
+    local sex = data and data.sex or 'm'
+    SetPedDefaultComponentVariation(ped)
+    local a = data and data.appearance or {}
+    SetPedHeadBlendData(ped, a.face or 0, a.face or 0, 0, a.skin or 0, a.skin or 0, 0, 0.5, 0.5, 0.0, false)
+    SetPedComponentVariation(ped, 2, a.hair or 0, 0, 0)
+    SetPedHairColor(ped, a.hairColor or 0, a.hairColor or 0)
+    local outfit = (Config.Outfits[sex] or {})[a.outfit or 1]
+    for comp, v in pairs(outfit or {}) do SetPedComponentVariation(ped, comp, v[1], v[2] or 0, 0) end
 end
 
 -- freemode model + face, skin, hair, outfit from the character
@@ -189,11 +200,136 @@ local function endMenu()
     end
 end
 
+-- ---------- v1.0.45 GTA V style character switch ----------
+-- With characters: the camera flies up into the sky above Osijek (GTA switch), the character wheel opens,
+-- after you pick the character + spawn the camera dives down onto them (SwitchInPlayer).
+local inSky, heads = false, {}
+
+local function freeHeads()
+    for _, h in pairs(heads) do if h and IsPedheadshotValid(h) then UnregisterPedheadshot(h) end end
+    heads = {}
+end
+
+local function headshot(c)
+    local model = loadModel(c.sex == 'f' and 'mp_f_freemode_01' or 'mp_m_freemode_01')
+    if not model then return nil end
+    local me = GetEntityCoords(PlayerPedId())
+    local ped = CreatePed(4, model, me.x, me.y, me.z - 30.0, 0.0, false, false)
+    SetEntityInvincible(ped, true)
+    FreezeEntityPosition(ped, true)
+    lookOn(ped, c)
+    local h = RegisterPedheadshotTransparent(ped)
+    local t = GetGameTimer()
+    while (not IsPedheadshotReady(h) or not IsPedheadshotValid(h)) and GetGameTimer() - t < 5000 do Wait(0) end
+    local txd = IsPedheadshotReady(h) and GetPedheadshotTxdString(h) or nil
+    DeletePed(ped)
+    SetModelAsNoLongerNeeded(model)
+    heads[c.cid] = h
+    return txd
+end
+
+local function skyHud()
+    CreateThread(function()
+        while inSky do
+            HideHudAndRadarThisFrame()
+            DisableAllControlActions(0)
+            Wait(0)
+        end
+    end)
+end
+
+local function goSky()
+    if inSky then return end
+    local ped = PlayerPedId()
+    SetEntityCoordsNoOffset(ped, PREVIEW.x, PREVIEW.y, PREVIEW.z + 1.0, false, false, false)
+    FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, false, false)
+    SendNUIMessage({ action = 'loading', show = false })
+    ShutdownLoadingScreen()
+    ShutdownLoadingScreenNui()
+    DoScreenFadeIn(600)
+    SwitchOutPlayer(ped, 0, 1)
+    inSky = true
+    skyHud()
+    local t = GetGameTimer()
+    while GetPlayerSwitchState() ~= 5 and GetGameTimer() - t < 9000 do Wait(50) end
+end
+
+local function leaveSky()                      -- cancel the switch (new character / plane arrival)
+    if not inSky then return end
+    inSky = false
+    if IsPlayerSwitchInProgress() then StopPlayerSwitch() end
+    freeHeads()
+end
+OSRP.LeaveSky = leaveSky
+
+-- dive down onto the character at x, y, z (GTA switch in)
+function OSRP.SwitchIn(x, y, z, h, data)
+    SendNUIMessage({ action = 'closeSwitch' })
+    SetNuiFocus(false, false)
+    OSRP.ApplyLook(data)
+    local ped = PlayerPedId()
+    if IsEntityDead(ped) then NetworkResurrectLocalPlayer(x, y, z, h, true, true) ped = PlayerPedId() end
+    RequestCollisionAtCoord(x, y, z)
+    SetEntityCoordsNoOffset(ped, x, y, z, false, false, false)
+    SetEntityHeading(ped, h)
+    ClearPedTasksImmediately(ped)
+    SetEntityHealth(ped, GetEntityMaxHealth(ped))
+    waitArea(x, y, 420.0, 20000, true)
+    local t = GetGameTimer()
+    while GetGameTimer() - t < 12000 do
+        if GetGroundZFor_3dCoord(x, y, z + 5.0, false) and HasCollisionLoadedAroundEntity(ped) then break end
+        Wait(200)
+    end
+    SetEntityVisible(ped, true, false)
+    FreezeEntityPosition(ped, false)
+    freeHeads()
+    SwitchInPlayer(ped)
+    t = GetGameTimer()
+    while IsPlayerSwitchInProgress() and GetGameTimer() - t < 20000 do Wait(100) end
+    inSky = false
+    OSRP.Spawned = true
+    TriggerEvent('osrp:playerSpawned')
+end
+
 RegisterNetEvent('osrp:chars', function(list, max)
-    if not menuCam then menuScene() end
-    SetEntityVisible(PlayerPedId(), false, false)
+    if #list == 0 and not inSky then              -- first character: straight into the ID card creator
+        if not menuCam then menuScene() end
+        SetEntityVisible(PlayerPedId(), false, false)
+        SetNuiFocus(true, true)
+        SendNUIMessage({ action = 'openMenu', chars = list, max = max, nations = Config.Nationalities })
+        return
+    end
+    goSky()
     SetNuiFocus(true, true)
-    SendNUIMessage({ action = 'openMenu', chars = list, max = max, nations = Config.Nationalities })
+    SendNUIMessage({ action = 'openSwitch', chars = list, max = max, nations = Config.Nationalities, server = Config.ServerName or 'OSIJEK ROLEPLAY' })
+    CreateThread(function()                       -- GTA portraits of your characters
+        for _, c in ipairs(list) do
+            if not inSky then return end
+            local txd = heads[c.cid] and IsPedheadshotValid(heads[c.cid]) and GetPedheadshotTxdString(heads[c.cid]) or headshot(c)
+            if txd then SendNUIMessage({ action = 'switchHead', cid = c.cid, img = ('https://nui-img/%s/%s'):format(txd, txd) }) end
+        end
+    end)
+end)
+
+-- "new character" from the wheel: leave the sky, open the creator next to the ID card
+RegisterNUICallback('switchNew', function(_, cb)
+    cb({})
+    DoScreenFadeOut(400)
+    while not IsScreenFadedOut() do Wait(0) end
+    leaveSky()
+    menuScene()
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'openMenu', chars = {}, max = Config.MaxCharacters, nations = Config.Nationalities, create = true })
+end)
+
+-- from the creator back to the wheel
+RegisterNUICallback('switchBack', function(_, cb)
+    cb({})
+    DoScreenFadeOut(300)
+    while not IsScreenFadedOut() do Wait(0) end
+    endMenu()
+    TriggerServerEvent('osrp:ready')
 end)
 
 RegisterNUICallback('preview', function(d, cb)
@@ -233,7 +369,7 @@ RegisterNetEvent('osrp:spawnSelect', function(data)
     for _, p in ipairs(Config.SpawnPoints) do
         points[#points + 1] = { id = p.id, label = p.label, icon = p.icon, desc = p.desc, disabled = (p.id == 'last' and not data.pos) }
     end
-    SendNUIMessage({ action = 'openSpawn', points = points, name = data.firstname .. ' ' .. data.lastname })
+    SendNUIMessage({ action = inSky and 'switchSpawn' or 'openSpawn', points = points, name = data.firstname .. ' ' .. data.lastname })
 end)
 
 RegisterNUICallback('previewSpawn', function(d, cb)
@@ -262,6 +398,27 @@ RegisterNUICallback('chooseSpawn', function(d, cb)
     local data = OSRP.Data
     if not data then return end
     endMenu()
+    if inSky then
+        if d.id == 'arrival' then                    -- the plane film starts from a black screen
+            DoScreenFadeOut(400)
+            while not IsScreenFadedOut() do Wait(0) end
+            leaveSky()
+        else
+            local c
+            if d.id == 'last' and data.pos then
+                local p, sp = data.pos, Config.Spawn
+                if #(vector3(p.x, p.y, p.z) - vector3(sp.x, sp.y, sp.z)) <= (Config.CityRadius or 1100.0) then
+                    c = vector4(p.x, p.y, p.z, p.h or 0.0)
+                end
+            end
+            if not c then
+                for _, p in ipairs(Config.SpawnPoints) do if p.id == d.id and p.coords then c = p.coords end end
+            end
+            c = c or Config.Spawn
+            OSRP.SwitchIn(c.x, c.y, c.z, c.w or 0.0, data)
+            return welcome(data, true)
+        end
+    end
     if d.id == 'last' and data.pos then
         local p, s = data.pos, Config.Spawn
         if #(vector3(p.x, p.y, p.z) - vector3(s.x, s.y, s.z)) <= (Config.CityRadius or 1100.0) then

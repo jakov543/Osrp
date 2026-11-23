@@ -49,3 +49,16 @@ kbd { min-width: 4.6vh; padding: .3vh .8vh; border-radius: .7vh; text-align: cen
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 1.2vh; font-size: 1.3vh; letter-spacing: .25vh; text-transform: uppercase; color: #707a90; }
 .steps span { transition: color .4s; } .steps span.done { color: #1fd6b6; } .steps span.now { color: #fff; }
 .corner { position: absolute; right: 4vw; bottom: 2vh; font-size: 1.3vh; color: #8790a6; letter-spacing: .2vh; }
+
+/* v1.0.45 city photos */
+.photos { position: absolute; inset: 0; overflow: hidden; }
+.photos .ph { position: absolute; inset: -4%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.6s ease;
+  filter: saturate(1.08) contrast(1.04); }
+.photos .ph.on { opacity: 1; animation: kb 9s linear both; }
+@keyframes kb { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
+.photos .ph.alt.on { animation-name: kb2; }
+@keyframes kb2 { from { transform: scale(1.12) translate(1.5%, 0); } to { transform: scale(1.02) translate(0, -1%); } }
+.caption { position: absolute; right: 4vw; bottom: 26vh; text-align: right; text-shadow: 0 2px 12px rgba(0,0,0,.8); transition: opacity .6s; }
+.caption small { display: block; font-size: 1.3vh; letter-spacing: .45em; opacity: .8; }
+.caption b { display: block; font-size: 3.4vh; font-weight: 800; letter-spacing: .04em; }
+.caption.fade { opacity: 0; }

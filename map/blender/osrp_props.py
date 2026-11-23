@@ -503,6 +503,38 @@ def build_props(h):
     p = "sign_street"; names.append(p)            # blue street plate on a post
     C(p, "stup", (0, -0.05, 0), 0.04, 2.9, "pole", 8)
     face("prop_" + p, "lice", [(-0.45, 2.5), (0.45, 2.5), (0.45, 2.9), (-0.45, 2.9)], 0.02, signtex("street"))
+    # ---------------- v1.0.45 more real Croatian signs + Bike Osijek board + yellow direction signs
+    import osrp_signs as _sg
+    for key, kind, r, hgt in (("yield", "itri", 0.5, 2.2), ("bikepath", "circle", 0.32, 2.3)):
+        p = f"sign_{key}"; names.append(p)
+        C(p, "stup", (0, -0.05, 0), 0.04, hgt + r, "pole", 8)
+        if kind == "itri":
+            sh = [(-r, hgt + r * 0.75), (0, hgt - r * 0.95), (r, hgt + r * 0.75)]
+            sh2 = [(-r - 0.03, hgt + r * 0.77), (0, hgt - r * 0.99), (r + 0.03, hgt + r * 0.77)]
+        else:
+            sh, sh2 = shape(kind, 0, hgt, r), shape(kind, 0, hgt, r + 0.02)
+        face("prop_" + p, "lice", sh, 0.02, signtex(key))
+        face("prop_" + p, "ledja", sh2, -0.005, M["signback"])
+    p = "sign_bikestation"; names.append(p)         # Bike Osijek station board (0.9 x 0.9) on a post
+    C(p, "stup", (0, -0.06, 0), 0.05, 2.9, "pole", 8)
+    face("prop_" + p, "lice", [(-0.45, 1.85), (0.45, 1.85), (0.45, 2.75), (-0.45, 2.75)], 0.02, signtex("bike_station"))
+    B(p, "ploca", (0, -0.02, 1.83), (0.94, 0.04, 0.94), "signback")
+    for key in _sg.DIR_KEYS:                         # yellow putokaz 1.7 x 0.65 on two posts
+        p = "sign_" + key; names.append(p)
+        face("prop_" + p, "lice", [(-0.85, 2.1), (0.85, 2.1), (0.85, 2.75), (-0.85, 2.75)], 0.03, signtex(key))
+        B(p, "ploca", (0, 0.0, 2.08), (1.74, 0.04, 0.69), "signback")
+        for sx in (-0.6, 0.6):
+            C(p, f"stup_{sx}", (sx, -0.06, 0), 0.04, 2.75, "pole", 8)
+
+    # ---------------- v1.0.45 vehicle decals (attached to cars in-game by osrp_osijek/liveries.lua), origin = centre, front = +Y
+    for i in range(_sg.POL_SEGS):                    # police side band, 6 pieces of 0.6 x 0.34 that follow the body curve
+        p = f"decal_pol_{i}"; names.append(p)
+        face("prop_" + p, "lice", [(-0.3, -0.17), (0.3, -0.17), (0.3, 0.17), (-0.3, 0.17)], 0.0, signtex(f"pol_band_{i}"))
+    for brand in _sg.TRUCK_BRANDS:                   # box truck panels: big (Benson / Pounder) + small (Mule)
+        for tag, (w, hh) in (("big", (6.0, 2.0)), ("small", (3.8, 1.4))):
+            p = f"decal_truck_{brand}_{tag}"; names.append(p)
+            face("prop_" + p, "lice", [(-w / 2, -hh / 2), (w / 2, -hh / 2), (w / 2, hh / 2), (-w / 2, hh / 2)], 0.0, signtex("truck_" + brand))
+
     p = "gunshop_sign"; names.append(p)            # shop sign board (on the wall, origin = wall)
     face("prop_" + p, "lice", [(-1.6, 0), (1.6, 0), (1.6, 1.6), (-1.6, 1.6)], 0.09, signtex("gunshop"))
     B(p, "ploca", (0, 0.04, -0.05), (3.3, 0.08, 1.7), "black")

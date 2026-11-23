@@ -170,74 +170,217 @@ def build(g):
         TREES.append((round(x, 2), round(y, 2), round(s, 2), "okrug"))
 
     # ------------------------------------------------------------ roads (axis aligned)
+    # v1.0.45: wider roads (2 x 3.5 m lanes + edge strips, 4 lanes on the avenue and the bypass), edge lines,
+    # no centre dashes inside junctions, zebra crossings, bridges only over the water, real Croatian signs.
     ROADS = []                                   # (x0, y0, x1, y1, width)
 
     def road(x0, y0, x1, y1, w):
         ROADS.append((min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1), w))
 
     for xa, xb in ((XW + 40, -550), (550, XE - 40)):
-        road(xa, 0, xb, 0, 16)                   # Europska avenija
-        road(xa, -350, xb, -350, 10)             # Vukovarska
-    road(XW + 40, -1000, XE - 40, -1000, 20)     # Južna obilaznica (south bypass)
-    road(XW + 50, -1000, XW + 50, RIV0 - 6, 12)  # west ring
-    road(XW + 50, RIV1 + 6, XW + 50, YN - 60, 12)
-    road(XE - 50, YS + 60, XE - 50, YN - 60, 12)  # east ring
-    road(XW + 50, YN - 60, XE - 50, YN - 60, 12)  # north ring
-    road(XW + 40, YS + 60, XE - 50, YS + 60, 12)  # far south road
+        road(xa, 0, xb, 0, 22)                   # Europska avenija (4 lanes)
+        road(xa, -350, xb, -350, 14)             # Vukovarska
+    road(XW + 40, -1000, XE - 40, -1000, 26)     # Južna obilaznica (south bypass, 4 lanes + shoulders)
+    road(XW + 50, -1000, XW + 50, RIV0 - 6, 16)  # west ring
+    road(XW + 50, RIV1 + 6, XW + 50, YN - 60, 16)
+    road(XE - 50, YS + 60, XE - 50, YN - 60, 16)  # east ring
+    road(XW + 50, YN - 60, XE - 50, YN - 60, 16)  # north ring
+    road(XW + 40, YS + 60, XE - 50, YS + 60, 16)  # far south road
     for x in (-1000, 900, 1700):                 # N-S through roads with Drava bridges
-        road(x, YS + 60, x, YN - 60, 12)
+        road(x, YS + 60, x, YN - 60, 16)
     for x in (-700, 1300, 2100):
-        road(x, -1000, x, RIV0 - 6, 10)
+        road(x, -1000, x, RIV0 - 6, 14)
     for x in (-400, 200, 1300, 2100):
-        road(x, RIV1 + 6, x, YN - 60, 10)
+        road(x, RIV1 + 6, x, YN - 60, 14)
     for y in (-700,):
-        road(XW + 50, y, -550, y, 10)
-        road(550, y, XE - 50, y, 10)
+        road(XW + 50, y, -550, y, 14)
+        road(550, y, XE - 50, y, 14)
     for y in (500, 800, 1100, 1400):
-        road(XW + 50, y, XE - 50, y, 10)
+        road(XW + 50, y, XE - 50, y, 14)
     for y in (-1400,):
-        road(XW + 40, y, XE - 50, y, 10)
+        road(XW + 40, y, XE - 50, y, 14)
     for x in (-300, 400):
-        road(x, YS + 60, x, -1000, 10)
+        road(x, YS + 60, x, -1000, 14)
 
     def on_river(y0, y1):
         return y1 > RIV0 - 4 and y0 < RIV1 + 4
 
+    HR = [r for r in ROADS if (r[3] - r[1]) < 1]
+    VR = [r for r in ROADS if (r[3] - r[1]) >= 1]
+    JUNC = []                                    # (x, y, w of the horizontal road, w of the vertical road)
+    for (hx0, hy, hx1, _, wh) in HR:
+        for (vx, vy0, _, vy1, wv) in VR:
+            if hx0 - 1 <= vx <= hx1 + 1 and vy0 - 1 <= hy <= vy1 + 1:
+                if any(_inside(vx, hy, r, 2) for r in EXCL):
+                    continue
+                JUNC.append((vx, hy, wh, wv))
+
+    def gaps_h(y, w):                            # x intervals of a horizontal road taken by junctions (+ zebra)
+        return [(jx - jwv / 2 - 4.0, jx + jwv / 2 + 4.0) for (jx, jy, jwh, jwv) in JUNC if abs(jy - y) < 0.5]
+
+    def gaps_v(x, w):
+        return [(jy - jwh / 2 - 4.0, jy + jwh / 2 + 4.0) for (jx, jy, jwh, jwv) in JUNC if abs(jx - x) < 0.5]
+
+    def free_iv(a, b, gaps):
+        out = [(a, b)]
+        for (g0, g1) in gaps:
+            nxt = []
+            for (f0, f1) in out:
+                if g1 <= f0 or g0 >= f1:
+                    nxt.append((f0, f1))
+                    continue
+                if g0 > f0:
+                    nxt.append((f0, g0))
+                if g1 < f1:
+                    nxt.append((g1, f1))
+            out = nxt
+        return [(f0, f1) for (f0, f1) in out if f1 - f0 > 0.5]
+
+    def paint(horiz, c, a, b, w, z, gaps):
+        """lane markings of one road piece: edge lines, centre (dashed, or double solid on 4-lane roads), lane dashes"""
+        for (f0, f1) in free_iv(a, b, gaps):
+            def ln(off, width, dash=None):
+                if dash is None:
+                    segs = [(f0, f1)]
+                else:
+                    segs = [(f0 + 1 + j * dash[1], min(f1, f0 + 1 + j * dash[1] + dash[0])) for j in range(int((f1 - f0) // dash[1]))]
+                for (s0, s1) in segs:
+                    if horiz:
+                        T.quad(M_LINE, s0, c + off - width / 2, s1, c + off + width / 2, z)
+                    else:
+                        T.quad(M_LINE, c + off - width / 2, s0, c + off + width / 2, s1, z)
+            for sgn in (-1, 1):
+                ln(sgn * (w / 2 - 0.6), 0.15)                                  # edge lines
+            if w >= 20:
+                ln(-0.18, 0.12); ln(0.18, 0.12)                                # double solid centre line
+                for sgn in (-1, 1):
+                    ln(sgn * w / 4, 0.12, (3.0, 9.0))                          # lane dashes
+            else:
+                ln(0.0, 0.12, (4.0, 9.0))                                      # dashed centre line
+
     for (x0, y0, x1, y1, w) in ROADS:
         horiz = (y1 - y0) < 1
         L = (x1 - x0) if horiz else (y1 - y0)
-        n = max(1, int(math.ceil(L / 50.0)))
-        for k in range(n):
+        if horiz:
+            cuts = sorted({x0, x1} | {x0 + L * k / max(1, int(math.ceil(L / 50.0))) for k in range(1, int(math.ceil(L / 50.0)))})
+        else:
+            cuts = sorted({y0, y1} | {y0 + L * k / max(1, int(math.ceil(L / 50.0))) for k in range(1, int(math.ceil(L / 50.0)))}
+                          | ({RIV0 - 2.0, RIV1 + 2.0} if y0 < RIV0 - 2 and y1 > RIV1 + 2 else set()))
+        for a, b in zip(cuts, cuts[1:]):
             if horiz:
-                a, b = x0 + L * k / n, x0 + L * (k + 1) / n
                 if any(_overlaps(a, b, y0 - w / 2, y0 + w / 2, r, -1) for r in EXCL):
                     continue
                 T.quad(M_ROAD, a, y0 - w / 2, b, y0 + w / 2, 0.10)
-                for j in range(int((b - a) // 9)):
-                    xx = a + 3 + j * 9
-                    T.quad(M_LINE, xx, y0 - 0.08, xx + 4, y0 + 0.08, 0.115)
+                paint(True, y0, a, b, w, 0.115, gaps_h(y0, w))
             else:
-                a, b = y0 + L * k / n, y0 + L * (k + 1) / n
                 if any(_overlaps(x0 - w / 2, x0 + w / 2, a, b, r, -1) for r in EXCL):
                     continue
-                if on_river(a, b):                   # bridge deck over the Drava
-                    T.box(M_STONE, x0, (a + b) / 2, -0.8, w + 3, b - a, 0.88)
-                    T.quad(M_ROAD, x0 - w / 2, a, x0 + w / 2, b, 0.105)
+                if a >= RIV0 - 2.01 and b <= RIV1 + 2.01:          # bridge deck over the Drava (only over the water)
+                    W2 = w / 2
+                    T.box(M_STONE, x0, (a + b) / 2, -0.8, w + 6.0, b - a, 0.88)
+                    T.quad(M_ROAD, x0 - W2, a, x0 + W2, b, 0.105)
                     for sx in (-1, 1):
-                        T.box(M_FENCE, x0 + sx * (w / 2 + 1.2), (a + b) / 2, 0.1, 0.15, b - a, 1.1)
+                        T.box(M_WALK, x0 + sx * (W2 + 1.25), (a + b) / 2, 0.08, 2.5, b - a, 0.17)       # footpath
+                        T.box(M_STONE, x0 + sx * (W2 + 2.75), (a + b) / 2, 0.08, 0.5, b - a, 0.75)      # concrete parapet
+                        T.box(M_FENCE, x0 + sx * (W2 + 2.75), (a + b) / 2, 0.83, 0.12, b - a, 0.08)     # steel hand rail
+                        T.box(M_FENCE, x0 + sx * (W2 + 2.75), (a + b) / 2, 1.13, 0.10, b - a, 0.06)
+                        for k in range(int((b - a) // 2.5)):
+                            T.box(M_FENCE, x0 + sx * (W2 + 2.75), a + 1.25 + k * 2.5, 0.83, 0.08, 0.08, 0.32)
+                    paint(False, x0, a, b, w, 0.12, [])
                     continue
                 T.quad(M_ROAD, x0 - w / 2, a, x0 + w / 2, b, 0.105)
-                for j in range(int((b - a) // 9)):
-                    yy = a + 3 + j * 9
-                    T.quad(M_LINE, x0 - 0.08, yy, x0 + 0.08, yy + 4, 0.12)
+                paint(False, x0, a, b, w, 0.12, gaps_v(x0, w))
         if horiz:
             MAPRECTS.append(("road", (x0 + x1) / 2, y0, x1 - x0, w))
         else:
             MAPRECTS.append(("road", x0, (y0 + y1) / 2, w, y1 - y0))
     for x in (-1000, 900, 1700):                 # bridge piers
         for yy in (RIV0 + 30, RIV1 - 30):
-            T.box(M_STONE, x, yy, BED_Z, 6, 4, -BED_Z - 0.8)
+            T.box(M_STONE, x, yy, BED_Z, 8, 4, -BED_Z - 0.8)
     LANDMARKS.extend([("Most Sjenjak", -1000, 220), ("Most Jug 2", 900, 220), ("Istočni most", 1700, 220)])
+
+    # zebra crossings + stop lines + Croatian signs at every junction outside the old city
+    cprop = g["cprop"]
+    nsign = 0
+    for (jx, jy, wh, wv) in JUNC:
+        major_h = wh >= wv                       # the wider road has priority (C08 / B01)
+        has_n = any(abs(r[0] - jx) < 0.5 and r[3] > jy + 1 for r in VR if r[1] - 1 <= jy <= r[3] + 1)
+        has_s = any(abs(r[0] - jx) < 0.5 and r[1] < jy - 1 for r in VR if r[1] - 1 <= jy <= r[3] + 1)
+        has_e = any(abs(r[1] - jy) < 0.5 and r[2] > jx + 1 for r in HR if r[0] - 1 <= jx <= r[2] + 1)
+        has_w = any(abs(r[1] - jy) < 0.5 and r[0] < jx - 1 for r in HR if r[0] - 1 <= jx <= r[2] + 1)
+        if jy > RIV0 - 30 and jy < RIV1 + 30:
+            continue
+        arms = []                                # (exists, horizontal?, side, zebra centre, sign spot, heading of the sign)
+        arms.append((has_s, False, -1, (jx, jy - wh / 2 - 2.0), (jx + wv / 2 + 1.3, jy - wh / 2 - 5.0), 180.0))
+        arms.append((has_n, False, 1, (jx, jy + wh / 2 + 2.0), (jx - wv / 2 - 1.3, jy + wh / 2 + 5.0), 0.0))
+        arms.append((has_w, True, -1, (jx - wv / 2 - 2.0, jy), (jx - wv / 2 - 5.0, jy - wh / 2 - 1.3), 90.0))
+        arms.append((has_e, True, 1, (jx + wv / 2 + 2.0, jy), (jx + wv / 2 + 5.0, jy + wh / 2 + 1.3), 270.0))
+        for (ok, horiz, side, zc, spot, hd) in arms:
+            if not ok:
+                continue
+            w_arm = wh if horiz else wv
+            # zebra: 0.5 m white bars every 1 m across the arm, 3 m deep
+            n = int((w_arm - 1.0) // 1.0)
+            for k in range(n):
+                o = -w_arm / 2 + 0.75 + k * 1.0
+                if horiz:
+                    T.quad(M_LINE, zc[0] - 1.5, zc[1] + o, zc[0] + 1.5, zc[1] + o + 0.5, 0.118)
+                else:
+                    T.quad(M_LINE, zc[0] + o, zc[1] - 1.5, zc[0] + o + 0.5, zc[1] + 1.5, 0.123)
+            minor = (horiz and not major_h) or ((not horiz) and major_h)
+            if minor:                            # stop / yield line on the incoming half of the arm
+                if horiz:
+                    yy0, yy1 = (jy - w_arm / 2, jy) if side < 0 else (jy, jy + w_arm / 2)
+                    xx = zc[0] + side * 2.0
+                    T.quad(M_LINE, xx - 0.25, yy0, xx + 0.25, yy1, 0.118)
+                else:
+                    xx0, xx1 = (jx, jx + w_arm / 2) if side < 0 else (jx - w_arm / 2, jx)
+                    yy = zc[1] + side * 2.0
+                    T.quad(M_LINE, xx0, yy - 0.25, xx1, yy + 0.25, 0.123)
+            sx_, sy_ = spot
+            if _blocked(sx_ - 0.5, sx_ + 0.5, sy_ - 0.5, sy_ + 0.5, 1):
+                continue
+            cprop("sign_yield" if minor else "sign_priority", sx_, sy_, 0.15, hd, 150.0)
+            # crossing sign (C02) facing the same traffic, a bit further out
+            ox, oy = (side * 9.0, 0.0) if horiz else (0.0, side * 9.0)
+            if not _blocked(sx_ + ox - 0.5, sx_ + ox + 0.5, sy_ + oy - 0.5, sy_ + oy + 0.5, 1):
+                cprop("sign_crossing", sx_ + ox, sy_ + oy, 0.15, hd, 150.0)
+            nsign += 2
+            # yellow direction signs (putokaz) 30 m before the bigger junctions
+            dest = None
+            if abs(jy) < 1 and not horiz:                         # crossing Europska avenija: centre is east (x<0) / west (x>0)
+                go_left = (jx > 0) == (side < 0)                 # northbound (side -1) -> left is west
+                dest = "dir_centar_" + ("l" if go_left else "r")
+            elif abs(jy + 1000) < 1 and not horiz and -800 < jx < 1400 and side < 0:
+                dest = None
+            elif abs(jy + 1000) < 1 and horiz:                    # on the bypass: airport is north of it
+                dest = "dir_aerodrom_" + ("l" if side < 0 else "r")
+            elif abs(jy) < 1 and horiz:                           # along the avenue: district names / centre
+                if jx < -550:
+                    dest = "dir_centar_s" if side < 0 else "dir_sjenjak_s"
+                else:
+                    dest = "dir_centar_s" if side > 0 else ("dir_jug2_s" if jx < 1700 else "dir_zona_s")
+            elif jy > RIV1 and not horiz and side > 0 and abs(jy - 500) < 1:
+                dest = "dir_drava_s"
+            elif jy > RIV1 and horiz and abs(jy - 500) < 1 and jx < 200:
+                dest = "dir_retfala_" + ("s" if side > 0 else "s")
+            if dest:
+                dx_, dy_ = (side * 30.0, 0.0) if horiz else (0.0, side * 30.0)
+                px_, py_ = sx_ + dx_, sy_ + dy_
+                if horiz:
+                    py_ += -side * 0.0
+                if not _blocked(px_ - 1, px_ + 1, py_ - 1, py_ + 1, 1):
+                    cprop("sign_" + dest, px_, py_, 0.15, hd, 200.0)
+                    nsign += 1
+    # speed limit 50 where the district roads begin
+    for (x0, y0, x1, y1, w) in ROADS:
+        horiz = (y1 - y0) < 1
+        for (px_, py_, hd) in (((x0 + 30, y0 - w / 2 - 1.3, 90.0), (x1 - 30, y0 + w / 2 + 1.3, 270.0)) if horiz else
+                               ((x0 + w / 2 + 1.3, y0 + 30, 180.0), (x0 - w / 2 - 1.3, y1 - 30, 0.0))):
+            if not _blocked(px_ - 1, px_ + 1, py_ - 1, py_ + 1, 2):
+                cprop("sign_speed50", px_, py_, 0.15, hd, 150.0)
+                nsign += 1
+    print(f"[OSRP] district junctions: {len(JUNC)}, signs: {nsign}")
 
     # street lights along the arterials (GTA lamp props from SIGNS)
     for (x0, y0, x1, y1, w) in ROADS:
@@ -249,6 +392,8 @@ def build(g):
             if _blocked(px_ - 1, px_ + 1, py_ - 1, py_ + 1, 3) and not (RIV0 - 6 < py_ < RIV1 + 6 and not horiz):
                 continue
             if not horiz and RIV0 - 6 < py_ < RIV1 + 6:
+                continue
+            if any(abs(px_ - jx) < jwv / 2 + 6 and abs(py_ - jy) < jwh / 2 + 6 for (jx, jy, jwh, jwv) in JUNC):
                 continue
             SIGNS.append(("ulicna_lampa", round(px_, 2), round(py_, 2), 90.0 if horiz else 0.0))
 
@@ -317,27 +462,34 @@ def build(g):
 
     # ------------------------------------------------------------ blocks between the roads
     def lots(x0, x1, y0, y1):
-        """cut a region into blocks along the road grid; returns block rects (inside the road edges)"""
+        """cut a region into blocks along the road grid; returns block rects (inside the road edges)
+        v1.0.45: the block starts right at the road edge (+0.3 m curb), so the sidewalk ring is the pavement of the street"""
+        def wx(x):
+            ws = [r[4] for r in ROADS if r[0] == r[2] and abs(r[0] - x) < 0.5]
+            return max(ws) / 2 + 0.3 if ws else 9.0
+        def wy(y):
+            ws = [r[4] for r in ROADS if r[1] == r[3] and abs(r[1] - y) < 0.5]
+            return max(ws) / 2 + 0.3 if ws else 9.0
         xcuts = sorted({x0, x1} | {r[0] for r in ROADS if r[0] == r[2] and x0 < r[0] < x1 and r[1] <= y0 + 1 and r[3] >= y1 - 1})
         ycuts = sorted({y0, y1} | {r[1] for r in ROADS if r[1] == r[3] and y0 < r[1] < y1 and r[0] <= x0 + 1 and r[2] >= x1 - 1})
         out = []
         for i in range(len(xcuts) - 1):
             for j in range(len(ycuts) - 1):
-                out.append((xcuts[i] + 9, xcuts[i + 1] - 9, ycuts[j] + 9, ycuts[j + 1] - 9))
+                out.append((xcuts[i] + wx(xcuts[i]), xcuts[i + 1] - wx(xcuts[i + 1]), ycuts[j] + wy(ycuts[j]), ycuts[j + 1] - wy(ycuts[j + 1])))
         return out
 
     def sidewalk_ring(b):
         x0, x1, y0, y1 = b
-        for (cx, cy, sx, sy) in (((x0 + x1) / 2, y0 + 1.5, x1 - x0, 3), ((x0 + x1) / 2, y1 - 1.5, x1 - x0, 3),
-                                 (x0 + 1.5, (y0 + y1) / 2, 3, y1 - y0 - 6), (x1 - 1.5, (y0 + y1) / 2, 3, y1 - y0 - 6)):
+        for (cx, cy, sx, sy) in (((x0 + x1) / 2, y0 + 1.75, x1 - x0, 3.5), ((x0 + x1) / 2, y1 - 1.75, x1 - x0, 3.5),
+                                 (x0 + 1.75, (y0 + y1) / 2, 3.5, y1 - y0 - 7), (x1 - 1.75, (y0 + y1) / 2, 3.5, y1 - y0 - 7)):
             n = max(1, int(math.ceil(max(sx, sy) / 60)))
             for k in range(n):
                 if sx >= sy:
                     a = x0 + (x1 - x0) * k / n
                     T.box(M_WALK, a + (x1 - x0) / n / 2, cy, 0.0, (x1 - x0) / n, sy, 0.15)
                 else:
-                    a = y0 + 3 + (y1 - y0 - 6) * k / n
-                    T.box(M_WALK, cx, a + (y1 - y0 - 6) / n / 2, 0.0, sx, (y1 - y0 - 6) / n, 0.15)
+                    a = y0 + 3.5 + (y1 - y0 - 7) * k / n
+                    T.box(M_WALK, cx, a + (y1 - y0 - 7) / n / 2, 0.0, sx, (y1 - y0 - 7) / n, 0.15)
 
     def fill(b, kind):
         MAPRECTS.append((kind, (b[0] + b[1]) / 2, (b[2] + b[3]) / 2, b[1] - b[0], b[3] - b[2]))
@@ -474,6 +626,25 @@ def build(g):
             tree(rnd.uniform(x0 + 5, x1 - 5), rnd.uniform(y0 + 5, y1 - 5), rnd.uniform(0.9, 1.5))
         MAPRECTS.append(("park", (x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0))
 
+    RW_Y = -665.0
+    APPROACH = (XW, -550.0, RW_Y - 90.0, RW_Y + 90.0)        # v1.0.45: clear approach corridor west of the runway
+
+    M_APPL = g.get("M_RWLIGHT", M_LINE)
+
+    def approach_block(b):                       # only grass + approach light bars (the plane flies low here)
+        x0, x1, y0, y1 = b
+        fill(b, "field")
+        T.quad(M_PARK, x0 + 3, y0 + 3, x1 - 3, y1 - 3, 0.02)
+        if y0 < RW_Y < y1:
+            x = -560.0
+            while x > x0 + 4:
+                if x < x1 - 4:
+                    T.box(M_POLE_D, x, RW_Y, 0.0, 0.3, 0.3, 1.2)
+                    T.box(M_APPL, x, RW_Y, 1.2, 1.2 if int(-x) % 120 else 18.0, 0.5, 0.25)
+                x -= 30.0
+
+    M_POLE_D = g.get("M_POLE", M_FENCE)
+
     REGIONS = [
         ("SJENJAK", (XW + 50, -550, -1000, RIV0 - 6), tower_block),
         ("JUG 2", (550, 1700, -1000, RIV0 - 6), slab_block),
@@ -506,23 +677,39 @@ def build(g):
                 if p_[3] > RIV0 - 6 and p_[2] < RIV1 + 6:
                     continue
                 sidewalk_ring(p_)
-                fn(p_)
+                if _overlaps(p_[0], p_[1], p_[2], p_[3], APPROACH):
+                    approach_block(p_)
+                else:
+                    fn(p_)
                 nb += 1
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
         LANDMARKS.append((name.title() if name.isupper() else name, cx, cy))
     g["DISTRICTS"] = [(n, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2) for n, r, _ in REGIONS]
 
     # ------------------------------------------------------------ v1.0.41 bike lanes along both Drava banks, joined to the old ones
+    # v1.0.45: the lane stops at every road and crosses it as a flat red crossing with white square markings
+    # (Croatian "biciklistički prijelaz") - no more raised lane on the asphalt or through the bridge parapets
     M_BIKE = g.get("M_BIKE", M_ROAD)
     BS, BN = g.get("BIKE_S", 157.5), g.get("BIKE_N", 308.25)
     BIKE_S2, BIKE_N2 = RIV0 - 10.0, RIV1 + 7.0
     for (a, b) in ((XW + 60, -556.0), (556.0, XE - 60)):
         for yy in (BIKE_S2, BIKE_N2):
-            for k in range(int(math.ceil((b - a) / 100))):
-                x0_, x1_ = a + k * 100, min(b, a + (k + 1) * 100)
-                T.box(M_BIKE, (x0_ + x1_) / 2, yy, 0.0, x1_ - x0_, 2.6, 0.14)
-                for j in range(int((x1_ - x0_) // 5)):
-                    T.quad(M_LINE, x0_ + j * 5 + 1, yy - 0.06, x0_ + j * 5 + 3, yy + 0.06, 0.145)
+            cross = [(r[0] - r[4] / 2 - 0.4, r[0] + r[4] / 2 + 0.4) for r in VR if r[1] - 1 <= yy <= r[3] + 1 and a - 10 < r[0] < b + 10]
+            pieces = free_iv(a, b, cross)
+            for (p0, p1) in pieces:
+                for k in range(int(math.ceil((p1 - p0) / 100))):
+                    x0_, x1_ = p0 + k * 100, min(p1, p0 + (k + 1) * 100)
+                    T.box(M_BIKE, (x0_ + x1_) / 2, yy, 0.0, x1_ - x0_, 2.6, 0.14)
+                    for j in range(int((x1_ - x0_) // 5)):
+                        T.quad(M_LINE, x0_ + j * 5 + 1, yy - 0.06, x0_ + j * 5 + 3, yy + 0.06, 0.145)
+            for (c0, c1) in cross:                                    # flat crossing on the road
+                T.quad(M_BIKE, c0, yy - 1.3, c1, yy + 1.3, 0.112)
+                for sgn in (-1, 1):
+                    for k in range(int((c1 - c0) // 1.0)):
+                        x_ = c0 + 0.25 + k * 1.0
+                        T.quad(M_LINE, x_, yy + sgn * 1.3 - 0.25, x_ + 0.5, yy + sgn * 1.3 + 0.25, 0.118)
+                for (sx_, hd) in ((c0 - 2.0, 90.0), (c1 + 2.0, 270.0)):    # B45 bike path sign before each crossing
+                    cprop("sign_bikepath", sx_, yy + (1.7 if hd == 90.0 else -1.7), 0.14, hd, 120.0)
             g["BIKEROUTES"].append((a, yy, b, yy))
             MAPRECTS.append(("bike", (a + b) / 2, yy, b - a, 2.6))
     for sx in (-1, 1):                                     # connectors from the old lanes

@@ -40,6 +40,9 @@ def _pedestrian(d, cx, cy, s, fill=BLACK):
 
 
 def draw(key):
+    v45 = draw_v45(key) if ("draw_v45" in globals()) else None
+    if v45 is not None:
+        return v45
     img = Image.new("RGB", (S, S), WHITE)
     d = ImageDraw.Draw(img)
     if key == "stop":                       # B02 STOP - red octagon, white border, white STOP
@@ -262,3 +265,133 @@ def _billboard(k):
 
 
 KEYS = ["bulet", "bulet_stand", "police_logo", "pu_plate", "notice", "osijek_map", "flag_hr", "hitna_sign", "gate", "stop", "crossing", "priority", "noentry", "speed50", "works", "closed", "detour", "street", "gunshop", "clothes", "tech", "ad_bulet", "ad_volt", "ad_stil", "ad_osijek", "ad_kava", "tram_stop", "mall_logo", "shop_stil", "shop_volt", "shop_kava", "shop_sport", "shop_knjige", "shop_igracke", "shop_market", "shop_ljekarna"]
+
+# ---------------------------------------------------------------- v1.0.45 real Croatian signs (Pravilnik NN 92/19) + vehicle decals
+GREEN = (0, 120, 70)
+DIR_DESTS = {"centar": "CENTAR", "aerodrom": "ZRAČNA LUKA", "sjenjak": "SJENJAK", "jug2": "JUG 2", "retfala": "RETFALA",
+             "zona": "IND. ZONA", "drava": "DRAVA"}
+DIR_KEYS = [f"dir_{d}_{a}" for d in DIR_DESTS for a in ("l", "r", "s")]
+POL_SEGS = 6
+TRUCK_BRANDS = ("volt", "stil", "market", "kava", "trans")
+
+
+def _arrow(d, cx, cy, s, way, fill=BLACK):
+    """thick direction arrow: way l / r / s (straight up)"""
+    w = s * 0.16
+    if way == "s":
+        d.rectangle((cx - w, cy - s * 0.15, cx + w, cy + s * 0.5), fill=fill)
+        d.polygon([(cx - s * 0.42, cy - s * 0.1), (cx + s * 0.42, cy - s * 0.1), (cx, cy - s * 0.55)], fill=fill)
+        return
+    k = -1 if way == "l" else 1
+    d.rectangle((cx - s * 0.5 * k if k > 0 else cx - s * 0.15, cy - w, cx + s * 0.15 if k > 0 else cx + s * 0.5, cy + w), fill=fill)
+    d.polygon([(cx + k * s * 0.1, cy - s * 0.42), (cx + k * s * 0.1, cy + s * 0.42), (cx + k * s * 0.55, cy)], fill=fill)
+
+
+def _bicycle(d, cx, cy, s, fill=WHITE, width=None):
+    w = int(width or s * 0.06)
+    r = s * 0.2
+    for x in (cx - s * 0.28, cx + s * 0.28):
+        d.ellipse((x - r, cy + s * 0.1 - r, x + r, cy + s * 0.1 + r), outline=fill, width=w)
+    a, b, c, e = (cx - s * 0.28, cy + s * 0.1), (cx - s * 0.02, cy + s * 0.12), (cx + s * 0.16, cy - s * 0.16), (cx - s * 0.12, cy - s * 0.16)
+    d.line([a, b, c, (cx + s * 0.28, cy + s * 0.1)], fill=fill, width=w)
+    d.line([a, e, b], fill=fill, width=w)
+    d.line([e, c], fill=fill, width=w)
+    d.line([c, (cx + s * 0.13, cy - s * 0.3), (cx + s * 0.24, cy - s * 0.32)], fill=fill, width=w)
+    d.line([(cx - s * 0.17, cy - s * 0.26), (cx - s * 0.05, cy - s * 0.26)], fill=fill, width=w)
+    d.line([e, (cx - s * 0.11, cy - s * 0.26)], fill=fill, width=w)
+
+
+def draw_v45(key):
+    if key == "yield":                      # B01 "raskrižje s cestom s prednošću prolaska" - red-edged triangle, point down
+        img = Image.new("RGB", (S, S), WHITE)
+        d = ImageDraw.Draw(img)
+        d.rectangle((0, 0, S, S), fill=RED)
+        d.polygon([(50, 70), (S - 50, 70), (S / 2, S - 50)], fill=WHITE)
+        return img
+    if key == "bikepath":                   # B45 "biciklistička staza" - blue circle, white bicycle
+        img = Image.new("RGB", (S, S), BLUE)
+        d = ImageDraw.Draw(img)
+        d.ellipse((6, 6, S - 6, S - 6), outline=WHITE, width=10)
+        _bicycle(d, S / 2, S / 2, S * 0.9)
+        return img
+    if key == "bike_station":               # Bike Osijek public bike station board
+        img = Image.new("RGB", (S, S), (0, 92, 175))
+        d = ImageDraw.Draw(img)
+        d.rectangle((0, S * 0.72, S, S), fill=WHITE)
+        d.rounded_rectangle((96, 40, S - 96, 236), radius=26, fill=WHITE)
+        _bicycle(d, S / 2, 140, 190, fill=(0, 92, 175), width=14)
+        _center_text(d, "BIKE OSIJEK", S * 0.58, 70, WHITE, cond=True)
+        _center_text(d, "JAVNI BICIKLI · E = NAJAM", S * 0.86, 36, (0, 60, 120), cond=True)
+        return img
+    if key.startswith("dir_"):              # C?? putokaz: yellow with black text on state/other roads (2.6 : 1)
+        _, dest, way = key.split("_")
+        W_, H_ = 1330, 512
+        wide = Image.new("RGB", (W_, H_), YELLOW)
+        dw = ImageDraw.Draw(wide)
+        dw.rectangle((10, 10, W_ - 10, H_ - 10), outline=BLACK, width=14)
+        name = DIR_DESTS[dest]
+        f = _font(150 if len(name) < 9 else 120, cond=True)
+        b = dw.textbbox((0, 0), name, font=f)
+        tw = b[2] - b[0]
+        if way == "r":
+            ax, tx = W_ - 210, (W_ - 380 - tw) / 2 + 40
+        else:
+            ax, tx = 210, 380 + (W_ - 420 - tw) / 2
+        _arrow(dw, ax, H_ / 2, 300, way)
+        dw.text((tx - b[0], H_ / 2 - (b[3] - b[1]) / 2 - b[1]), name, font=f, fill=BLACK)
+        return wide.resize((S, S))
+    if key.startswith("pol_band_"):         # police side band, cut into POL_SEGS pieces (each piece = own prop)
+        i = int(key.split("_")[-1])
+        W_, H_ = 1800, 192
+        band = Image.new("RGB", (W_, H_), (0, 62, 140))
+        db = ImageDraw.Draw(band)
+        db.rectangle((0, 0, W_, 16), fill=(220, 230, 40))           # reflective yellow-green edges
+        db.rectangle((0, H_ - 16, W_, H_), fill=(220, 230, 40))
+        f = _font(132)
+        b = db.textbbox((0, 0), "POLICIJA", font=f)
+        db.text(((W_ - (b[2] - b[0])) / 2 - b[0], (H_ - (b[3] - b[1])) / 2 - b[1]), "POLICIJA", font=f, fill=WHITE)
+        sw = W_ // POL_SEGS
+        return band.crop((i * sw, 0, (i + 1) * sw, H_)).resize((S, S))
+    if key.startswith("truck_"):            # delivery truck box panels (3 : 1)
+        brand = key[6:]
+        W_, H_ = 1536, 512
+        im = Image.new("RGB", (W_, H_))
+        d = ImageDraw.Draw(im)
+        def grad(c0, c1):
+            for y in range(H_):
+                t = y / H_
+                d.line([(0, y), (W_, y)], fill=tuple(int(c0[k] + (c1[k] - c0[k]) * t) for k in range(3)))
+        def txt(t, x, y, size, fill, cond=False, anchor="l"):
+            f = _font(size, cond)
+            b = d.textbbox((0, 0), t, font=f)
+            xx = x - b[0] if anchor == "l" else (W_ - (b[2] - b[0])) / 2 - b[0]
+            d.text((xx, y - (b[3] - b[1]) / 2 - b[1]), t, font=f, fill=fill)
+        if brand == "volt":
+            grad((10, 16, 30), (20, 40, 70))
+            d.polygon([(130, 60), (60, 270), (150, 270), (100, 450), (260, 190), (165, 190), (220, 60)], fill=(60, 200, 255))
+            txt("VOLT", 330, 200, 230, (60, 200, 255))
+            txt("ELEKTRONIKA · DOSTAVA ISTI DAN", 340, 390, 64, WHITE, cond=True)
+        elif brand == "stil":
+            grad((250, 246, 240), (236, 228, 220))
+            d.rectangle((0, H_ - 70, W_, H_), fill=(190, 40, 90))
+            txt("STIL", 0, 210, 260, (20, 20, 24), anchor="c")
+            txt("MODA · ODJEĆA · OBUĆA", 0, 380, 60, (190, 40, 90), cond=True, anchor="c")
+        elif brand == "market":
+            grad((210, 24, 34), (170, 10, 20))
+            d.ellipse((70, 96, 390, 416), fill=WHITE)
+            txt("DM", 128, 256, 130, (200, 20, 30))
+            txt("DRAVA MARKET", 430, 210, 128, WHITE, cond=True)
+            txt("svježe svaki dan", 450, 370, 80, (255, 230, 120), cond=True)
+        elif brand == "kava":
+            grad((70, 40, 22), (40, 22, 12))
+            d.ellipse((90, 120, 330, 400), fill=(245, 220, 180))
+            d.ellipse((140, 170, 280, 350), fill=(70, 40, 22))
+            txt("KAVA DRAVA", 400, 220, 170, (245, 220, 180), cond=True)
+            txt("PRŽIONICA · OSIJEK", 410, 380, 70, (230, 160, 90), cond=True)
+        else:                                   # trans
+            grad((240, 120, 10), (210, 80, 0))
+            d.rectangle((0, 0, W_, 40), fill=(30, 30, 34)); d.rectangle((0, H_ - 40, W_, H_), fill=(30, 30, 34))
+            txt("OSIJEK TRANS", 0, 220, 190, WHITE, cond=True, anchor="c")
+            txt("PRIJEVOZ · SELIDBE · 031 000 000", 0, 380, 64, (30, 30, 34), cond=True, anchor="c")
+        return im.resize((S, S))
+    return None

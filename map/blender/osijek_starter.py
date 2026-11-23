@@ -1777,6 +1777,8 @@ for name, by in (("jug", BIKE_S), ("sjever", BIKE_N)):
                   (x, by - 0.45, 0.14, 0.06, 0.3, 0.012)]
     boxes_mesh(f"osrp_biciklisticka_crte_{name}", lines, M_LINE)
     BIKEROUTES.append((-MAP_W / 2 + 6, by, MAP_W / 2 - 6, by))
+    for x in range(-500, 501, 250):                       # v1.0.45: B45 "biciklistička staza" signs along the lane
+        cprop("sign_bikepath", x, by + (1.75 if name == "jug" else -1.75), 0.14, 90.0)
 
 # v1.0.27: granite edging along the promenade + walkway + bike path (no thin floating edge over the grass)
 for k, (y, L) in enumerate(((PROM_Y - 8.1, MAP_W), (NP_Y - 3.1, MAP_W - 2), (NP_Y + 3.1, MAP_W - 2), (BIKE_N - 1.4, MAP_W - 4), (BIKE_N + 1.4, MAP_W - 4))):
@@ -1796,8 +1798,7 @@ EXTRA_WALKS = [(-MAP_W / 2 + 10, NP_Y + 1, MAP_W / 2 - 10, NP_Y + 1)]
 for k, (bx, by, h) in enumerate(((-300, BIKE_S - 3.6, 0.0), (150, BIKE_S - 3.6, 0.0), (-140, BIKE_N + 3.5, 180.0), (-180, BEACH_Y + 16, 180.0))):
     box(col, f"osrp_bicikli_ploca_{k}", (bx, by, 0.0), (8.0, 3.4, 0.14), M_WALK)
     box(col, f"osrp_bicikli_stalak_{k}", (bx, by + (1.3 if h == 0.0 else -1.3), 0.14), (7.2, 0.12, 0.75), M_STEEL)
-    box(col, f"osrp_bicikli_znak_{k}", (bx - 3.6, by, 0.14), (0.15, 0.15, 2.2), M_POLE)
-    box(col, f"osrp_bicikli_znak_ploca_{k}", (bx - 3.6, by, 2.2), (0.08, 1.2, 0.8), M_SIGN_BLUE)
+    cprop("sign_bikestation", bx - 4.4, by, 0.14, 180.0 if h == 0.0 else 0.0)   # v1.0.45: real Bike Osijek board (was a blank blue plate)
     for j, m in enumerate(("cruiser", "scorcher", "bmx", "tribike")):
         SPECIAL.append((bx - 2.4 + j * 1.6, by, None, h, m, 0))
 MAPRECTS += [("bike", 0, BIKE_S, MAP_W, 2.6), ("bike", 0, BIKE_N, MAP_W, 2.6), ("walk", 0, NP_Y, MAP_W, 6)]
@@ -2425,4 +2426,4 @@ PROP_COL, PROP_NAMES = osrp_props.build_props(globals())
 # v1.0.40: Veliki Osijek - new districts all around the old city (osrp_districts.py)
 import osrp_districts
 osrp_districts.build(globals())
-print(f"[OSRP] Osijek map v1.0.44: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")
+print(f"[OSRP] Osijek map v1.0.45: {len(PROP_NAMES)} custom props, {len(PARKING)} parking, {len(SIGNS)} signs, {len(DOORS)} doors, {len(FURNITURE)} furniture, {len(col.objects)} objects, {li} street lights, collection '{COL_NAME}'")

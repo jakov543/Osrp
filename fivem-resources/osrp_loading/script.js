@@ -91,3 +91,32 @@ window.addEventListener('message', (e) => {
   if (d.eventName === 'performMapLoadFunction') $('stage').textContent = 'Postavljam ulice i zgrade';
 });
 show(0, 'Pripremam grad');
+
+// ---------- v1.0.45: slideshow of our city (img/*.jpg, rendered from the map). The drawn sunset stays behind it. ----------
+(() => {
+  const PH = [
+    ['img/katedrala.jpg', 'Tvrđa i Konkatedrala'], ['img/drava.jpg', 'Most preko Drave'], ['img/aerodrom.jpg', 'Zračna luka Osijek'],
+    ['img/sjenjak.jpg', 'Sjenjak'],
+  ];
+  const box = $('photos'), cap = $('caption');
+  const els = [];
+  PH.forEach(([src], i) => {
+    const d = document.createElement('div');
+    d.className = 'ph' + (i % 2 ? ' alt' : '');
+    const img = new Image();
+    img.onload = () => { d.style.backgroundImage = `url(${src})`; d.dataset.ok = '1'; };
+    img.src = src;
+    box.appendChild(d); els.push(d);
+  });
+  let k = -1;
+  const next = () => {
+    const ok = els.map((e, i) => e.dataset.ok ? i : -1).filter((i) => i >= 0);
+    if (!ok.length) return;                       // no photos (yet) -> the drawn scene is shown
+    k = ok[(ok.indexOf(k) + 1) % ok.length];
+    els.forEach((e, i) => { e.classList.remove('on'); if (i === k) { void e.offsetWidth; e.classList.add('on'); } });
+    cap.classList.add('fade');
+    setTimeout(() => { cap.querySelector('b').textContent = PH[k][1]; cap.classList.remove('fade'); }, 600);
+  };
+  setTimeout(next, 400);
+  setInterval(next, 7000);
+})();

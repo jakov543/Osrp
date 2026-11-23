@@ -133,7 +133,10 @@ Config.PedModels = { 'a_m_y_business_01', 'a_f_y_business_01', 'a_m_m_business_0
 Config.Traffic = true
 Config.TrafficCount = 24            -- v1.0.43: cars around you (road network of the whole city)
 Config.TrafficModels = { 'asea', 'premier', 'blista', 'ingot', 'stanier', 'tailgater', 'fugitive', 'primo', 'dilettante', 'emperor',
-    'asterope', 'glendale', 'warrener', 'intruder', 'surge', 'issi2', 'panto', 'rhapsody', 'minivan', 'speedo', 'mule', 'benson' }
+    'asterope', 'glendale', 'warrener', 'intruder', 'surge', 'issi2', 'panto', 'rhapsody', 'minivan', 'speedo', 'mule', 'benson',
+    'mule3', 'pounder', 'club', 'brioso', 'weevil', 'kanjo', 'asbo', 'serrano', 'radi', 'landstalker' }
+-- v1.0.45: real-looking car paints for the traffic (GTA paint ids: black, white, silvers, greys, dark blue, blue, red, wine, green, beige, brown)
+Config.TrafficColours = { 0, 1, 111, 112, 4, 5, 6, 7, 8, 13, 61, 62, 64, 73, 27, 28, 34, 49, 50, 99, 102, 96 }
 Config.TrafficSpeed = 13.5          -- m/s top speed in town (about 50 km/h); bypass streets have their own
 Config.DrivingStyle = 786603        -- normal, careful driving
 
@@ -192,11 +195,21 @@ Config.JoggerShare = 0.35           -- part of the people on the promenades who 
 -- texture at runtime. GTA maps that texture in its own way, so if it looks wrong set Enabled = false and send us the
 -- original pol3_sign_1 texture from OpenIV (police3.ytd) - then the livery is painted exactly on its layout.
 Config.PoliceLivery = {
-    Enabled = true,
+    Enabled = false,             -- v1.0.45: off - the new decal livery below works on every model (this one needed the GTA texture layout)
     Replace = { { txd = 'police3', tex = 'pol3_sign_1' }, { txd = 'police3+hi', tex = 'pol3_sign_1' } },
     Image = 'html/livery/policija_hr.png',
     Models = { 'police3', 'police', 'policet' },
     Colour = 111,                -- white body (GTA paint index) on the station's police cars
+}
+
+-- v1.0.45 liveries made of our own decal models (liveries.lua): Croatian police band + brand panels on box trucks
+Config.Liveries = {
+    Enabled = true,
+    PoliceModels = { 'police', 'police2', 'police3', 'police4', 'policet', 'sheriff', 'sheriff2' },
+    PoliceColour = 111,          -- white body (GTA paint index)
+    PoliceBandHeight = 0.42,     -- band height on the doors (0 = bottom of the car, 1 = roof). Move it if it sits too high / low
+    TruckModels = { mule = 'small', mule2 = 'small', mule3 = 'small', mule4 = 'small', benson = 'big', pounder = 'big', pounder2 = 'big' },
+    Max = 40,
 }
 
 -- v1.0.33 BULET e-scooters (rent at the green stations, E). Prices are charged by osrp_framework.

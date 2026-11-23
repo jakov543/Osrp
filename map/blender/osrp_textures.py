@@ -542,6 +542,9 @@ def _to_dds(ppm, dds):
 def build(name, base_rgb, seed, out_dir):
     """make <name>.dds (+ <name>_n.dds); returns (diffuse path, normal path or None, tile metres)"""
     key, fn, size, tile, nstr = lookup(name)
+    import re as _re
+    if size > 512 and _re.search(r"_\d+$", name):   # v1.0.45: colour variants (houses, flats) at 512 px - keeps the .ytd small
+        size = 512
     rng = np.random.default_rng(seed)
     albedo, height = fn(rng, size, base_rgb)
     tmp = os.path.join(out_dir, name + ".ppm")
@@ -551,7 +554,12 @@ def build(name, base_rgb, seed, out_dir):
     ndds = None
     if height is not None and nstr > 0:
         ndds = os.path.join(out_dir, name + "_n.dds")
-        _write_ppm(tmp, normal_from_height(_blur(np.asarray(height, float), 0.6), nstr * size / 256.0))
+        nrm = normal_from_height(_blur(np.asarray(height, float), 0.6), nstr * size / 256.0)
+        if size > 512:                                    # v1.0.45: normal maps at half size (you cannot see the difference)
+            a = np.asarray(nrm, float)
+            a = (a[0::2, 0::2] + a[1::2, 0::2] + a[0::2, 1::2] + a[1::2, 1::2]) / 4.0
+            nrm = np.clip(a, 0, 255).astype(np.uint8)
+        _write_ppm(tmp, nrm)
         _to_dds(tmp, ndds)
     os.remove(tmp)
     return dds, ndds, tile
